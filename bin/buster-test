@@ -1,0 +1,4 @@
+#!/usr/bin/env node
+
+//require("../poc/client.js");
+require("../lib/buster-test-client/test-client.js").run(process.argv);
