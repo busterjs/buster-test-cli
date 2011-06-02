@@ -1,34 +1,27 @@
+var helper = require("../../test-helper").requestHelperFor("localhost", "9999");
 var http = require("http");
 var buster = require("buster");
+buster.serverCli = helper.require("cli/server");
 var assert = buster.assert;
 buster.server = require("buster-server");
-var helper = require("../../test-helper").requestHelperFor("localhost", "9999");
 
 buster.testCase("buster-server binary", {
-    setUp: function () {
-        this.cli = Object.create(helper.require("cli/server"));
-        this.stub(process, "exit");
-    },
+    setUp: helper.cliTestSetUp(buster.serverCli),
 
     "run": {
         "should print to stderr if option handling fails": function () {
-            this.stub(console, "error");
-
             this.cli.run(["--hey"]);
 
-            assert.calledOnce(console.error);
+            assert.notEquals(this.stderr, "");
         },
 
         "should print help message": function () {
-            this.stub(console, "log");
-
             this.cli.run(["--help"]);
 
-            assert.match(console.log.args[0][0], "Server for automating");
+            assert.match(this.stdout, "Server for automating");
         },
 
         "should start server on default port": function () {
-            this.stub(console, "log");
             var server = { listen: this.spy() };
             this.stub(this.cli, "createServer").returns(server);
 
@@ -39,7 +32,6 @@ buster.testCase("buster-server binary", {
         },
 
         "should start server on specified port": function () {
-            this.stub(console, "log");
             var server = { listen: this.spy() };
             this.stub(this.cli, "createServer").returns(server);
 
@@ -50,15 +42,14 @@ buster.testCase("buster-server binary", {
         },
 
         "should print message if address is already in use": function () {
-            this.stub(console, "error");
             var error = new Error("EADDRINUSE, Address already in use");
             var server = { listen: this.stub().throws(error) };
             this.stub(this.cli, "createServer").returns(server);
 
             this.cli.run(["-p", "3200"]);
 
-            assert.match(console.error.args[0][0],
-                         "Address already in use. Pick another port with -p/--port to start buster-server");
+            assert.match(this.stderr, "Address already in use. " +
+                         "Pick another port with -p/--port to start buster-server");
         }
     },
 

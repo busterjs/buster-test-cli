@@ -5,6 +5,20 @@ module.exports = {
         return require("../../lib/buster-test-cli/" + mod);
     },
 
+    cliTestSetUp: function (cli) {
+        return function () {
+            this.stub(process, "exit");
+            var self = this;
+            this.stdout = "";
+            this.stderr = "";
+
+            this.cli = cli.create(
+                {puts: function () { self.stdout += [].join.call(arguments, " "); }},
+                {puts: function () { self.stderr += [].join.call(arguments, " "); }}
+            );
+        }
+    },
+
     requestHelperFor: function (host, port) {
         var helper = Object.create(this);
         helper.host = host;
