@@ -8,9 +8,10 @@ buster.testCase("Test client cli", {
 
     "run": {
         "should print help message": function () {
-            this.cli.run([]);
+            this.cli.run(["--help"]);
 
-            assert.equals(this.stdout, "");
+            assert.match(this.stdout, "Run Buster.JS tests on node, in browsers");
+            assert.match(this.stdout, "--help");
         }
     }
 });

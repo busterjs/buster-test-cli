@@ -19,6 +19,8 @@ buster.testCase("buster-server binary", {
             this.cli.run(["--help"]);
 
             assert.match(this.stdout, "Server for automating");
+            assert.match(this.stdout, "-h/--help");
+            assert.match(this.stdout, "-p/--port");
         },
 
         "should start server on default port": function () {
