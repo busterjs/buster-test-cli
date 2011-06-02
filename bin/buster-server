@@ -1,6 +1,5 @@
 #!/usr/bin/env node
-
-require("../lib/buster-test-client/server.js").create(
+require("../lib/buster-test-cli/cli/server.js").create(
     { puts: function () { console.log.apply(console, arguments); } },
     { puts: function () { console.error.apply(console, arguments); } }
 ).run(process.argv.slice(2));
