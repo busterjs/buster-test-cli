@@ -1,4 +1,6 @@
 var http = require("http");
+var path = require("path");
+var fs = require("fs");
 
 module.exports = {
     require: function (mod) {
@@ -16,6 +18,29 @@ module.exports = {
                 {puts: function () { self.stdout += [].join.call(arguments, " "); }},
                 {puts: function () { self.stderr += [].join.call(arguments, " "); }}
             );
+        }
+    },
+
+    clientTearDown: function (done) {
+        // rmdir
+    },
+
+    runTest: function (args, callback) {
+        return function (done) {
+            this.cli.run(args, function () {
+                callback.call(this);
+                done();
+            }.bind(this));
+        };
+    },
+
+    mkdir: function (dir) {
+        var root = path.resolve(__dirname, "..");
+        var dirs = dir.split("/"), tmp = root;
+
+        for (var i = 0, l = dirs.length; i < l; ++i) {
+            tmp += "/" + dirs[i];
+            fs.mkdirSync(tmp, "755");
         }
     },
 
