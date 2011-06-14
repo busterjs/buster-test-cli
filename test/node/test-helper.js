@@ -16,10 +16,11 @@ module.exports = {
             var self = this;
             this.stdout = "";
             this.stderr = "";
+            var j = [].join;
 
             this.cli = cli.create(
-                {puts: function () { self.stdout += [].join.call(arguments, " "); }},
-                {puts: function () { self.stderr += [].join.call(arguments, " "); }}
+                {puts: function () { self.stdout += j.call(arguments, " ") + "\n"; }},
+                {puts: function () { self.stderr += j.call(arguments, " ") + "\n"; }}
             );
         }
     },

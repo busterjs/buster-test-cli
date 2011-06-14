@@ -25,6 +25,11 @@ buster.testCase("Test client cli", {
                 assert.match(this.stderr, "--config/-c: buster is not a file");
                 done();
             }.bind(this));
-        }
+        },
+
+        "should fail if default config does not exist": run([], function () {
+            assert.match(this.stderr, "--config/-c not provided, and none of\n" +
+                         "[buster.js, test/buster.js, spec/buster.js] exists");
+        })
     }
 });
