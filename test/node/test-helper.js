@@ -1,6 +1,9 @@
 var http = require("http");
 var path = require("path");
 var fs = require("fs");
+var rmrf = require("rimraf");
+
+var FIXTURES_ROOT = path.resolve(__dirname, "..", "fixtures");
 
 module.exports = {
     require: function (mod) {
@@ -22,7 +25,10 @@ module.exports = {
     },
 
     clientTearDown: function (done) {
-        // rmdir
+        rmrf(FIXTURES_ROOT, function (err) {
+            if (err) require("buster").log(err.toString());
+            done();
+        });
     },
 
     runTest: function (args, callback) {
@@ -35,8 +41,8 @@ module.exports = {
     },
 
     mkdir: function (dir) {
-        var root = path.resolve(__dirname, "..");
-        var dirs = dir.split("/"), tmp = root;
+        var dirs = dir.split("/"), tmp = FIXTURES_ROOT;
+        fs.mkdirSync(FIXTURES_ROOT, "755");
 
         for (var i = 0, l = dirs.length; i < l; ++i) {
             tmp += "/" + dirs[i];

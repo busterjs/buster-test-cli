@@ -7,6 +7,7 @@ buster.server = require("buster-server");
 
 buster.testCase("buster-server binary", {
     setUp: helper.cliTestSetUp(buster.serverCli),
+    tearDown: helper.cliTestTearDown,
 
     "run": {
         "should print to stderr if option handling fails": function () {

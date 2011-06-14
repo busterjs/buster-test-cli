@@ -6,6 +6,7 @@ var run = helper.runTest;
 
 buster.testCase("Test client cli", {
     setUp: helper.cliTestSetUp(buster.testCli),
+    tearDown: helper.clientTearDown,
 
     "run": {
         "should print help message": run(["--help"], function () {
