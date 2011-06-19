@@ -1,9 +1,9 @@
 var buster = require("buster");
 var assert = buster.assert;
-buster.testCli = require("../../../lib/buster-test-cli");
+var testCli = require("../../../lib/buster-test-cli");
 
 buster.testCase("Module index", {
-    "should have dynamic version getter": function () {
-        assert.match(buster.testCli.VERSION, /^\d+\.\d+\.\d+$/);
+    "should get version": function () {
+        assert.match(testCli.VERSION, /^\d+\.\d+\.\d+$/);
     }
 });
