@@ -1,20 +1,25 @@
 var helper = require("../test-helper");
 var buster = require("buster");
 var testConfig = helper.require("config");
-buster.configBuilder = require("buster-client").configBuilder;
+buster.configuration = require("buster-client").configuration;
 var assert = buster.assert;
+var version = require("../../../lib/buster-test-cli").VERSION;
 
 buster.testCase("Test client configuration", {
     setUp: function () {
-        var promise = buster.promise.create();
-        promise.resolve();
-        this.stub(buster.configBuilder, "loadFile").returns(promise);;
+        this.config = {
+            "client tests": {},
+            "server tests": { environment: "node" }
+        };
+
+        this.stub(buster.configuration, "safeRequire").returns(this.config);
     },
 
     "should preload session configuration with library": function (done) {
         this.stub(Date, "now").returns(11111111);
+        testConfig.loadModule("buster.js")
 
-        testConfig.fromFile("buster.json").then(function (config) {
+        testConfig.eachFor("browsers", function (config) {
             config.sessionConfig.configure().then(function (conf) {
                 var res = conf.resources;
                 assert.isObject(res["/buster/buster-core.js"]);
@@ -42,14 +47,14 @@ buster.testCase("Test client configuration", {
                 assert.isObject(res["/buster/buster-test/test-runner.js"]);
                 assert.isObject(res["/buster/buster-test/reporters/json-proxy.js"]);
                 assert.isObject(res["/buster/sinon-buster.js"]);
-                assert.isObject(res["/buster/bundle-0.1.0-11111111.js"]);
+                assert.isObject(res["/buster/bundle-" + version + "-11111111.js"]);
                 assert.isObject(res["/buster/sinon/util/timers_ie.js"]);
                 assert.isObject(res["/buster/sinon/util/xhr_ie.js"]);
                 assert.isObject(res["/buster/wiring.js"]);
 
                 assert.match(conf.load, [
-                    "/buster/bundle-0.1.0-11111111.js",
-                    "/buster/compat-0.1.0.js"]);
+                    "/buster/bundle-" + version + "-11111111.js",
+                    "/buster/compat-" + version + ".js"]);
 
                 done();
             });
@@ -57,9 +62,20 @@ buster.testCase("Test client configuration", {
     },
 
     "should load configuration file": function (done) {
-        testConfig.fromFile("buster.json").then(function (config) {
-            assert.calledOnce(buster.configBuilder.loadFile);
-            assert.calledWith(buster.configBuilder.loadFile, "buster.json");
+        testConfig.loadModule("buster.js");
+
+        testConfig.eachFor("browsers", function (config) {
+            assert.calledOnce(buster.configuration.safeRequire);
+            assert.calledWith(buster.configuration.safeRequire, "buster.js");
+            done();
+        });
+    },
+
+    "should not extend node configuration": function (done) {
+        testConfig.loadModule("buster.js");
+
+        testConfig.eachFor("node", function (config) {
+            assert.isUndefined(config.sessionConfig);
             done();
         });
     }
