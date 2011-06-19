@@ -15,20 +15,20 @@ buster.testCase("Test client cli", {
         }),
 
         "should fail if config does not exist": run(["-c", "file.js"], function () {
-            assert.match(this.stderr, "--config/-c: file.js is not a file");
+            assert.match(this.stderr, "-c/--config: file.js is not a file");
         }),
 
         "should fail if config is a directory": function (done) {
             helper.mkdir("buster");
 
             this.cli.run(["-c", "buster"], function () {
-                assert.match(this.stderr, "--config/-c: buster is not a file");
+                assert.match(this.stderr, "-c/--config: buster is not a file");
                 done();
             }.bind(this));
         },
 
         "should fail if default config does not exist": run([], function () {
-            assert.match(this.stderr, "--config/-c not provided, and none of\n" +
+            assert.match(this.stderr, "-c/--config not provided, and none of\n" +
                          "[buster.js, test/buster.js, spec/buster.js] exists");
         })
     }
