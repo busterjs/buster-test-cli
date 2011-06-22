@@ -13,6 +13,8 @@ module.exports = {
     cliTestSetUp: function (cli) {
         return function () {
             this.stub(process, "exit");
+            module.exports.mkdir(FIXTURES_ROOT);
+            process.chdir(FIXTURES_ROOT);
             var self = this;
             this.stdout = "";
             this.stderr = "";
@@ -34,21 +36,37 @@ module.exports = {
 
     runTest: function (args, callback) {
         return function (done) {
-            this.cli.run(args, function () {
-                callback.call(this);
+            module.exports.run(this, args, function () {
                 done();
-            }.bind(this));
+                callback.call(this);
+            });
         };
     },
 
+    run: function (tc, args, callback) {
+        tc.cli.run(args);
+
+        setTimeout(function () {
+            callback.call(tc);
+        }, 5);
+    },
+
     mkdir: function (dir) {
-        var dirs = dir.split("/"), tmp = FIXTURES_ROOT;
-        fs.mkdirSync(FIXTURES_ROOT, "755");
+        var dirs = [FIXTURES_ROOT].concat(dir.split("/")), tmp = "";
 
         for (var i = 0, l = dirs.length; i < l; ++i) {
-            tmp += "/" + dirs[i];
-            fs.mkdirSync(tmp, "755");
+            tmp += dirs[i] + "/";
+
+            try {
+                fs.mkdirSync(tmp, "755");
+            } catch (e) {}
         }
+    },
+
+    writeFile: function (file, contents) {
+        file = path.join(FIXTURES_ROOT, file);
+        this.mkdir(path.dirname(file));
+        fs.writeFileSync(file, contents);
     },
 
     requestHelperFor: function (host, port) {
