@@ -20,7 +20,7 @@ buster.testCase("Test client configuration", {
         this.stub(Date, "now").returns(11111111);
         testConfig.loadModule("cfg.js")
 
-        testConfig.eachGroup("browsers", function (config) {
+        testConfig.eachGroup("browsers", function (err, config) {
             config.sessionConfig.configure().then(function (conf) {
                 var res = conf.resources;
                 assert.isObject(res["/buster/buster-core.js"]);
@@ -65,7 +65,7 @@ buster.testCase("Test client configuration", {
     "should not extend node configuration": function (done) {
         testConfig.loadModule("buster.js");
 
-        testConfig.eachGroup("node", function (config) {
+        testConfig.eachGroup("node", function (err, config) {
             assert.isUndefined(config.sessionConfig);
             done();
         });
