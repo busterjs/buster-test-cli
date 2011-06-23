@@ -7,19 +7,20 @@ var version = require("../../../lib/buster-test-cli").VERSION;
 
 buster.testCase("Test client configuration", {
     setUp: function () {
-        this.config = {
-            "client tests": {},
-            "server tests": { environment: "node" }
-        };
+        helper.writeFile("cfg.js", "var config = module.exports;" +
+                         "config['client tests'] = {};" +
+                         "config['server tests'] = { environment: 'node' };");
 
-        this.stub(buster.configuration, "safeRequire").returns(this.config);
+        process.chdir(helper.FIXTURES_ROOT);
     },
+
+    tearDown: helper.clientTearDown,
 
     "should preload session configuration with library": function (done) {
         this.stub(Date, "now").returns(11111111);
-        testConfig.loadModule("buster.js")
+        testConfig.loadModule("cfg.js")
 
-        testConfig.eachFor("browsers", function (config) {
+        testConfig.eachGroup("browsers", function (config) {
             config.sessionConfig.configure().then(function (conf) {
                 var res = conf.resources;
                 assert.isObject(res["/buster/buster-core.js"]);
@@ -61,20 +62,10 @@ buster.testCase("Test client configuration", {
         });
     },
 
-    "should load configuration file": function (done) {
-        testConfig.loadModule("buster.js");
-
-        testConfig.eachFor("browsers", function (config) {
-            assert.calledOnce(buster.configuration.safeRequire);
-            assert.calledWith(buster.configuration.safeRequire, "buster.js");
-            done();
-        });
-    },
-
     "should not extend node configuration": function (done) {
         testConfig.loadModule("buster.js");
 
-        testConfig.eachFor("node", function (config) {
+        testConfig.eachGroup("node", function (config) {
             assert.isUndefined(config.sessionConfig);
             done();
         });

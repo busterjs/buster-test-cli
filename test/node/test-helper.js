@@ -5,7 +5,9 @@ var rmrf = require("rimraf");
 
 var FIXTURES_ROOT = path.resolve(__dirname, "..", "fixtures");
 
-module.exports = {
+var helper = module.exports = {
+    FIXTURES_ROOT: FIXTURES_ROOT,
+
     require: function (mod) {
         return require("../../lib/buster-test-cli/" + mod);
     },
@@ -13,7 +15,7 @@ module.exports = {
     cliTestSetUp: function (cli) {
         return function () {
             this.stub(process, "exit");
-            module.exports.mkdir(FIXTURES_ROOT);
+            helper.mkdir(FIXTURES_ROOT);
             process.chdir(FIXTURES_ROOT);
             var self = this;
             this.stdout = "";
@@ -36,7 +38,7 @@ module.exports = {
 
     runTest: function (args, callback) {
         return function (done) {
-            module.exports.run(this, args, function () {
+            helper.run(this, args, function () {
                 done();
                 callback.call(this);
             });
