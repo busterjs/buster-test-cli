@@ -79,7 +79,7 @@ buster.testCase("Test client cli", {
 
         "should transfer filters to node runner": function (done) {
             helper.run(this, ["should-"], function () {
-                assert.match(nodeRunner.run.args[0][1], { filters: ["should-"] });
+                assert.equals(nodeRunner.run.args[0][1].filters, ["should-"]);
                 done();
             });
         }
