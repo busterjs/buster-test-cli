@@ -13,6 +13,16 @@ buster.testCase("Test client cli", {
         "should print help message": run(["--help"], function () {
             assert.match(this.stdout, "Run Buster.JS tests on node, in browsers");
             assert.match(this.stdout, "--help");
+        }),
+
+        "should fail if no such help topic": run(["--help", "bleh"], function () {
+            assert.match(this.stderr, "No such help topic `bleh'. Try one of");
+            assert.match(this.stderr, "reporters");
+        }),
+
+        "should print specific topic help": run(["--help", "reporters"], function () {
+            assert.match(this.stdout, "xml");
+            assert.match(this.stdout, "bddConsole");
         })
     },
 
