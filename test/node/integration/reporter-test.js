@@ -2,7 +2,7 @@ var helper = require("../test-helper");
 
 if (require.main != module) {
     console.log("Integration test must be run manually - it is a visual test");
-    console.log("node test/node/integration/reporter-test.js");
+    console.log("node test/node/integration/reporter-test.js\n");
 } else {
     run();
 }
