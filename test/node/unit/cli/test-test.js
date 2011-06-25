@@ -44,7 +44,9 @@ buster.testCase("Test client cli", {
                 assert.match(this.stderr, /\d+:\d+/);
                 done();
             });
-        }
+        },
+
+        "//should fail gracefully if runner is missing": function () {}
     },
 
     "node runs": {
@@ -80,6 +82,13 @@ buster.testCase("Test client cli", {
         "should transfer filters to node runner": function (done) {
             helper.run(this, ["should-"], function () {
                 assert.equals(nodeRunner.run.args[0][1].filters, ["should-"]);
+                done();
+            });
+        },
+
+        "should fail if reporter does not exist": function (done) {
+            helper.run(this, ["-r", "bogus"], function () {
+                assert.match(this.stderr, "No such reporter 'bogus'");
                 done();
             });
         }
