@@ -3,6 +3,8 @@ var http = require("http");
 var buster = require("buster");
 buster.serverCli = helper.require("cli/server");
 var assert = buster.assert;
+var refute = buster.refute;
+var run = helper.runTest;
 buster.server = require("buster-server");
 
 buster.testCase("buster-server binary", {
@@ -10,49 +12,49 @@ buster.testCase("buster-server binary", {
     tearDown: helper.cliTestTearDown,
 
     "run": {
-        "should print to stderr if option handling fails": function () {
-            this.cli.run(["--hey"]);
+        "should print to stderr if option handling fails":
+        run(["--hey"], function () {
+            refute.equals(this.stderr, "");
+        }),
 
-            assert.notEquals(this.stderr, "");
-        },
-
-        "should print help message": function () {
-            this.cli.run(["--help"]);
-
+        "should print help message": run(["--help"], function () {
             assert.match(this.stdout, "Server for automating");
             assert.match(this.stdout, "-h/--help");
             assert.match(this.stdout, "-p/--port");
-        },
+        }),
 
-        "should start server on default port": function () {
+        "should start server on default port": function (done) {
             var server = { listen: this.spy() };
             this.stub(this.cli, "createServer").returns(server);
 
-            this.cli.run([]);
-
-            assert.calledOnce(server.listen);
-            assert.calledWith(server.listen, 1111);
+            helper.run(this, [], function () {
+                assert.calledOnce(server.listen);
+                assert.calledWith(server.listen, 1111);
+                done();
+            });
         },
 
-        "should start server on specified port": function () {
+        "should start server on specified port": function (done) {
             var server = { listen: this.spy() };
             this.stub(this.cli, "createServer").returns(server);
 
-            this.cli.run(["-p", "3200"]);
-
-            assert.calledOnce(server.listen);
-            assert.calledWith(server.listen, 3200);
+            helper.run(this, ["-p", "3200"], function () {
+                assert.calledOnce(server.listen);
+                assert.calledWith(server.listen, 3200);
+                done();
+            });
         },
 
-        "should print message if address is already in use": function () {
+        "should print message if address is already in use": function (done) {
             var error = new Error("EADDRINUSE, Address already in use");
             var server = { listen: this.stub().throws(error) };
             this.stub(this.cli, "createServer").returns(server);
 
-            this.cli.run(["-p", "3200"]);
-
-            assert.match(this.stderr, "Address already in use. " +
-                         "Pick another port with -p/--port to start buster-server");
+            helper.run(this, ["-p", "3200"], function () {
+                assert.match(this.stderr, "Address already in use. Pick another " +
+                             "port with -p/--port to start buster-server");
+                done();
+            });
         }
     },
 
@@ -66,6 +68,7 @@ buster.testCase("buster-server binary", {
         tearDown: function (done) {
             this.server.on("close", done);
             this.server.close();
+            done();
         },
 
         "should redirect client when capturing": function (done) {

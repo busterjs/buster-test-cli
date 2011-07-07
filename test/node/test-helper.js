@@ -50,7 +50,7 @@ var helper = module.exports = {
 
         setTimeout(function () {
             callback.call(tc);
-        }, 5);
+        }, 10);
     },
 
     mkdir: function (dir) {

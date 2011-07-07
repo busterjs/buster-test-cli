@@ -1,11 +1,12 @@
 var helper = require("../../test-helper");
 var buster = require("buster");
-assert = buster.assert;
+var assert = buster.assert;
+var refute = buster.refute;
 buster.testCli = helper.require("cli/test");
 var run = helper.runTest;
 var nodeRunner = helper.require("cli/runners/node-runner");
 
-buster.testCase("Test client cli", {
+buster.testCase("Test cli", {
     setUp: helper.cliTestSetUp(buster.testCli),
     tearDown: helper.clientTearDown,
 
@@ -68,9 +69,10 @@ buster.testCase("Test client cli", {
 
         "should load node runner": function (done) {
             helper.run(this, [], function () {
-                assert.calledOnce(nodeRunner.run);
-                assert.notEquals(nodeRunner.run.thisValues[0], nodeRunner);
-                done();
+                done(function () {
+                    assert.calledOnce(nodeRunner.run);
+                    refute.equals(nodeRunner.run.thisValues[0], nodeRunner);
+                });
             });
         },
 
@@ -90,8 +92,8 @@ buster.testCase("Test client cli", {
         },
 
         "should transfer filters to node runner": function (done) {
-            helper.run(this, ["should-"], function () {
-                assert.equals(nodeRunner.run.args[0][1].filters, ["should-"]);
+            helper.run(this, ["//should-"], function () {
+                assert.equals(nodeRunner.run.args[0][1].filters, ["//should-"]);
                 done();
             });
         },
