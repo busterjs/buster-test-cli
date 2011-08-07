@@ -83,7 +83,7 @@ buster.testCase("Test cli", {
             });
         },
 
-        "should run runner with config and options": function (done) {
+        "//should run runner with config and options": function (done) {
             helper.run(this, [], function () {
                 assert.match(nodeRunner.run.args[0][1], { reporter: "xUnitConsole" });
                 assert.equals(nodeRunner.run.args[0][0].environment, "node");
