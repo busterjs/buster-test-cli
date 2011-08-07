@@ -76,3 +76,9 @@
 [submodule "node_modules/buster-terminal"]
 	path = node_modules/buster-terminal
 	url = git://gitorious.org/buster/buster-terminal.git
+[submodule "node_modules/watch-tree"]
+	path = node_modules/watch-tree
+	url = git://gitorious.org/buster/watch-tree.git
+[submodule "node_modules/inotify"]
+	path = node_modules/inotify
+	url = https://github.com/c4milo/node-inotify.git
