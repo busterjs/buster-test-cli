@@ -1,0 +1,20 @@
+* buster-server [0/3]
+** TODO Ignore query params
+** TODO Don't ignore query params if the resource is configured with them
+** TODO Actively use cache-defeating headers
+* multicast [2/2]
+** DONE throttle should set time to throttle
+** DONE throttle produces heaps of garbage (duplicate events?)
+* ascii art [3/3]
+** DONE Don't manually pad strings in cli.js
+** DONE Extract ascii stuff from buster-test
+** DONE Add ascii module in buster-core
+* running tests [6/8]
+** DONE Use real configuration module in test.js
+** DONE Test config loading in test.js
+** DONE Node runner should use buster.test.autoRun
+** DONE Test Node runner
+** DONE Modify autoRun to accept more options
+** DONE Modify autoRun to somehow allow filteredRunner to filter contexts
+** TODO Test failures don't print log messages
+** TODO buster-test -r buster-test - Error handling if module isn't a valid reporter
