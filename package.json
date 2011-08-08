@@ -22,6 +22,7 @@
         "buster-multicast": "~0.0.1",
         "buster-terminal": "~0.1",
         "buster-server": "*",
+        "buster-promise": "*",
         "rimraf": "~>1",
         "paperboy": "~>0",
         "ejs": "~>0",
