@@ -20,6 +20,11 @@
     "dependencies": {
         "buster-core": "~0.2.1",
         "buster-multicast": "~0.0.1",
-        "buster-server": "~0.0.0"
+        "buster-terminal": "~0.1",
+        "buster-server": "*",
+        "rimraf": "~>1",
+        "paperboy": "~>0",
+        "ejs": "~>0",
+        "mime": "~>1.2"
     }
 }
