@@ -18,9 +18,9 @@
         "url": "http://git.gitorious.org/buster/buster-test-cli.git"
     },
     "dependencies": {
-        "buster-core": "~0.2.1",
-        "buster-multicast": "~0.0.1",
-        "buster-terminal": "~0.1",
+        "buster-core": "*",
+        "buster-multicast": "*",
+        "buster-terminal": "*",
         "buster-server": "*",
         "buster-promise": "*",
         "rimraf": "~>1",
