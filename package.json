@@ -26,6 +26,7 @@
         "rimraf": "~>1",
         "paperboy": "~>0",
         "ejs": "~>0",
-        "mime": "~>1.2"
+        "mime": "~>1.2",
+        "sinon-buster": "*"
     }
 }
