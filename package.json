@@ -1,8 +1,9 @@
 {
     "name": "buster-test-cli",
-    "version": "0.0.1",
+    "version": "0.1.0",
     "description": "Cli tools for Buster.JS test runners",
-    "homepage": "http://busterjs.org/buster-test-cli",
+    "homepage": "http://busterjs.org/docs/buster-test-cli",
+    "author": { "name": "August Lilleaas and Christian Johansen" },
     "contributors": [{
         "name": "August Lilleaas",
         "email": "august.lilleaas@gmail.com",
@@ -15,18 +16,18 @@
     "main": "./lib/buster-test-cli",
     "repository": {
         "type": "git",
-        "url": "http://git.gitorious.org/buster/buster-test-cli.git"
+        "url": "git://gitorious.org/buster/buster-test-cli.git"
     },
     "dependencies": {
-        "buster-core": "*",
-        "buster-multicast": "*",
-        "buster-terminal": "*",
-        "buster-server": "*",
-        "buster-promise": "*",
-        "rimraf": "~>1",
-        "paperboy": "~>0",
-        "ejs": "~>0",
-        "mime": "~>1.2",
-        "sinon-buster": "*"
+        "buster-core": "~0.3",
+        "buster-multicast": "~0.1",
+        "buster-terminal": "~0.2",
+        "buster-server": "~0.2",
+        "buster-promise": "~0.3",
+        "rimraf": "~1",
+        "paperboy": "~0",
+        "ejs": "~0.4",
+        "mime": "~1.2",
+        "sinon-buster": "~0.3"
     }
 }
