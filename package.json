@@ -20,14 +20,22 @@
     },
     "dependencies": {
         "buster-core": "~0.3",
+        "buster-client": "~0.3",
         "buster-multicast": "~0.1",
         "buster-terminal": "~0.2",
         "buster-server": "~0.2",
         "buster-promise": "~0.3",
+        "buster-evented-logger": "~0.3",
+        "buster-assertions": "~0.6",
+        "buster-format": "~0.4",
+        "buster-test": "~0.2",
+        "buster-args": "~0.2",
+        "buster-user-agent-parser": "~0.2",
         "rimraf": "~1",
         "paperboy": "~0",
         "ejs": "~0.4",
         "mime": "~1.2",
+        "sinon": "~1.1",
         "sinon-buster": "~0.3"
     }
 }
