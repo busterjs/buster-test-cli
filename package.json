@@ -21,6 +21,7 @@
     "dependencies": {
         "buster-core": "~0.3",
         "buster-client": "~0.3",
+        "buster-configuration": "~0.1",
         "buster-multicast": "~0.1",
         "buster-terminal": "~0.2",
         "buster-server": "~0.2",
