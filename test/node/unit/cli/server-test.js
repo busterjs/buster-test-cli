@@ -34,7 +34,7 @@ buster.testCase("buster-server binary", {
             });
         },
 
-        "//should start server on specified port": function (done) {
+        "should start server on specified port": function (done) {
             var server = { listen: this.spy() };
             this.stub(this.cli, "createServer").returns(server);
 
@@ -45,7 +45,7 @@ buster.testCase("buster-server binary", {
             });
         },
 
-        "//should print message if address is already in use": function (done) {
+        "should print message if address is already in use": function (done) {
             var error = new Error("EADDRINUSE, Address already in use");
             var server = { listen: this.stub().throws(error) };
             this.stub(this.cli, "createServer").returns(server);
