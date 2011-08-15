@@ -11,21 +11,10 @@ buster.testCase("Test cli", {
     tearDown: helper.clientTearDown,
 
     "help": {
-        "should print help message": run(["--help"], function () {
-            assert.match(this.stdout, "Run Buster.JS tests on node, in browsers");
-            assert.match(this.stdout, "--help");
-        }),
-
-        "should fail if no such help topic": run(["--help", "bleh"], function () {
-            assert.match(this.stderr, "No such help topic 'bleh'.");
-            assert.match(this.stderr, "Try without a specific help topic, or one of");
-            assert.match(this.stderr, "reporters");
-        }),
-
-        "should print specific topic help": run(["--help", "reporters"], function () {
-            assert.match(this.stdout, "xml");
-            assert.match(this.stdout, "bddConsole");
-        })
+        "should have helpTopics property with reporters": function () {
+            buster.assert("helpTopics" in this.cli);
+            buster.refute.isUndefined(this.cli.helpTopics.reporters);
+        },
     },
 
     "configuration": {
