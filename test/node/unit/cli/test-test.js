@@ -17,7 +17,8 @@ buster.testCase("Test cli", {
         }),
 
         "should fail if no such help topic": run(["--help", "bleh"], function () {
-            assert.match(this.stderr, "No such help topic `bleh'. Try one of");
+            assert.match(this.stderr, "No such help topic 'bleh'.");
+            assert.match(this.stderr, "Try without a specific help topic, or one of");
             assert.match(this.stderr, "reporters");
         }),
 
@@ -83,7 +84,7 @@ buster.testCase("Test cli", {
             });
         },
 
-        "//should run runner with config and options": function (done) {
+        "should run runner with config and options": function (done) {
             helper.run(this, [], function () {
                 assert.match(nodeRunner.run.args[0][1], { reporter: "xUnitConsole" });
                 assert.equals(nodeRunner.run.args[0][0].environment, "node");
