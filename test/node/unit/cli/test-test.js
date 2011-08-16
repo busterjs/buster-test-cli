@@ -2,12 +2,12 @@ var helper = require("../../test-helper");
 var buster = require("buster");
 var assert = buster.assert;
 var refute = buster.refute;
-buster.testCli = helper.require("cli/test");
+var testCli = helper.require("cli/test");
 var run = helper.runTest;
 var nodeRunner = helper.require("cli/runners/node-runner");
 
 buster.testCase("Test cli", {
-    setUp: helper.cliTestSetUp(buster.testCli),
+    setUp: helper.cliTestSetUp(testCli),
     tearDown: helper.clientTearDown,
 
     "help": {

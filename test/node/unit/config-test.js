@@ -7,11 +7,10 @@ var version = require("../../../lib/buster-test-cli").VERSION;
 
 buster.testCase("Test client configuration", {
     setUp: function () {
+        helper.cdFixtures();
         helper.writeFile("cfg.js", "var config = module.exports;" +
                          "config['client tests'] = {};" +
                          "config['server tests'] = { environment: 'node' };");
-
-        process.chdir(helper.FIXTURES_ROOT);
     },
 
     tearDown: helper.clientTearDown,

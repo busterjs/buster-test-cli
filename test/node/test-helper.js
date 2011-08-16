@@ -1,12 +1,10 @@
 var http = require("http");
-var path = require("path");
-var fs = require("fs");
-var rmrf = require("rimraf");
-
-var FIXTURES_ROOT = path.resolve(__dirname, "..", "fixtures");
+var cliHelper = require("buster-cli/lib/test-helper");
 
 var helper = module.exports = {
-    FIXTURES_ROOT: FIXTURES_ROOT,
+    writeFile: cliHelper.writeFile,
+    mkdir: cliHelper.mkdir,
+    cdFixtures: cliHelper.cdFixtures,
 
     require: function (mod) {
         return require("../../lib/buster-test-cli/" + mod);
@@ -15,25 +13,14 @@ var helper = module.exports = {
     cliTestSetUp: function (cli) {
         return function () {
             this.stub(process, "exit");
-            helper.mkdir(FIXTURES_ROOT);
-            process.chdir(FIXTURES_ROOT);
-            var self = this;
-            this.stdout = "";
-            this.stderr = "";
-            var j = [].join;
-
-            this.cli = cli.create(
-                {puts: function () { self.stdout += j.call(arguments, " ") + "\n"; }},
-                {puts: function () { self.stderr += j.call(arguments, " ") + "\n"; }}
-            );
+            cliHelper.cdFixtures();
+            this.cli = cli.create();
+            cliHelper.mockLogger(this);
         }
     },
 
     clientTearDown: function (done) {
-        rmrf(FIXTURES_ROOT, function (err) {
-            if (err) require("buster").log(err.toString());
-            done();
-        });
+        cliHelper.clearFixtures(done);
     },
 
     runTest: function (args, callback) {
@@ -51,24 +38,6 @@ var helper = module.exports = {
         setTimeout(function () {
             callback.call(tc);
         }, 10);
-    },
-
-    mkdir: function (dir) {
-        var dirs = [FIXTURES_ROOT].concat(dir.split("/")), tmp = "";
-
-        for (var i = 0, l = dirs.length; i < l; ++i) {
-            tmp += dirs[i] + "/";
-
-            try {
-                fs.mkdirSync(tmp, "755");
-            } catch (e) {}
-        }
-    },
-
-    writeFile: function (file, contents) {
-        file = path.join(FIXTURES_ROOT, file);
-        this.mkdir(path.dirname(file));
-        fs.writeFileSync(file, contents);
     },
 
     requestHelperFor: function (host, port) {
