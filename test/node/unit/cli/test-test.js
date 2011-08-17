@@ -5,6 +5,7 @@ var refute = buster.refute;
 var testCli = helper.require("cli/test");
 var run = helper.runTest;
 var nodeRunner = helper.require("cli/runners/node-runner");
+var browserRunner = helper.require("cli/runners/browser-runner");
 
 buster.testCase("Test cli", {
     setUp: helper.cliTestSetUp(testCli),
@@ -92,6 +93,65 @@ buster.testCase("Test cli", {
             helper.run(this, ["-r", "bogus"], function () {
                 assert.match(this.stderr, "No such reporter 'bogus'");
                 done();
+            });
+        }
+    },
+
+    "browser runs": {
+        setUp: function () {
+            this.config = helper.writeFile(
+                "buster2.js", "var config = module.exports;" +
+                    "config.server = { environment: 'browser' }");
+
+            this.stub(browserRunner, "run");
+        },
+
+        "should load browser runner": function (done) {
+            helper.run(this, ["-c", this.config], function () {
+                done(function () {
+                    assert.calledOnce(browserRunner.run);
+                    refute.equals(browserRunner.run.thisValues[0], browserRunner);
+                });
+            });
+        },
+
+        "should load browser with server setting": function (done) {
+            helper.run(this, ["-c", this.config], function () {
+                done(function () {
+                    assert.match(browserRunner.run.args[0][1], {
+                        server: "http://localhost:1111"
+                    });
+                });
+            });
+        },
+
+        "should load browser with specific server setting": function (done) {
+            helper.run(this, ["-c", this.config, "-s", "127.0.0.1:1234"], function () {
+                done(function () {
+                    assert.match(browserRunner.run.args[0][1], {
+                        server: "http://127.0.0.1:1234"
+                    });
+                });
+            });
+        },
+
+        "should allow hostnameless server config": function (done) {
+            helper.run(this, ["-c", this.config, "--server", ":5678"], function () {
+                done(function () {
+                    assert.match(browserRunner.run.args[0][1], {
+                        server: "http://127.0.0.1:5678"
+                    });
+                });
+            });
+        },
+
+        "should allow full server url, including protocol": function (done) {
+            helper.run(this, ["-c", this.config, "-s", "http://lol:1234"], function () {
+                done(function () {
+                    assert.match(browserRunner.run.args[0][1], {
+                        server: "http://lol:1234"
+                    });
+                });
             });
         }
     }

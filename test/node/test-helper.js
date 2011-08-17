@@ -5,6 +5,7 @@ var helper = module.exports = {
     writeFile: cliHelper.writeFile,
     mkdir: cliHelper.mkdir,
     cdFixtures: cliHelper.cdFixtures,
+    mockLogger: cliHelper.mockLogger,
 
     require: function (mod) {
         return require("../../lib/buster-test-cli/" + mod);
