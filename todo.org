@@ -9,7 +9,7 @@
 ** DONE Don't manually pad strings in cli.js
 ** DONE Extract ascii stuff from buster-test
 ** DONE Add ascii module in buster-core
-* running tests [6/8]
+* running tests [6/9]
 ** DONE Use real configuration module in test.js
 ** DONE Test config loading in test.js
 ** DONE Node runner should use buster.test.autoRun
@@ -18,3 +18,4 @@
 ** DONE Modify autoRun to somehow allow filteredRunner to filter contexts
 ** TODO Test failures don't print log messages
 ** TODO buster-test -r buster-test - Error handling if module isn't a valid reporter
+** TODO --server option
