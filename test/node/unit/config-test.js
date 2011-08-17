@@ -1,7 +1,7 @@
 var helper = require("../test-helper");
 var buster = require("buster");
-var testConfig = helper.require("config");
-buster.configuration = require("buster-client").configuration;
+var configHelper = helper.require("config");
+var testConfig = require("buster-configuration").config;
 var assert = buster.assert;
 var version = require("../../../lib/buster-test-cli").VERSION;
 
@@ -11,21 +11,26 @@ buster.testCase("Test client configuration", {
         helper.writeFile("cfg.js", "var config = module.exports;" +
                          "config['client tests'] = {};" +
                          "config['server tests'] = { environment: 'node' };");
+
+        this.stub(Date, "now").returns(11111111);
+        this.config = testConfig.create();
+        this.config.loadModule("cfg.js");
+        configHelper.extendConfiguration(this.config);
     },
 
     tearDown: helper.clientTearDown,
 
     "should preload session configuration with library": function (done) {
-        this.stub(Date, "now").returns(11111111);
-        testConfig.loadModule("cfg.js")
-
-        testConfig.eachGroup("browsers", function (err, config) {
+        this.config.eachGroup("browser", function (err, config) {
             config.sessionConfig.configure().then(function (conf) {
                 var res = conf.resources;
                 assert.isObject(res["/buster/buster-core.js"]);
                 assert.isObject(res["/buster/buster-event-emitter.js"]);
                 assert.isObject(res["/buster/buster-evented-logger.js"]);
                 assert.isObject(res["/buster/buster-assertions.js"]);
+                assert.isObject(res["/buster/buster-assertions/that.js"]);
+                assert.isObject(res["/buster/buster-assertions/assert-that.js"]);
+                assert.isObject(res["/buster/buster-assertions/refute-that.js"]);
                 assert.isObject(res["/buster/buster-format.js"]);
                 assert.isObject(res["/buster/buster-promise.js"]);
                 assert.isObject(res["/buster/sinon.js"]);
@@ -62,9 +67,7 @@ buster.testCase("Test client configuration", {
     },
 
     "should not extend node configuration": function (done) {
-        testConfig.loadModule("buster.js");
-
-        testConfig.eachGroup("node", function (err, config) {
+        this.config.eachGroup("node", function (err, config) {
             assert.isUndefined(config.sessionConfig);
             done();
         });
