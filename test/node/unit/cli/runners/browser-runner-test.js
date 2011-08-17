@@ -5,6 +5,7 @@ var browserRunner = helper.require("cli/runners/browser-runner");
 var busterClient = require("buster-client").client;
 var busterConfigExt = helper.require("config");
 var busterPromise = require("buster-promise");
+var http = require("http");
 
 buster.testCase("Browser runner", {
     setUp: function () {
@@ -58,19 +59,18 @@ buster.testCase("Browser runner", {
                     self.stderr += arg + "\n";
                 }
             };
+
+            this.runner.run({ sessionConfig: { id: 41 } }, this.options);
         },
 
         "should print session creation error to stderr": function () {
-            this.runner.run({ sessionConfig: { id: 41 } }, this.options);
             this.sessionPromise.reject({ id: 47 });
             
             assert.match(this.stderr, "Failed creating session");
         },
 
-        // TODO: The error is actually asynchronously thrown from within buster-client
         "should print understandable error if server cannot be reached": function () {
-            busterClient.create.throws(new Error("ECONNREFUSED, Connection refused"));
-            this.runner.run({ sessionConfig: { id: 41 } }, this.options);
+            this.sessionPromise.reject(new Error("ECONNREFUSED, Connection refused"));
 
             assert.match(this.stderr, "Unable to connect to server");
             assert.match(this.stderr, "http://127.0.0.1:1200");
