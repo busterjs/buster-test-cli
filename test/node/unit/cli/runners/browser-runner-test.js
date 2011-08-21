@@ -25,9 +25,9 @@ buster.testCase("Browser runner", {
         this.stdout = "";
         this.stderr = "";
 
-        this.runner.logger = stdioLogger.create(
-            { puts: function (msg) { self.stdout += msg + "\n"; } },
-            { puts: function (msg) { self.stderr += msg + "\n"; } });
+        this.runner.logger = stdioLogger(
+            { write: function (msg) { self.stdout += msg; } },
+            { write: function (msg) { self.stderr += msg; } });
     },
 
     "should create client for configured location": function () {
