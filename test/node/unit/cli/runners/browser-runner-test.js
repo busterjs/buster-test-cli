@@ -185,7 +185,7 @@ buster.testCase("Browser runner", {
             this.runner.runSession(this.session);
 
             assert.match(reporters.xUnitConsole.create.args[0][0], {
-                color: true, bright: true, displayProgress: true
+                color: true, bright: true
             });
         },
 
