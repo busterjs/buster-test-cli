@@ -84,10 +84,15 @@ buster.testCase("Browser runner", {
             this.closePromise = busterPromise.create();
             this.session.close = this.stub().returns(this.closePromise);
             this.session.multicaster = buster.eventEmitter.create();
+            this.stackFilter = buster.stackFilter.filters;
 
             this.emitSessionMessage = function (event, data) {
                 this.session.emit(event, { data: data });
             };
+        },
+
+        tearDown: function () {
+            buster.stackFilter.filters = this.stackFilter;
         },
 
         "should listen for uncaught exceptions": function () {
