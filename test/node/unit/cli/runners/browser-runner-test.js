@@ -262,7 +262,7 @@ buster.testCase("Browser runner", {
             this.runner.runSession(this.session);
             var stderr = this.stderr;
             runner.emit("suite:end");
-            console.log(this.stderr, stderr);
+
             refute.equals(this.stderr, stderr);
         }
     },
