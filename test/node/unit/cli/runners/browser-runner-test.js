@@ -36,6 +36,22 @@ buster.testCase("Browser runner", {
         assert.calledWith(busterClient.create, "1200", "127.0.0.1");
     },
 
+    "should create non-caching client": function () {
+        this.options.cacheResources = false;
+        this.runner.run({ load: [] }, this.options);
+
+        var client = busterClient.create.returnValues[0];
+        assert.isFalse(client.cacheResources);
+    },
+
+    "should create explicitly caching client": function () {
+        this.options.cacheResources = true;
+        this.runner.run({ load: [] }, this.options);
+
+        var client = busterClient.create.returnValues[0];
+        assert.isTrue(client.cacheResources);
+    },
+
     "should extend configuration": function () {
         var config = { id: 42 };
         this.runner.run(config, this.options);

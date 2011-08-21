@@ -153,6 +153,18 @@ buster.testCase("Test cli", {
                     });
                 });
             });
+        },
+
+        "should skip caching": function (done) {
+            helper.run(this, ["-R", "-c", this.config], function () {
+                done(function () {
+                    assert.calledOnce(browserRunner.run);
+                    assert.match(browserRunner.run.args[0][1], {
+                        cacheResources: false
+                    });
+                    done();
+                });
+            });
         }
     }
 });
