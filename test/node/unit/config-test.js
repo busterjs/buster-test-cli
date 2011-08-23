@@ -55,6 +55,7 @@ buster.testCase("Test client configuration", {
                 assert.isObject(res["/buster/bundle-" + version + "-11111111.js"]);
                 assert.isObject(res["/buster/sinon/util/timers_ie.js"]);
                 assert.isObject(res["/buster/sinon/util/xhr_ie.js"]);
+                assert.isObject(res["/buster/buster/buster-wiring.js"]);
                 assert.isObject(res["/buster/wiring.js"]);
 
                 assert.match(conf.load, [
