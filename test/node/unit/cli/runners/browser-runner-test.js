@@ -286,11 +286,18 @@ buster.testCase("Browser runner", {
             assert.match(this.stderr, "Please make sure that buster-server is running");
         },
 
-        "should print understandable error if a file could not be found": function () {
+        "should print understandable error if pattern matches no files": function () {
             this.stub(process, "cwd").returns("/home/christian/projects/buster/sample");
             this.sessionPromise.reject(new Error("ENOENT, No such file or directory '/home/christian/projects/buster/sample/src/*.js'"));
 
             assert.match(this.stderr, "pattern 'src/*.js' does not match any files");
+        },
+
+        "should print understandable error if a file could not be found": function () {
+            this.stub(process, "cwd").returns("/home/christian/projects/buster/sample");
+            this.sessionPromise.reject(new Error("ENOENT, No such file or directory '/home/christian/projects/buster/sample/src/trim.js'"));
+
+            assert.match(this.stderr, "Configured path 'src/trim.js' is not a file or directory");
         }
     }
 });
