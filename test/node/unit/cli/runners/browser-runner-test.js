@@ -17,7 +17,7 @@ buster.testCase("Browser runner", {
         this.sessionPromise = busterPromise.create();
         this.client = { createSession: this.stub().returns(this.sessionPromise) };
         this.stub(busterClient, "create").returns(this.client);
-        this.stub(busterConfigExt, "extendConfigurationGroup");
+        this.stub(busterConfigExt, "extendConfigurationGroupWithWiring");
         this.options = { server: "http://127.0.0.1:1200" };
         this.runner = Object.create(browserRunner);
 
@@ -56,8 +56,8 @@ buster.testCase("Browser runner", {
         var config = { id: 42 };
         this.runner.run(config, this.options);
 
-        assert.calledOnce(busterConfigExt.extendConfigurationGroup);
-        assert.calledWith(busterConfigExt.extendConfigurationGroup, config);
+        assert.calledOnce(busterConfigExt.extendConfigurationGroupWithWiring);
+        assert.calledWith(busterConfigExt.extendConfigurationGroupWithWiring, config);
     },
 
     "should create session using provided session configuration": function () {
