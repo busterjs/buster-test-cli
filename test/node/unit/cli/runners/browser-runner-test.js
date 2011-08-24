@@ -81,6 +81,7 @@ buster.testCase("Browser runner", {
     "session": {
         setUp: function () {
             this.session = buster.eventEmitter.create();
+            this.session.onMessage = function () {};
             this.closePromise = busterPromise.create();
             this.session.close = this.stub().returns(this.closePromise);
             this.session.multicaster = buster.eventEmitter.create();
@@ -135,6 +136,16 @@ buster.testCase("Browser runner", {
             });
         },
 
+        "should not create progress reporter when providing reporter": function () {
+            this.spy(progressReporter, "create");
+            this.spy(reporters.bddConsole, "create");
+            this.runner.options = { reporter: "bddConsole" };
+            this.runner.runSession(this.session);
+
+            assert.notCalled(progressReporter.create);
+            assert.calledOnce(reporters.bddConsole.create);
+        },
+
         "progress reporter should respect color settings": function () {
             this.spy(progressReporter, "create");
 
@@ -146,9 +157,7 @@ buster.testCase("Browser runner", {
             });
         },
 
-        // Problem: The logger is unable to 'print' messages (i.e. without a
-        // trailing newline. Need to modify stdio-logger
-        "//should use logger as io backend for remote reporter": function () {
+        "should use logger as io backend for remote reporter": function () {
             this.spy(progressReporter, "create");
 
             this.runner.runSession(this.session);
