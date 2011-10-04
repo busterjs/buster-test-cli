@@ -142,7 +142,7 @@ buster.testCase("Browser runner", {
             this.runner.options = { reporter: "bddConsole" };
             this.runner.runSession(this.session);
 
-            assert.notCalled(progressReporter.create);
+            refute.called(progressReporter.create);
             assert.calledOnce(reporters.bddConsole.create);
         },
 

@@ -2,6 +2,7 @@ var helper = require("../../test-helper")
 var buster = require("buster");
 buster.remoteRunner = helper.require("test-runner/remote-runner");
 var assert = buster.assert;
+var refute = buster.refute;
 
 buster.testCase("Remote runner", {
     setUp: function () {
@@ -268,7 +269,7 @@ buster.testCase("Remote runner", {
             this.emit("test:tearDown", { name: "test #1" }, 1);
             this.emit("test:success", { name: "test #1" }, 1);
 
-            assert.notCalled(listeners[0]);
+            refute.called(listeners[0]);
 
             this.emit("context:end", { name: "Test case" }, 1);
 
@@ -315,7 +316,7 @@ buster.testCase("Remote runner", {
 
             this.emit("context:start", { name: "Test case" }, 1);
             this.emit("context:unsupported", { name: "Something" }, 1);
-            assert.notCalled(listener);
+            refute.called(listener);
 
             this.emit("context:end", { name: "Test case" }, 1);
             assert.calledOnce(listener);
@@ -364,7 +365,7 @@ buster.testCase("Remote runner", {
             this.emit("test:failure", { name: "test #2" }, 1);
             this.emit("context:end", { name: "Test case" }, 1);
 
-            assert.notCalled(listener);
+            refute.called(listener);
             this.emit("context:end", { name: "Test case" }, 1);
 
             assert.calledOnce(listener);
@@ -434,7 +435,7 @@ buster.testCase("Remote runner", {
             this.emit("suite:start", {}, 2);
             this.emit("suite:end", {}, 1);
 
-            assert.notCalled(listener);
+            refute.called(listener);
         },
 
         "should emit suite:end when all clients are ready": function () {
@@ -465,7 +466,7 @@ buster.testCase("Remote runner", {
             this.emit("suite:start", {}, 5);
             this.emit("suite:end", {}, 4);
 
-            assert.notCalled(listener);
+            refute.called(listener);
             this.emit("suite:end", {}, 5);
 
             assert.calledOnce(listener);
@@ -476,7 +477,7 @@ buster.testCase("Remote runner", {
 
             this.emit("suite:start", {}, 1);
             this.emit("suite:end", {}, 1);
-            assert.notCalled(listener);
+            refute.called(listener);
 
             this.emit("suite:start", {}, 2);
             this.emit("suite:end", {}, 2);
@@ -534,13 +535,13 @@ buster.testCase("Remote runner", {
         },
 
         "should emit client:timeout if client is unresponsive for 15s": function () {
-            this.connect(); 
+            this.connect();
             var listener = this.spy();
             this.runner.on("client:timeout", listener);
 
             this.clock.tick(14999);
             this.emit("context:start", { name: "Test" }, 1);
-            assert.notCalled(listener);
+            refute.called(listener);
 
             this.clock.tick(1);
             assert.calledOnce(listener);
@@ -555,7 +556,7 @@ buster.testCase("Remote runner", {
 
             this.clock.tick(1999);
             this.emit("context:start", { name: "Test" }, 1);
-            assert.notCalled(listener);
+            refute.called(listener);
 
             this.clock.tick(1);
             assert.calledOnce(listener);
@@ -572,7 +573,7 @@ buster.testCase("Remote runner", {
             this.emit("context:start", { name: "Test" }, 2);
 
             this.clock.tick(7500);
-            assert.notCalled(listener);
+            refute.called(listener);
         },
 
         "should complete run with only one client if other timed out": function () {
@@ -602,7 +603,7 @@ buster.testCase("Remote runner", {
 
             this.clock.tick(15000);
 
-            assert.notCalled(listener);
+            refute.called(listener);
         },
 
         "should ignore suite messages from timed out client": function () {
@@ -617,7 +618,7 @@ buster.testCase("Remote runner", {
             this.emit("suite:start", null, 1);
             this.emit("suite:end", null, 1);
 
-            assert.notCalled(listener);
+            refute.called(listener);
         },
 
         "should ignore context messages from timed out client": function () {
@@ -632,7 +633,7 @@ buster.testCase("Remote runner", {
             this.emit("context:unsupported", { name: "Tests" }, 1);
             this.emit("context:end", { name: "Tests" }, 1);
 
-            assert.notCalled(listener);
+            refute.called(listener);
         },
 
         "should ignore test messages from timed out client": function () {
@@ -664,7 +665,7 @@ buster.testCase("Remote runner", {
             this.emit("log", { name: "#1" }, 1);
             this.emit("context:end", { name: "Tests" }, 1);
 
-            assert.notCalled(listener);
+            refute.called(listener);
         }
     }
 });
