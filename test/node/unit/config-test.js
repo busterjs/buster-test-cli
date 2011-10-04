@@ -28,9 +28,7 @@ buster.testCase("Test client configuration", {
                 assert.isObject(res["/buster/buster-event-emitter.js"]);
                 assert.isObject(res["/buster/buster-evented-logger.js"]);
                 assert.isObject(res["/buster/buster-assertions.js"]);
-                assert.isObject(res["/buster/buster-assertions/that.js"]);
-                assert.isObject(res["/buster/buster-assertions/assert-that.js"]);
-                assert.isObject(res["/buster/buster-assertions/refute-that.js"]);
+                assert.isObject(res["/buster/buster-assertions/expect.js"]);
                 assert.isObject(res["/buster/buster-format.js"]);
                 assert.isObject(res["/buster/buster-promise.js"]);
                 assert.isObject(res["/buster/sinon.js"]);
