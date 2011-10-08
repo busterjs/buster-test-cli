@@ -13,8 +13,8 @@ buster.testCase("Test cli", {
 
     "help": {
         "should have helpTopics property with reporters": function () {
-            buster.assert("helpTopics" in this.cli);
-            buster.refute.isUndefined(this.cli.helpTopics.reporters);
+            assert("helpTopics" in this.cli);
+            assert.defined(this.cli.helpTopics.reporters);
         },
     },
 

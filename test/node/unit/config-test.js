@@ -67,7 +67,7 @@ buster.testCase("Test client configuration", {
 
     "should not extend node configuration": function (done) {
         this.config.eachGroup("node", function (err, config) {
-            assert.isUndefined(config.sessionConfig);
+            refute.defined(config.sessionConfig);
             done();
         });
     }
