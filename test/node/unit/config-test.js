@@ -3,6 +3,7 @@ var buster = require("buster");
 var configHelper = helper.require("config");
 var testConfig = require("buster-configuration").config;
 var assert = buster.assert;
+var refute = buster.refute;
 var version = require("../../../lib/buster-test-cli").VERSION;
 
 buster.testCase("Test client configuration", {
