@@ -23,7 +23,6 @@
         "buster-client": "~0.3",
         "buster-cli": "~0.2",
         "buster-configuration": "~0.1",
-        "buster-multicast": "~0.1",
         "buster-terminal": "~0.2",
         "buster-server": ">=0.2",
         "buster-promise": "~0.3",

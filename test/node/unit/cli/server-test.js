@@ -24,31 +24,28 @@ buster.testCase("buster-server binary", {
         }),
 
         "should start server on default port": function (done) {
-            var server = { listen: this.spy() };
-            this.stub(this.cli, "createServer").returns(server);
+            var createServer = this.stub(this.cli, "createServer");
 
             helper.run(this, [], function () {
-                assert.calledOnce(server.listen);
-                assert.calledWith(server.listen, 1111);
+                assert.calledOnce(createServer);
+                assert.calledWith(createServer, 1111);
                 done();
             });
         },
 
         "should start server on specified port": function (done) {
-            var server = { listen: this.spy() };
-            this.stub(this.cli, "createServer").returns(server);
+            var createServer = this.stub(this.cli, "createServer");
 
             helper.run(this, ["-p", "3200"], function () {
-                assert.calledOnce(server.listen);
-                assert.calledWith(server.listen, 3200);
+                assert.calledOnce(createServer);
+                assert.calledWith(createServer, 3200);
                 done();
             });
         },
 
         "should print message if address is already in use": function (done) {
             var error = new Error("EADDRINUSE, Address already in use");
-            var server = { listen: this.stub().throws(error) };
-            this.stub(this.cli, "createServer").returns(server);
+            this.stub(this.cli, "createServer").throws(error);
 
             helper.run(this, ["-p", "3200"], function () {
                 assert.match(this.stderr, "Address already in use. Pick another " +
@@ -60,15 +57,13 @@ buster.testCase("buster-server binary", {
 
     "createServer": {
         setUp: function (done) {
-            this.server = this.cli.createServer();
-            this.server.listen(9999);
+            this.server = this.cli.createServer(9999);
             done();
         },
 
         tearDown: function (done) {
             this.server.on("close", done);
             this.server.close();
-            done();
         },
 
         "should redirect client when capturing": function (done) {
