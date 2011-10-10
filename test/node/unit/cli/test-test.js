@@ -168,6 +168,34 @@ buster.testCase("Test cli", {
         }
     },
 
+    "configuration": {
+        setUp: function () {
+            this.run = this.spy();
+            this.stub(this.cli, "loadRunner").returns({ run: this.run });
+            this.stub(this.cli, "onConfig").yields(null, {});
+            this.busterOptBlank = typeof process.env.BUSTER_TEST_OPT != "string";
+            this.busterOpt = process.env.BUSTER_TEST_OPT;
+        },
+
+        tearDown: function () {
+            process.env.BUSTER_TEST_OPT = this.busterOpt;
+            if (this.busterOptBlank) delete process.env.BUSTER_TEST_OPT;
+        },
+
+        "adds command-line options set with $BUSTER_TEST_OPT": function (done) {
+            process.env.BUSTER_TEST_OPT = "--color dim -r bddConsole"
+
+            helper.run(this, [], function () {
+                assert.match(this.run.args[0][1], {
+                    color: true,
+                    bright: false,
+                    reporter: "bddConsole"
+                });
+                done();
+            });
+        }
+    },
+
     "with --color option": {
         setUp: function () {
             this.run = this.spy();
