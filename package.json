@@ -32,6 +32,7 @@
         "buster-test": "~0.2",
         "buster-args": "~0.2",
         "buster-user-agent-parser": "~0.2",
+        "buster-bayeux-emitter": ">=0.1",
         "rimraf": "~1",
         "paperboy": "~0",
         "ejs": "~0.4",
