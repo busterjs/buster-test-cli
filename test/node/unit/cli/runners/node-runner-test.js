@@ -14,7 +14,7 @@ buster.testCase("Node runner", {
     },
 
     "should use buster.autoRun to run tests": function () {
-        nodeRunner.run({ load: [] }, this.options);
+        nodeRunner.run({ absoluteLoadEntries: [] }, this.options);
 
         assert.calledOnce(buster.autoRun);
         assert.calledWith(buster.autoRun, this.options);
@@ -23,7 +23,7 @@ buster.testCase("Node runner", {
     "should register listener for created test cases": function () {
         var runner = function () {};
         buster.autoRun.returns(runner);
-        nodeRunner.run({ load: [] }, this.options);
+        nodeRunner.run({ absoluteLoadEntries: [] }, this.options);
 
         assert.equals(buster.testCase.onCreate, runner);
         assert.equals(buster.spec.describe.onCreate, runner);

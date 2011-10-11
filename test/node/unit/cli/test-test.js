@@ -172,7 +172,7 @@ buster.testCase("Test cli", {
         setUp: function () {
             this.run = this.spy();
             this.stub(this.cli, "loadRunner").returns({ run: this.run });
-            this.stub(this.cli, "onConfig").yields(null, {});
+            this.stub(this.cli, "onConfig").yields(null, [{}]);
             this.busterOptBlank = typeof process.env.BUSTER_TEST_OPT != "string";
             this.busterOpt = process.env.BUSTER_TEST_OPT;
         },
@@ -185,7 +185,7 @@ buster.testCase("Test cli", {
         "adds command-line options set with $BUSTER_TEST_OPT": function (done) {
             process.env.BUSTER_TEST_OPT = "--color dim -r bddConsole"
 
-            helper.run(this, [], function () {
+            helper.run(this, ["-c", this.config], function () {
                 assert.match(this.run.args[0][1], {
                     color: true,
                     bright: false,
