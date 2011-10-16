@@ -60,8 +60,8 @@ buster.testCase("Browser runner", {
         assert.calledWith(busterConfigExt.extendConfigurationGroupWithWiring, config);
     },
 
-    "should create session using provided session configuration": function () {
-        this.runner.run({ sessionConfig: { id: 41 } }, this.options);
+    "should create session using provided resource set": function () {
+        this.runner.run({ resourceSet: { id: 41 } }, this.options);
 
         assert.calledOnce(this.client.createSession);
         assert.calledWith(this.client.createSession, { id: 41 });
@@ -69,7 +69,7 @@ buster.testCase("Browser runner", {
 
     "should be run with runSession": function () {
         this.stub(this.runner, "runSession");
-        this.runner.run({ sessionConfig: { id: 41 } }, this.options);
+        this.runner.run({ resourceSet: { id: 41 } }, this.options);
 
         this.sessionPromise.resolve({ id: 47 });
 
@@ -278,7 +278,7 @@ buster.testCase("Browser runner", {
 
     "error handling": {
         setUp: function () {
-            this.runner.run({ sessionConfig: { id: 41 } }, this.options);
+            this.runner.run({ resourceSet: { id: 41 } }, this.options);
         },
 
         "should print session creation error to stderr": function () {
