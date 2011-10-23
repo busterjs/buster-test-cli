@@ -9,6 +9,7 @@ var busterConfigExt = helper.require("config");
 var busterPromise = require("buster-promise");
 var remoteRunner = helper.require("test-runner/remote-runner");
 var progressReporter = helper.require("test-runner/progress-reporter");
+var bayeuxEmitter = require("buster-bayeux-emitter");
 var reporters = require("buster-test").reporters;
 var http = require("http");
 
@@ -82,9 +83,9 @@ buster.testCase("Browser runner", {
         setUp: function () {
             this.session = buster.eventEmitter.create();
             this.session.onMessage = function () {};
+            this.session.messagingClient = this.session;
             this.closePromise = busterPromise.create();
             this.session.close = this.stub().returns(this.closePromise);
-            this.session.multicaster = buster.eventEmitter.create();
             this.stackFilter = buster.stackFilter.filters;
 
             this.emitSessionMessage = function (event, data) {
@@ -110,7 +111,7 @@ buster.testCase("Browser runner", {
             this.runner.runSession(this.session);
 
             assert.calledOnce(remoteRunner.create);
-            assert.calledWith(remoteRunner.create, this.session.multicaster, {
+            assert.calledWith(remoteRunner.create, this.session.messagingClient, {
                 failOnNoAssertions: false
             });
         },
@@ -120,7 +121,7 @@ buster.testCase("Browser runner", {
             this.runner.options = { failOnNoAssertions: true };
             this.runner.runSession(this.session);
 
-            assert.calledWith(remoteRunner.create, this.session.multicaster, {
+            assert.calledWith(remoteRunner.create, this.session.messagingClient, {
                 failOnNoAssertions: true
             });
         },

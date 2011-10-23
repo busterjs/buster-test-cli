@@ -8,6 +8,7 @@ var version = testConfig.VERSION;
 
 buster.testCase("Test client configuration", {
     setUp: function () {
+        process.chdir(__dirname);
         this.config = testConfig.create();
         this.config.addGroup("Client tests", {});
         this.config.addGroup("Server tests", { environment: "node", load: ["something.js"] });
