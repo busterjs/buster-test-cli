@@ -6,6 +6,8 @@
     buster.util.testCase("BrowserWiringTest", {
         setUp: function () {
             this.emitter = createRemoteEmitter();
+            this.readyListener = sinon.spy();
+            this.emitter.on("ready", this.readyListener);
             B.configureTestClient(this.emitter);
 
             this.bnt = buster.nextTick;
@@ -17,6 +19,26 @@
 
         tearDown: function () {
             buster.nextTick = this.bnt;
+        },
+
+        "should connect bayeux emitter": function () {
+            assertTrue(this.emitter.connect.calledOnce);
+        },
+
+        "should not emit ready immediately": function () {
+            assertFalse(this.readyListener.called);
+        },
+
+        "should emit ready when connected": function () {
+            this.emitter.connect.args[0][0]();
+
+            assertTrue(this.readyListener.calledOnce);
+        },
+
+        "should emit user agent string with ready event": function () {
+            this.emitter.connect.args[0][0]();
+
+            assertTrue(/Mozilla/.test(this.readyListener.args[0][0].data));
         },
 
         "should set up console and buster.log shortcut": function () {
@@ -60,7 +82,7 @@
             var listener = sinon.spy();
             this.emitter.on("suite:start", listener);
 
-            buster.testCase("Test", { "should do it": function () {} });
+            buster.testCase("SomeTest", { "should do it": function () {} });
             this.emitter.emit("tests:run");
 
             assertTrue(listener.calledOnce);

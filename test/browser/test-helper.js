@@ -8,6 +8,7 @@ function createRemoteEmitter() {
         });
     };
 
+    emitter.connect = sinon.spy();
     return emitter;
 }
 
