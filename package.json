@@ -37,7 +37,7 @@
         "paperboy": "~0",
         "ejs": "~0.4",
         "mime": "~1.2",
-        "sinon": "~1.3",
+        "sinon": "~1.1",
         "sinon-buster": "~0.3"
     },
     "devDependencies": {
