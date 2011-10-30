@@ -1,6 +1,6 @@
 var helper = require("../../../test-helper");
 var buster = require("buster");
-var stdioLogger = require("buster-cli/lib/stdio-logger");
+var stdioLogger = require("buster-stdio-logger");
 var assert = buster.assert;
 var refute = buster.refute;
 var browserRunner = helper.require("cli/runners/browser-runner");

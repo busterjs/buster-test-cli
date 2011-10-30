@@ -42,6 +42,7 @@
     },
     "devDependencies": {
         "faye": ">=0.6",
-        "buster-util": ">=0.2"
+        "buster-util": ">=0.2",
+        "buster-stdio-logger": ">=0.1"
     }
 }
