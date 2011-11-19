@@ -11,6 +11,7 @@
             B.configureTestClient(this.emitter);
 
             this.bnt = buster.nextTick;
+            sinon.spy(buster.testRunner, "runSuite");
 
             buster.nextTick = function (callback) {
                 callback();
@@ -19,6 +20,7 @@
 
         tearDown: function () {
             buster.nextTick = this.bnt;
+            buster.testRunner.runSuite.restore();
         },
 
         "should connect bayeux emitter": function () {
@@ -103,19 +105,16 @@
         },
 
         "should run parsable context when emitting tests:run": function () {
-            var listener = sinon.spy();
-            this.emitter.on("context:start", listener);
+            var context = { name: "Parsed", tests: [] };
 
             buster.addTestContext({
                 parse: function () {
-                    return { name: "Parsed", tests: [] };
+                    return context;
                 }
             });
 
             this.emitter.emit("tests:run");
-
-            assertTrue(listener.calledOnce);
-            assertEquals(listener.args[0][0].data.name, "Parsed");
+            assertTrue(buster.testRunner.runSuite.calledWith([context]));
         },
 
         "should create test runner with options": function () {
