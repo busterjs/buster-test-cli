@@ -22,7 +22,7 @@
         <ol class="browsers">
           <% for (var i = 0, l = clients.length; i < l; ++i) { %>
             <% var agent = clients[i] %>
-            <li class="<%= agent.browser.toLowerCase() %> <%= agent.platform.toLowerCase() %>">
+            <li class="<%= /internet explorer/i.test(agent.browser) ? 'ie' : agent.browser.toLowerCase() %> <%= agent.platform.toLowerCase() %>">
               <h3><%= agent.browser %> <%= agent.version %> <%= agent.platform %></h3>
               <p><%= agent.userAgent %></p>
             </li>
