@@ -55,7 +55,29 @@ buster.testCase("Test client configuration", {
             assert.equals(configGroup.load, [
                 "/buster/bundle-" + version + ".js",
                 "/buster/compat-" + version + ".js",
-                "/buster/wiring.js"]);
+                "/buster/wiring.js",
+                "/buster/ready.js"]);
+
+            done();
+        });
+    },
+
+    "should load ready script last": function (done) {
+        var config = testConfig.create();
+        config.addGroup("Client tests", {
+            rootPath: process.cwd,
+            load: "config-test.js"
+        }, "/");
+
+        extendConfigGroup(config, "browser", function (configGroup) {
+            var res = configGroup.resources;
+
+            assert.equals(configGroup.load, [
+                "/buster/bundle-" + version + ".js",
+                "/buster/compat-" + version + ".js",
+                "/buster/wiring.js",
+                process.cwd() + "/config-test.js",
+                "/buster/ready.js"]);
 
             done();
         });
@@ -69,5 +91,5 @@ function extendConfigGroup(config, env, callback) {
         group.resourceSet.getReadOnly(function (err, conf) {
             callback(conf);
         });
-    });
+    }, function (err) { buster.log(err); });
 }

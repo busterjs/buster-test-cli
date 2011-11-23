@@ -3,25 +3,28 @@
         return;
     }
 
+    function setUp() {
+        this.emitter = createRemoteEmitter();
+        this.readyListener = sinon.spy();
+        this.emitter.on("ready", this.readyListener);
+        B.configureTestClient(this.emitter);
+
+        this.bnt = buster.nextTick;
+        sinon.spy(buster.testRunner, "runSuite");
+
+        buster.nextTick = function (callback) {
+            callback();
+        };
+    }
+
+    function tearDown() {
+        buster.nextTick = this.bnt;
+        buster.testRunner.runSuite.restore();
+    }
+
     buster.util.testCase("BrowserWiringTest", {
-        setUp: function () {
-            this.emitter = createRemoteEmitter();
-            this.readyListener = sinon.spy();
-            this.emitter.on("ready", this.readyListener);
-            B.configureTestClient(this.emitter);
-
-            this.bnt = buster.nextTick;
-            sinon.spy(buster.testRunner, "runSuite");
-
-            buster.nextTick = function (callback) {
-                callback();
-            };
-        },
-
-        tearDown: function () {
-            buster.nextTick = this.bnt;
-            buster.testRunner.runSuite.restore();
-        },
+        setUp: setUp,
+        tearDown: tearDown,
 
         "should connect bayeux emitter": function () {
             assertTrue(this.emitter.connect.calledOnce);
@@ -37,30 +40,29 @@
             assertFalse(this.readyListener.calledOnce);
         },
 
-        "should emit ready when calling buster.run": function () {
+        "should emit ready when calling buster.ready": function () {
             this.emitter.connect.args[0][0]();
-            buster.run();
-
-            assertTrue(this.readyListener.calledOnce);
-        },
-
-        "should emit ready when calling buster.run before client is connected":
-        function () {
-            buster.run();
-            this.emitter.connect.args[0][0]();
+            buster.ready();
 
             assertTrue(this.readyListener.calledOnce);
         },
 
         "should not emit ready before client is connected": function () {
-            buster.run();
+            buster.ready();
 
             assertFalse(this.readyListener.calledOnce);
         },
 
+        "should emit ready when connected after calling buster.ready": function () {
+            buster.ready();
+            this.emitter.connect.args[0][0]();
+
+            assertTrue(this.readyListener.calledOnce);
+        },
+
         "should emit user agent string with ready event": function () {
             this.emitter.connect.args[0][0]();
-            buster.run();
+            buster.ready();
 
             assertTrue(/Mozilla/.test(this.readyListener.args[0][0].data));
         },
@@ -107,7 +109,7 @@
             this.emitter.on("suite:start", listener);
 
             buster.testCase("SomeTest", { "should do it": function () {} });
-            this.emitter.emit("tests:run");
+            this.emitter.emit("tests:run", { autoRun: true });
 
             assertTrue(listener.calledOnce);
         },
@@ -120,7 +122,7 @@
                 buster.spec.should("do it", function () {});
             });
 
-            this.emitter.emit("tests:run");
+            this.emitter.emit("tests:run", { autoRun: true });
 
             assertTrue(listener.calledOnce);
             assertEquals(listener.args[0][0].data.name, "Spec");
@@ -135,7 +137,7 @@
                 }
             });
 
-            this.emitter.emit("tests:run");
+            this.emitter.emit("tests:run", { autoRun: true });
             assertTrue(buster.testRunner.runSuite.calledWith([context]));
         },
 
@@ -144,7 +146,7 @@
                 timeout: 25, failOnNoAssertions: false
             });
 
-            assertEquals(buster.wiredRunner.timeout, 25);
+            assertEquals(25, buster.wiredRunner.timeout);
             assertFalse(buster.wiredRunner.failOnNoAssertions);
         },
 
@@ -175,6 +177,39 @@
             this.emitter.emit("tests:run");
 
             assertEquals(counts, [1, 2]);
+        }
+    });
+
+    buster.util.testCase("BrowserWiringAutoRunFalseTest", {
+        setUp: function () {
+            setUp.call(this);
+
+            this.listener = sinon.spy();
+            this.emitter.on("suite:start", this.listener);
+            buster.testCase("SomeTest", { "should do it": function () {} });
+        },
+
+        tearDown: tearDown,
+
+        "should not start running tests on tests:run when autoRun is false":
+        function () {
+            this.emitter.emit("tests:run", { autoRun: false });
+
+            assertFalse(this.listener.calledOnce);
+        },
+
+        "should start running tests when calling run after tests:run": function () {
+            this.emitter.emit("tests:run", { autoRun: false });
+            buster.run();
+
+            assertTrue(this.listener.calledOnce);
+        },
+
+        "should start running tests when calling run before tests:run": function () {
+            buster.run();
+            this.emitter.emit("tests:run", { autoRun: false });
+
+            assertTrue(this.listener.calledOnce);
         }
     });
 }(buster));
