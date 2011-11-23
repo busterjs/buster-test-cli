@@ -31,14 +31,36 @@
             assertFalse(this.readyListener.called);
         },
 
-        "should emit ready when connected": function () {
+        "should not emit ready when connected": function () {
+            this.emitter.connect.args[0][0]();
+
+            assertFalse(this.readyListener.calledOnce);
+        },
+
+        "should emit ready when calling buster.run": function () {
+            this.emitter.connect.args[0][0]();
+            buster.run();
+
+            assertTrue(this.readyListener.calledOnce);
+        },
+
+        "should emit ready when calling buster.run before client is connected":
+        function () {
+            buster.run();
             this.emitter.connect.args[0][0]();
 
             assertTrue(this.readyListener.calledOnce);
         },
 
+        "should not emit ready before client is connected": function () {
+            buster.run();
+
+            assertFalse(this.readyListener.calledOnce);
+        },
+
         "should emit user agent string with ready event": function () {
             this.emitter.connect.args[0][0]();
+            buster.run();
 
             assertTrue(/Mozilla/.test(this.readyListener.args[0][0].data));
         },
