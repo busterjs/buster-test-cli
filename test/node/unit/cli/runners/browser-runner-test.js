@@ -126,6 +126,14 @@ buster.testCase("Browser runner", {
             });
         },
 
+        "should create remote runner that does not auto run": function () {
+            this.spy(remoteRunner, "create");
+            this.runner.options = { autoRun: true };
+            this.runner.runSession(this.session);
+
+            assert(remoteRunner.create.args[0][1].autoRun);
+        },
+
         "should create progress reporter": function () {
             this.spy(progressReporter, "create");
 
