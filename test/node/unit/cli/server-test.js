@@ -75,6 +75,17 @@ buster.testCase("buster-server binary", {
             });
         },
 
+        "should serve header when captured": function (done) {
+            helper.get("/capture", function (res, body) {
+                helper.get("/clientHeader/", function (res, body) {
+                    done(function () {
+                        assert.equals(res.statusCode, 200);
+                        assert.match(body, "test slave");
+                    });
+                });
+            });
+        },
+
         "should serve static pages": function (done) {
             helper.get("/stylesheets/buster.css", function (res, body) {
                 done(function () {
