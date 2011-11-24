@@ -61,11 +61,14 @@ buster.testCase("Browser runner", {
         assert.calledWith(busterConfigExt.extendConfigurationGroupWithWiring, config);
     },
 
-    "should create session using provided resource set": function () {
+    "should create unjoinable session using provided resource set": function () {
         this.runner.run({ resourceSet: { id: 41 } }, this.options);
 
         assert.calledOnce(this.client.createSession);
-        assert.calledWith(this.client.createSession, { id: 41 });
+        assert.calledWith(this.client.createSession, {
+            resourceSet: { id: 41 },
+            joinable: false
+        });
     },
 
     "should be run with runSession": function () {
