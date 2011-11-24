@@ -15,8 +15,8 @@
         var span = document.getElementsByTagName("span")[1];
         var dots = ["", ".", "..", "...", "...", "..."], i = 0;
         setInterval(function () {
-            span.innerHTML = dots[i % dots.length];
-            i += 1;
+            span.innerHTML = dots[i];
+            i = (i + 1) % dots.length;
         }, 350);
     }());
     </script>
