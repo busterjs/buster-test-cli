@@ -8,7 +8,17 @@
   </head>
   <body>
     <div id="masthead">
-      <p><a href="/">Buster.<span>JS</span></a> Test slave</p>
+      <p><a href="/">Buster.<span>JS</span></a> Test slave: Running<span></span></p>
     </div>
+    <script type="text/javascript">
+    (function () {
+        var span = document.getElementsByTagName("span")[1];
+        var dots = ["", ".", "..", "...", "...", "..."], i = 0;
+        setInterval(function () {
+            span.innerHTML = dots[i % dots.length];
+            i += 1;
+        }, 350);
+    }());
+    </script>
   </body>
 </html>
