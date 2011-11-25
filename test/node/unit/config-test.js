@@ -6,6 +6,13 @@ var assert = buster.assert;
 var refute = buster.refute;
 var version = testConfig.VERSION;
 
+buster.assertions.add("isObject", {
+    assert: function (object) {
+        return typeof object == "object" && !!object;
+    },
+    assertMessage: "Expected ${0} to be object and not null"
+});
+
 buster.testCase("Test client configuration", {
     setUp: function () {
         process.chdir(__dirname);
