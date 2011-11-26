@@ -73,8 +73,8 @@ buster.testCase("Test client configuration", {
         var config = testConfig.create();
         config.addGroup("Client tests", {
             rootPath: process.cwd,
-            load: "config-test.js"
-        }, "/");
+            tests: ["config-test.js"]
+        });
 
         extendConfigGroup(config, "browser", function (configGroup) {
             var res = configGroup.resources;
@@ -83,7 +83,7 @@ buster.testCase("Test client configuration", {
                 "/buster/bundle-" + version + ".js",
                 "/buster/compat-" + version + ".js",
                 "/buster/wiring.js",
-                process.cwd() + "/config-test.js",
+                "/config-test.js",
                 "/buster/ready.js"]);
 
             done();

@@ -42,7 +42,7 @@ buster.testCase("Browser runner", {
         this.runner.run({ load: [] }, this.options);
 
         var client = busterClient.create.returnValues[0];
-        assert.isFalse(client.cacheResources);
+        refute(client.cacheResources);
     },
 
     "should create explicitly caching client": function () {
@@ -50,7 +50,7 @@ buster.testCase("Browser runner", {
         this.runner.run({ load: [] }, this.options);
 
         var client = busterClient.create.returnValues[0];
-        assert.isTrue(client.cacheResources);
+        assert(client.cacheResources);
     },
 
     "should extend configuration": function () {
@@ -250,7 +250,8 @@ buster.testCase("Browser runner", {
         "should set stackFilter.filters": function () {
             this.runner.runSession(this.session);
 
-            assert.equals(buster.stackFilter.filters, ["/buster/bundle-"]);
+            assert.equals(buster.stackFilter.filters,
+                          ["/buster/bundle-", "buster/wiring"]);
         },
 
         "should close session on suite:end": function () {
