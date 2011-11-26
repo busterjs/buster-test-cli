@@ -129,7 +129,7 @@
         },
 
         "should run parsable context when emitting tests:run": function () {
-            var context = { name: "Parsed", tests: [] };
+            var context = { name: "Parsed", tests: [{ name: "Yay" }], contexts: [] };
 
             buster.addTestContext({
                 parse: function () {
@@ -138,7 +138,9 @@
             });
 
             this.emitter.emit("tests:run", { autoRun: true });
-            assertTrue(buster.testRunner.runSuite.calledWith([context]));
+
+            assertTrue(buster.testRunner.runSuite.calledOnce);
+            assertEquals(buster.testRunner.runSuite.args[0][0], [context]);
         },
 
         "should create test runner with options": function () {
@@ -171,12 +173,25 @@
                 "test #2": function () {
                     buster.assert(true);
                     buster.assert(true);
-                },
+                }
             });
 
             this.emitter.emit("tests:run");
 
             assertEquals(counts, [1, 2]);
+        },
+
+        "should filter contexts prior to running": function () {
+            var tests = [this.spy(), this.spy()];
+            buster.testCase("AssertionCountTest", {
+                "test #1": tests[0],
+                "test #2": tests[1]
+            });
+
+            this.emitter.emit("tests:run", { autoRun: true, filters: ["#1"] });
+
+            assertTrue(tests[0].calledOnce);
+            assertFalse(tests[1].called);
         }
     });
 

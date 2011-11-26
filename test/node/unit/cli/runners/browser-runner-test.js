@@ -137,6 +137,14 @@ buster.testCase("Browser runner", {
             assert(remoteRunner.create.args[0][1].autoRun);
         },
 
+        "should create remote runner with filters": function () {
+            this.spy(remoteRunner, "create");
+            this.runner.options = { filters: ["1", "2"] };
+            this.runner.runSession(this.session);
+
+            assert.equals(remoteRunner.create.args[0][1].filters, ["1", "2"]);
+        },
+
         "should create progress reporter": function () {
             this.spy(progressReporter, "create");
 

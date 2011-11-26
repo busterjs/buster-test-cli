@@ -165,6 +165,13 @@ buster.testCase("Test cli", {
                     done();
                 });
             });
+        },
+
+        "should transfer filters": function (done) {
+            helper.run(this, ["-c", this.config, "//should-"], function () {
+                assert.equals(browserRunner.run.args[0][1].filters, ["//should-"]);
+                done();
+            });
         }
     },
 
