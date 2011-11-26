@@ -76,7 +76,7 @@ buster.testCase("Test cli", {
 
         "should run runner with config and options": function (done) {
             helper.run(this, [], function () {
-                assert.match(nodeRunner.run.args[0][1], { reporter: "xUnitConsole" });
+                assert.match(nodeRunner.run.args[0][1], { reporter: "dots" });
                 assert.equals(nodeRunner.run.args[0][0].environment, "node");
                 done();
             });
@@ -183,13 +183,13 @@ buster.testCase("Test cli", {
         },
 
         "adds command-line options set with $BUSTER_TEST_OPT": function (done) {
-            process.env.BUSTER_TEST_OPT = "--color dim -r bddConsole"
+            process.env.BUSTER_TEST_OPT = "--color dim -r specification"
 
             helper.run(this, ["-c", this.config], function () {
                 assert.match(this.run.args[0][1], {
                     color: true,
                     bright: false,
-                    reporter: "bddConsole"
+                    reporter: "specification"
                 });
                 done();
             });

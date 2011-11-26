@@ -150,12 +150,12 @@ buster.testCase("Browser runner", {
 
         "should not create progress reporter when providing reporter": function () {
             this.spy(progressReporter, "create");
-            this.spy(reporters.bddConsole, "create");
-            this.runner.options = { reporter: "bddConsole" };
+            this.spy(reporters.specification, "create");
+            this.runner.options = { reporter: "specification" };
             this.runner.runSession(this.session);
 
             refute.called(progressReporter.create);
-            assert.calledOnce(reporters.bddConsole.create);
+            assert.calledOnce(reporters.specification.create);
         },
 
         "progress reporter should respect color settings": function () {
@@ -195,22 +195,22 @@ buster.testCase("Browser runner", {
         },
 
         "should initialize reporter": function () {
-            this.spy(reporters.xUnitConsole, "create");
+            this.spy(reporters.dots, "create");
 
             this.runner.runSession(this.session);
 
-            assert.match(reporters.xUnitConsole.create.args[0][0], {
+            assert.match(reporters.dots.create.args[0][0], {
                 color: false, bright: false, displayProgress: false
             });
         },
 
         "should initialize reporter with custom properties": function () {
-            this.spy(reporters.xUnitConsole, "create");
+            this.spy(reporters.dots, "create");
 
             this.runner.options = { color: true, bright: true, displayProgress: true };
             this.runner.runSession(this.session);
 
-            assert.match(reporters.xUnitConsole.create.args[0][0], {
+            assert.match(reporters.dots.create.args[0][0], {
                 color: true, bright: true
             });
         },
@@ -218,11 +218,11 @@ buster.testCase("Browser runner", {
         "should build cwd from session server and root": function () {
             this.runner.server = { hostname: "localhost", port: 1111 };
             this.session.rootPath = "/aaa-bbb";
-            this.spy(reporters.xUnitConsole, "create");
+            this.spy(reporters.dots, "create");
 
             this.runner.runSession(this.session);
 
-            assert.match(reporters.xUnitConsole.create.args[0][0], {
+            assert.match(reporters.dots.create.args[0][0], {
                 cwd: "http://localhost:1111/aaa-bbb/resources"
             });
         },
@@ -230,21 +230,21 @@ buster.testCase("Browser runner", {
         "should build cwd from non-default session server and root": function () {
             this.runner.server = { hostname: "somewhere", port: 2524 };
             this.session.rootPath = "/aaa-ccc";
-            this.spy(reporters.xUnitConsole, "create");
+            this.spy(reporters.dots, "create");
 
             this.runner.runSession(this.session);
 
-            assert.match(reporters.xUnitConsole.create.args[0][0], {
+            assert.match(reporters.dots.create.args[0][0], {
                 cwd: "http://somewhere:2524/aaa-ccc/resources"
             });
         },
 
         "should set number of contexts in package name": function () {
-            this.spy(reporters.xUnitConsole, "create");
+            this.spy(reporters.dots, "create");
 
             this.runner.runSession(this.session);
 
-            assert.equals(reporters.xUnitConsole.create.returnValues[0].contextsInPackageName, 2);
+            assert.equals(reporters.dots.create.returnValues[0].contextsInPackageName, 2);
         },
 
         "should set stackFilter.filters": function () {
