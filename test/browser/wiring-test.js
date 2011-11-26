@@ -119,7 +119,7 @@
             this.emitter.on("context:start", listener);
 
             buster.spec.describe("Spec", function () {
-                buster.spec.should("do it", function () {});
+                buster.spec.it("does it", function () {});
             });
 
             this.emitter.emit("tests:run", { autoRun: true });
