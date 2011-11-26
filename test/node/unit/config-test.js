@@ -49,7 +49,7 @@ buster.testCase("Test client configuration", {
             assert.isObject(res["/buster/sinon/util/fake_server_with_clock.js"]);
             assert.isObject(res["/buster/buster-test/spec.js"]);
             assert.isObject(res["/buster/buster-test/test-case.js"]);
-            assert.isObject(res["/buster/buster-test/test-context-filter.js"]);
+            assert.isObject(res["/buster/buster-test/test-context.js"]);
             assert.isObject(res["/buster/buster-test/test-runner.js"]);
             assert.isObject(res["/buster/buster-test/reporters/json-proxy.js"]);
             assert.isObject(res["/buster/sinon-buster.js"]);
