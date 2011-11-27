@@ -46,9 +46,23 @@ buster.testCase("Test cli", {
                 assert.match(this.stderr, /\d+:\d+/);
                 done();
             });
+        }
+    },
+
+    "explicit environment": {
+        setUp: function () {
+            helper.writeFile("buster-buggy.js", "var config = module.exports;" +
+                             "config.server = { environment: 'phonegap' }");
         },
 
-        "//should fail gracefully if runner is missing": function () {}
+        "fails when environment does not exist": function (done) {
+            helper.run(this, ["-c", "buster-buggy.js", "-e", "phonegap"], function () {
+                assert.match(this.stderr, "Unknown environment 'phonegap'. Try one of");
+                assert.match(this.stderr, "node");
+                assert.match(this.stderr, "browser");
+                done();
+            });
+        }
     },
 
     "node runs": {
