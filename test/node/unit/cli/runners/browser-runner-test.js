@@ -148,31 +148,28 @@ buster.testCase("Browser runner", {
             assert.equals(remoteRunner.create.args[0][2].filters, ["1", "2"]);
         },
 
-        "should not create remote runner without clients": function () {
-            this.spy(remoteRunner, "create");
-            this.runner.options = { clients: [] };
-            this.runner.runSession(this.session);
+        "with no connected clients": {
+            setUp: function () {
+                this.spy(remoteRunner, "create");
+                this.session.clients = [];
+                this.runner.runSession(this.session);
+            },
 
-            refute.called(remoteRunner.create);
-        },
+            "does not create remote runner": function () {
+                refute.called(remoteRunner.create);
+            },
 
-        "should print understandable error when no clients": function () {
-            this.runner.options = { clients: [] };
-            this.runner.runSession(this.session);
+            "prints understandable error": function () {
+                assert.match(this.stderr, "No clients connected, nothing to do");
+            },
 
-            assert.match(this.stderr, "No clients connected, nothing to do");
-        },
-
-        "should close session when no clients": function () {
-            this.runner.options = { clients: [] };
-            this.runner.runSession(this.session);
-
-            assert.calledOnce(this.session.close);
+            "closes session": function () {
+                assert.calledOnce(this.session.close);
+            }
         },
 
         "should not call done callback when no clients until session closes": function () {
             this.runner.callback = this.spy();
-            this.runner.options = { clients: [] };
             this.runner.runSession(this.session);
 
             refute.called(this.runner.callback);
@@ -192,7 +189,7 @@ buster.testCase("Browser runner", {
         "should not create progress reporter when providing reporter": function () {
             this.spy(progressReporter, "create");
             this.spy(reporters.specification, "create");
-            this.runner.options.reporter = "specification";
+            this.runner.options = { reporter: "specification" };
             this.runner.runSession(this.session);
 
             refute.called(progressReporter.create);
@@ -202,7 +199,7 @@ buster.testCase("Browser runner", {
         "progress reporter should respect color settings": function () {
             this.spy(progressReporter, "create");
 
-            buster.extend(this.runner.options, { color: true, bright: true });
+            this.runner.options = { color: true, bright: true };
             this.runner.runSession(this.session);
 
             assert.match(progressReporter.create.args[0][0], {
@@ -248,11 +245,7 @@ buster.testCase("Browser runner", {
         "should initialize reporter with custom properties": function () {
             this.spy(reporters.dots, "create");
 
-            buster.extend(this.runner.options, {
-                color: true,
-                bright: true,
-                displayProgress: true
-            });
+            this.runner.options = { color: true, bright: true, displayProgress: true };
             this.runner.runSession(this.session);
 
             assert.match(reporters.dots.create.args[0][0], {
