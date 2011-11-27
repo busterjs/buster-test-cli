@@ -200,6 +200,27 @@ buster.testCase("Test cli", {
                 });
                 done();
             });
+        },
+
+        "should process one group at a time": function () {
+            var run = this.spy();
+            this.cli.loadRunner.returns({ run: run });
+            this.cli.onConfig.yields(null, [{id: 1}, {id: 2}]);
+
+            this.cli.run();
+
+            assert.calledOnce(run);
+        },
+
+        "should process next group when previous is done": function () {
+            var run = this.stub();
+            this.cli.loadRunner.returns({ run: run });
+            this.cli.onConfig.yields(null, [{id: 1}, {id: 2}]);
+
+            run.yields();
+            this.cli.run();
+
+            assert.calledTwice(run);
         }
     },
 
