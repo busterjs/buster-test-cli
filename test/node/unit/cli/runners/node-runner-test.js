@@ -27,5 +27,13 @@ buster.testCase("Node runner", {
 
         assert.equals(buster.testCase.onCreate, runner);
         assert.equals(buster.spec.describe.onCreate, runner);
+    },
+
+    "should call done callback when complete": function () {
+        var callback = this.spy();
+        buster.autoRun.yields();
+        nodeRunner.run({ absoluteLoadEntries: [] }, {}, callback);
+
+        assert.calledOnce(callback);
     }
 });
