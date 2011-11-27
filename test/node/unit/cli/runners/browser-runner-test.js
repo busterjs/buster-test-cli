@@ -21,6 +21,7 @@ buster.testCase("Browser runner", {
         this.stub(busterConfigExt, "extendConfigurationGroupWithWiring");
         this.options = { server: "http://127.0.0.1:1200" };
         this.runner = Object.create(browserRunner);
+        this.runner.options = { clients: [{ id: 1 }]};
 
         var self = this;
         this.stdout = "";
@@ -123,7 +124,7 @@ buster.testCase("Browser runner", {
 
         "should create remote runner that fails on no assertions": function () {
             this.spy(remoteRunner, "create");
-            this.runner.options = { failOnNoAssertions: true };
+            this.runner.options.failOnNoAssertions = true;
             this.runner.runSession(this.session);
 
             assert.calledWith(
@@ -133,7 +134,7 @@ buster.testCase("Browser runner", {
 
         "should create remote runner that does not auto run": function () {
             this.spy(remoteRunner, "create");
-            this.runner.options = { autoRun: true };
+            this.runner.options.autoRun = true;
             this.runner.runSession(this.session);
 
             assert(remoteRunner.create.args[0][2].autoRun);
@@ -141,10 +142,40 @@ buster.testCase("Browser runner", {
 
         "should create remote runner with filters": function () {
             this.spy(remoteRunner, "create");
-            this.runner.options = { filters: ["1", "2"] };
+            this.runner.options.filters = ["1", "2"];
             this.runner.runSession(this.session);
 
             assert.equals(remoteRunner.create.args[0][2].filters, ["1", "2"]);
+        },
+
+        "should not create remote runner without clients": function () {
+            this.spy(remoteRunner, "create");
+            this.runner.options = { clients: [] };
+            this.runner.runSession(this.session);
+
+            refute.called(remoteRunner.create);
+        },
+
+        "should print understandable error when no clients": function () {
+            this.runner.options = { clients: [] };
+            this.runner.runSession(this.session);
+
+            assert.match(this.stderr, "No clients connected, nothing to do");
+        },
+
+        "should close session when no clients": function () {
+            this.runner.options = { clients: [] };
+            this.runner.runSession(this.session);
+
+            assert.calledOnce(this.session.close);
+        },
+
+        "should not call done callback when no clients until session closes": function () {
+            this.runner.callback = this.spy();
+            this.runner.options = { clients: [] };
+            this.runner.runSession(this.session);
+
+            refute.called(this.runner.callback);
         },
 
         "should create progress reporter": function () {
@@ -161,7 +192,7 @@ buster.testCase("Browser runner", {
         "should not create progress reporter when providing reporter": function () {
             this.spy(progressReporter, "create");
             this.spy(reporters.specification, "create");
-            this.runner.options = { reporter: "specification" };
+            this.runner.options.reporter = "specification";
             this.runner.runSession(this.session);
 
             refute.called(progressReporter.create);
@@ -171,7 +202,7 @@ buster.testCase("Browser runner", {
         "progress reporter should respect color settings": function () {
             this.spy(progressReporter, "create");
 
-            this.runner.options = { color: true, bright: true };
+            buster.extend(this.runner.options, { color: true, bright: true });
             this.runner.runSession(this.session);
 
             assert.match(progressReporter.create.args[0][0], {
@@ -217,7 +248,11 @@ buster.testCase("Browser runner", {
         "should initialize reporter with custom properties": function () {
             this.spy(reporters.dots, "create");
 
-            this.runner.options = { color: true, bright: true, displayProgress: true };
+            buster.extend(this.runner.options, {
+                color: true,
+                bright: true,
+                displayProgress: true
+            });
             this.runner.runSession(this.session);
 
             assert.match(reporters.dots.create.args[0][0], {
@@ -274,16 +309,27 @@ buster.testCase("Browser runner", {
             assert.calledOnce(this.session.close);
         },
 
-        "should print to stdout on succesful session close": function () {
-            var runner = buster.eventEmitter.create();
-            this.stub(remoteRunner, "create").returns(runner);
-            this.closePromise.resolve();
+        "succesful session close": {
+            setUp: function () {
+                this.remoteRunner = buster.eventEmitter.create();
+                this.runner.callback = this.spy();
+                this.stub(remoteRunner, "create").returns(this.remoteRunner);
+                this.closePromise.resolve();
+                this.runner.runSession(this.session);
+            },
 
-            this.runner.runSession(this.session);
-            var stdout = this.stdout;
-            runner.emit("suite:end");
+            "prints to stdout": function () {
+                var stdout = this.stdout;
+                this.remoteRunner.emit("suite:end");
 
-            refute.equals(this.stdout, stdout);
+                refute.equals(this.stdout, stdout);
+            },
+
+            "calls callback": function () {
+                this.remoteRunner.emit("suite:end");
+
+                assert.calledOnce(this.runner.callback);
+            }
         },
 
         "should print to stderr on unsuccesful session close": function () {
