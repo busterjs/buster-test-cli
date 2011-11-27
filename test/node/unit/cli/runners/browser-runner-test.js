@@ -196,6 +196,14 @@ buster.testCase("Browser runner", {
             assert.calledOnce(reporters.specification.create);
         },
 
+        "should load reporter using buster-test's loader": function () {
+            this.spy(reporters, "load");
+            this.runner.options = { reporter: "dots" };
+            this.runner.runSession(this.session);
+
+            assert.calledOnceWith(reporters.load, "dots");
+        },
+
         "progress reporter should respect color settings": function () {
             this.spy(progressReporter, "create");
 
