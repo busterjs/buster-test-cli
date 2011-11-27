@@ -87,6 +87,7 @@ buster.testCase("Browser runner", {
             this.session = buster.eventEmitter.create();
             this.session.onMessage = function () {};
             this.session.messagingClient = this.session;
+            this.session.clients = [{ id: 1 }];
             this.closePromise = busterPromise.create();
             this.session.close = this.stub().returns(this.closePromise);
             this.stackFilter = buster.stackFilter.filters;
@@ -114,7 +115,8 @@ buster.testCase("Browser runner", {
             this.runner.runSession(this.session);
 
             assert.calledOnce(remoteRunner.create);
-            assert.calledWith(remoteRunner.create, this.session.messagingClient, {
+            assert.calledWith(remoteRunner.create,
+                              this.session.messagingClient, [{id: 1}], {
                 failOnNoAssertions: false
             });
         },
@@ -124,9 +126,9 @@ buster.testCase("Browser runner", {
             this.runner.options = { failOnNoAssertions: true };
             this.runner.runSession(this.session);
 
-            assert.calledWith(remoteRunner.create, this.session.messagingClient, {
-                failOnNoAssertions: true
-            });
+            assert.calledWith(
+                remoteRunner.create,
+                this.session.messagingClient, [{id: 1}], { failOnNoAssertions: true });
         },
 
         "should create remote runner that does not auto run": function () {
@@ -134,7 +136,7 @@ buster.testCase("Browser runner", {
             this.runner.options = { autoRun: true };
             this.runner.runSession(this.session);
 
-            assert(remoteRunner.create.args[0][1].autoRun);
+            assert(remoteRunner.create.args[0][2].autoRun);
         },
 
         "should create remote runner with filters": function () {
@@ -142,7 +144,7 @@ buster.testCase("Browser runner", {
             this.runner.options = { filters: ["1", "2"] };
             this.runner.runSession(this.session);
 
-            assert.equals(remoteRunner.create.args[0][1].filters, ["1", "2"]);
+            assert.equals(remoteRunner.create.args[0][2].filters, ["1", "2"]);
         },
 
         "should create progress reporter": function () {
