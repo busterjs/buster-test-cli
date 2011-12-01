@@ -5,7 +5,7 @@ buster.serverCli = helper.require("cli/server");
 var assert = buster.assert;
 var refute = buster.refute;
 var run = helper.runTest;
-buster.server = require("buster-server");
+buster.server = require("buster-capture-server");
 
 buster.testCase("buster-server binary", {
     setUp: helper.cliTestSetUp(buster.serverCli),

@@ -24,7 +24,7 @@
         "buster-cli": "~0.2",
         "buster-configuration": "~0.2",
         "buster-terminal": "~0.2",
-        "buster-server": ">=0.2",
+        "buster-capture-server": ">=0.2",
         "buster-promise": "~0.3",
         "buster-evented-logger": "~0.3",
         "buster-assertions": "~0.7",
