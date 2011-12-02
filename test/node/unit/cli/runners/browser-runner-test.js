@@ -68,7 +68,8 @@ buster.testCase("Browser runner", {
         assert.calledOnce(this.client.createSession);
         assert.calledWith(this.client.createSession, {
             resourceSet: { id: 41 },
-            joinable: false
+            joinable: false,
+            managed: true
         });
     },
 
