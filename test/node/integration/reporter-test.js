@@ -32,7 +32,7 @@ function run() {
     var clients = ["Mozilla/5.0 (X11; Linux x86_64; rv:2.0.1) Gecko/20100101 Firefox/4.0.1", "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/534.24 (KHTML, like Gecko) Chrome/11.0.696.71 Safari/534.24"];
 
     var reporter = buster.progressReporter.create({
-        io: require("sys"),
+        io: require("util"),
         color: true, bright: true
     }).listen(runner);
 
