@@ -241,11 +241,12 @@ buster.testCase("Test cli", {
     "with --color option": {
         setUp: function () {
             this.run = this.spy();
+            this.stub(this.cli, "onConfig").yields(null, [{}]);
             this.stub(this.cli, "loadRunner").returns({ run: this.run });
         },
 
         "skips ansi escape sequences when set to none": function (done) {
-            helper.run(this, ["--color", "none"], function () {
+            helper.run(this, ["-c", this.config, "--color", "none"], function () {
                 var runner = this;
 
                 done(function () {
@@ -253,7 +254,6 @@ buster.testCase("Test cli", {
                         color: false,
                         bright: false
                     });
-                    done();
                 });
             });
         }

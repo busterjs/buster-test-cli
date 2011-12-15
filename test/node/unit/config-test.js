@@ -92,10 +92,11 @@ buster.testCase("Test client configuration", {
 });
 
 function extendConfigGroup(config, env, callback) {
-    config.filterEnv(env).groups[0].resolve().then(function (group) {
+    var group = config.filterEnv(env).groups[0];
+    group.resolve().then(function (resourceSet) {
         configHelper.extendConfigurationGroupWithWiring(group);
 
-        group.resourceSet.getReadOnly(function (err, conf) {
+        resourceSet.getReadOnly(function (err, conf) {
             callback(conf);
         });
     }, function (err) { buster.log(err); });
