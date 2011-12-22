@@ -26,10 +26,7 @@ var helper = module.exports = {
 
     runTest: function (args, callback) {
         return function (done) {
-            helper.run(this, args, function () {
-                done();
-                callback.call(this);
-            });
+            helper.run(this, args, done(callback));
         };
     },
 

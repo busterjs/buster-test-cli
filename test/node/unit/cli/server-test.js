@@ -26,32 +26,29 @@ buster.testCase("buster-server binary", {
         "should start server on default port": function (done) {
             var createServer = this.stub(this.cli, "createServer");
 
-            helper.run(this, [], function () {
+            helper.run(this, [], done(function () {
                 assert.calledOnce(createServer);
                 assert.calledWith(createServer, 1111);
-                done();
-            });
+            }));
         },
 
         "should start server on specified port": function (done) {
             var createServer = this.stub(this.cli, "createServer");
 
-            helper.run(this, ["-p", "3200"], function () {
+            helper.run(this, ["-p", "3200"], done(function () {
                 assert.calledOnce(createServer);
                 assert.calledWith(createServer, 3200);
-                done();
-            });
+            }));
         },
 
         "should print message if address is already in use": function (done) {
             var error = new Error("EADDRINUSE, Address already in use");
             this.stub(this.cli, "createServer").throws(error);
 
-            helper.run(this, ["-p", "3200"], function () {
+            helper.run(this, ["-p", "3200"], done(function () {
                 assert.match(this.stderr, "Address already in use. Pick another " +
                              "port with -p/--port to start buster-server");
-                done();
-            });
+            }));
         }
     },
 
@@ -67,83 +64,67 @@ buster.testCase("buster-server binary", {
         },
 
         "should redirect client when capturing": function (done) {
-            helper.get("/capture", function (res, body) {
-                done(function () {
-                    assert.equals(res.statusCode, 302);
-                    assert.match(res.headers.location, /\/clients\/[0-9a-z\-]+$/);
-                });
-            });
+            helper.get("/capture", done(function (res, body) {
+                assert.equals(res.statusCode, 302);
+                assert.match(res.headers.location, /\/clients\/[0-9a-z\-]+$/);
+            }));
         },
 
         "should serve header when captured": function (done) {
             helper.get("/capture", function (res, body) {
-                helper.get("/clientHeader/", function (res, body) {
-                    done(function () {
-                        assert.equals(res.statusCode, 200);
-                        assert.match(body, "test slave");
-                    });
-                });
+                helper.get("/clientHeader/", done(function (res, body) {
+                    assert.equals(res.statusCode, 200);
+                    assert.match(body, "test slave");
+                }));
             });
         },
 
         "should serve static pages": function (done) {
-            helper.get("/stylesheets/buster.css", function (res, body) {
-                done(function () {
-                    assert.equals(res.statusCode, 200);
-                    assert.match(body, "body {");
-                });
-            });
+            helper.get("/stylesheets/buster.css", done(function (res, body) {
+                assert.equals(res.statusCode, 200);
+                assert.match(body, "body {");
+            }));
         },
 
         "should serve templated pages": function (done) {
-            helper.get("/", function (res, body) {
-                done(function () {
-                    assert.equals(res.statusCode, 200);
-                    assert.match(body, "<h1>Capture browser as test slave</h1>");
-                });
-            });
+            helper.get("/", done(function (res, body) {
+                assert.equals(res.statusCode, 200);
+                assert.match(body, "<h1>Capture browser as test slave</h1>");
+            }));
         },
 
         "should report no clients initially": function (done) {
-            helper.get("/", function (res, body) {
-                done(function () {
-                    assert.equals(res.statusCode, 200);
-                    assert.match(body, "<h2>No connected clients</h2>");
-                });
-            });
+            helper.get("/", done(function (res, body) {
+                assert.equals(res.statusCode, 200);
+                assert.match(body, "<h2>No connected clients</h2>");
+            }));
         },
 
         "should report connected clients": function (done) {
             helper.captureClient("Mozilla/5.0 (X11; Linux x86_64; rv:2.0.1) Gecko/20100101 Firefox/4.0.1", function () {
-                helper.get("/", function (res, body) {
-                    done(function () {
-                        assert.equals(res.statusCode, 200);
-                        assert.match(body, "<h2>Connected clients</h2>");
-                    });
-                });
+                helper.get("/", done(function (res, body) {
+                    assert.equals(res.statusCode, 200);
+                    assert.match(body, "<h2>Connected clients</h2>");
+                }));
             });
         },
 
         "should report name of connected clients": function (done) {
             helper.captureClient("Mozilla/5.0 (X11; Linux x86_64; rv:2.0.1) Gecko/20100101 Firefox/4.0.1", function () {
-                helper.get("/", function (res, body) {
-                    done(function () {
-                        assert.match(body, "<li class=\"firefox linux\">");
-                        assert.match(body, "<h3>Firefox 4.0.1 Linux</h3>");
-                    });
-                });
+                helper.get("/", done(function (res, body) {
+                    assert.match(body, "<li class=\"firefox linux\">");
+                    assert.match(body, "<h3>Firefox 4.0.1 Linux</h3>");
+                }));
             });
         },
 
         "should report name newly connected ones": function (done) {
             helper.get("/", function (res, body) {
                 helper.captureClient("Mozilla/5.0 (X11; Linux x86_64; rv:2.0.1) Gecko/20100101 Firefox/4.0.1", function () {
-                    helper.get("/", function (res, body) {
-                        done(function () {
+                    helper.get("/", done(function (res, body) {
                             assert.match(body, "<li class=\"firefox linux\">");
                             assert.match(body, "<h3>Firefox 4.0.1 Linux</h3>");
-                        });
-                    });
+                    }));
                 });
             });
         }
