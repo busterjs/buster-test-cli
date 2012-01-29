@@ -25,6 +25,7 @@
         "buster-configuration": "~0.2",
         "buster-terminal": "~0.3",
         "buster-capture-server": "~0.3",
+        "when": "https://github.com/cujojs/when/tarball/v0.11.1",
         "buster-promise": "~0.4",
         "buster-evented-logger": "~0.4",
         "buster-assertions": "~0.7",
