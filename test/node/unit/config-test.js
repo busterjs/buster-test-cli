@@ -35,7 +35,6 @@ buster.testCase("Test client configuration", {
             assert.isObject(rs.get("/buster/buster-assertions.js"));
             assert.isObject(rs.get("/buster/buster-assertions/expect.js"));
             assert.isObject(rs.get("/buster/buster-format.js"));
-            assert.isObject(rs.get("/buster/buster-promise.js"));
             assert.isObject(rs.get("/buster/sinon.js"));
             assert.isObject(rs.get("/buster/sinon/spy.js"));
             assert.isObject(rs.get("/buster/sinon/stub.js"));

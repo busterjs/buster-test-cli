@@ -6,7 +6,6 @@ var refute = buster.refute;
 var browserRunner = helper.require("cli/runners/browser-runner");
 var busterClient = require("buster-client").client;
 var busterConfigExt = helper.require("config");
-var busterPromise = require("buster-promise");
 var remoteRunner = helper.require("test-runner/remote-runner");
 var progressReporter = helper.require("test-runner/progress-reporter");
 var bayeuxEmitter = require("buster-bayeux-emitter");
@@ -16,8 +15,8 @@ var when = require("when");
 
 buster.testCase("Browser runner", {
     setUp: function () {
-        this.sessionPromise = busterPromise.create();
-        this.client = { createSession: this.stub().returns(this.sessionPromise) };
+        this.session = when.defer();
+        this.client = { createSession: this.stub().returns(this.session.promise) };
         this.stub(busterClient, "create").returns(this.client);
         this.options = { server: "http://127.0.0.1:1200" };
         this.runner = Object.create(browserRunner);
@@ -102,7 +101,7 @@ buster.testCase("Browser runner", {
         this.config.resolver.resolve({ id: 41 });
         this.runner.run(this.group, this.options);
 
-        this.sessionPromise.resolve({ id: 47 });
+        this.session.resolver.resolve({ id: 47 });
 
         assert.calledOnce(this.runner.runSession);
         assert.calledOn(this.runner.runSession, this.runner);
@@ -115,8 +114,8 @@ buster.testCase("Browser runner", {
             this.session.onMessage = function () {};
             this.session.messagingClient = this.session;
             this.session.clients = [{ id: 1 }];
-            this.closePromise = busterPromise.create();
-            this.session.close = this.stub().returns(this.closePromise);
+            this.close = when.defer();
+            this.session.close = this.stub().returns(this.close.promise);
             this.stackFilter = buster.stackFilter.filters;
 
             this.emitSessionMessage = function (event, data) {
@@ -341,7 +340,7 @@ buster.testCase("Browser runner", {
                 this.remoteRunner = buster.eventEmitter.create();
                 this.runner.callback = this.spy();
                 this.stub(remoteRunner, "create").returns(this.remoteRunner);
-                this.closePromise.resolve();
+                this.close.resolver.resolve();
                 this.runner.runSession(this.session);
             },
 
@@ -362,7 +361,7 @@ buster.testCase("Browser runner", {
         "prints to stderr on unsuccesful session close": function () {
             var runner = buster.eventEmitter.create();
             this.stub(remoteRunner, "create").returns(runner);
-            this.closePromise.reject({ message: "Oops" });
+            this.close.resolver.reject({ message: "Oops" });
 
             this.runner.runSession(this.session);
             var stderr = this.stderr;
@@ -376,7 +375,7 @@ buster.testCase("Browser runner", {
         "prints session creation error to stderr": function () {
             this.config.resolver.resolve();
             this.runner.run(this.group, this.options);
-            this.sessionPromise.reject({ id: 47 });
+            this.session.resolver.reject({ id: 47 });
 
             assert.match(this.stderr, "Failed creating session");
         },
@@ -384,7 +383,7 @@ buster.testCase("Browser runner", {
         "prints understandable error if server cannot be reached": function () {
             this.config.resolver.resolve();
             this.runner.run(this.group, this.options);
-            this.sessionPromise.reject(new Error("ECONNREFUSED, Connection refused"));
+            this.session.resolver.reject(new Error("ECONNREFUSED, Connection refused"));
 
             assert.match(this.stderr, "Unable to connect to server");
             assert.match(this.stderr, "http://127.0.0.1:1200");
@@ -395,7 +394,7 @@ buster.testCase("Browser runner", {
             this.config.resolver.resolve();
             this.runner.run(this.group, this.options);
             this.stub(process, "cwd").returns("/home/christian/projects/buster/sample");
-            this.sessionPromise.reject(new Error("ENOENT, No such file or directory '/home/christian/projects/buster/sample/src/*.js'"));
+            this.session.resolver.reject(new Error("ENOENT, No such file or directory '/home/christian/projects/buster/sample/src/*.js'"));
 
             assert.match(this.stderr, "pattern 'src/*.js' does not match any files");
         },
@@ -404,7 +403,7 @@ buster.testCase("Browser runner", {
             this.config.resolver.resolve();
             this.runner.run(this.group, this.options);
             this.stub(process, "cwd").returns("/home/christian/projects/buster/sample");
-            this.sessionPromise.reject(new Error("ENOENT, No such file or directory '/home/christian/projects/buster/sample/src/trim.js'"));
+            this.session.resolver.reject(new Error("ENOENT, No such file or directory '/home/christian/projects/buster/sample/src/trim.js'"));
 
             assert.match(this.stderr, "Configured path 'src/trim.js' is not a file or directory");
         },
