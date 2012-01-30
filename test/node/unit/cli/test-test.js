@@ -12,18 +12,18 @@ buster.testCase("Test cli", {
     tearDown: helper.clientTearDown,
 
     "help": {
-        "should have helpTopics property with reporters": function () {
+        "haves helpTopics property with reporters": function () {
             assert("helpTopics" in this.cli);
             assert.defined(this.cli.helpTopics.reporters);
-        },
+        }
     },
 
     "configuration": {
-        "should fail if config does not exist": run(["-c", "file.js"], function () {
+        "fails if config does not exist": run(["-c", "file.js"], function () {
             assert.match(this.stderr, "-c/--config: file.js is not a file");
         }),
 
-        "should fail if config is a directory": function (done) {
+        "fails if config is a directory": function (done) {
             helper.mkdir("buster");
 
             this.cli.run(["-c", "buster"], done(function () {
@@ -31,12 +31,12 @@ buster.testCase("Test cli", {
             }.bind(this)));
         },
 
-        "should fail if default config does not exist": run([], function () {
+        "fails if default config does not exist": run([], function () {
             assert.match(this.stderr, "-c/--config not provided, and none of\n" +
                          "[buster.js, test/buster.js, spec/buster.js] exists");
         }),
 
-        "should fail if config contains errors": function (done) {
+        "fails if config contains errors": function (done) {
             helper.writeFile("buster2.js", "modul.exports");
 
             helper.run(this, ["-c", "buster2.js"], done(function () {
@@ -69,33 +69,33 @@ buster.testCase("Test cli", {
             this.stub(nodeRunner, "run");
         },
 
-        "should load node runner": function (done) {
+        "loads node runner": function (done) {
             helper.run(this, [], done(function () {
                 assert.calledOnce(nodeRunner.run);
                 refute.equals(nodeRunner.run.thisValues[0], nodeRunner);
             }));
         },
 
-        "should provide runner with logger": function (done) {
+        "provides runner with logger": function (done) {
             helper.run(this, [], done(function () {
                 assert.equals(this.cli.logger, nodeRunner.run.thisValues[0].logger);
             }));
         },
 
-        "should run runner with config and options": function (done) {
+        "runs runner with config and options": function (done) {
             helper.run(this, [], done(function () {
                 assert.match(nodeRunner.run.args[0][1], { reporter: "dots" });
                 assert.equals(nodeRunner.run.args[0][0].environment, "node");
             }));
         },
 
-        "should transfer filters to node runner": function (done) {
-            helper.run(this, ["//should-"], done(function () {
-                assert.equals(nodeRunner.run.args[0][1].filters, ["//should-"]);
+        "transfers filters to node runner": function (done) {
+            helper.run(this, ["should-"], done(function () {
+                assert.equals(nodeRunner.run.args[0][1].filters, ["should-"]);
             }));
         },
 
-        "should fail if reporter does not exist": function (done) {
+        "fails if reporter does not exist": function (done) {
             helper.run(this, ["-r", "bogus"], done(function () {
                 assert.match(this.stderr, "No such reporter 'bogus'");
             }));
@@ -111,14 +111,14 @@ buster.testCase("Test cli", {
             this.stub(browserRunner, "run");
         },
 
-        "should load browser runner": function (done) {
+        "loads browser runner": function (done) {
             helper.run(this, ["-c", this.config], done(function () {
                 assert.calledOnce(browserRunner.run);
                 refute.equals(browserRunner.run.thisValues[0], browserRunner);
             }));
         },
 
-        "should load browser with server setting": function (done) {
+        "loads browser with server setting": function (done) {
             helper.run(this, ["-c", this.config], done(function () {
                 assert.match(browserRunner.run.args[0][1], {
                     server: "http://localhost:1111"
@@ -126,7 +126,7 @@ buster.testCase("Test cli", {
             }));
         },
 
-        "should load browser with specific server setting": function (done) {
+        "loads browser with specific server setting": function (done) {
             helper.run(this, ["-c", this.config, "-s", "127.0.0.1:1234"], done(function () {
                 assert.match(browserRunner.run.args[0][1], {
                     server: "http://127.0.0.1:1234"
@@ -134,7 +134,7 @@ buster.testCase("Test cli", {
             }));
         },
 
-        "should allow hostnameless server config": function (done) {
+        "allows hostnameless server config": function (done) {
             helper.run(this, ["-c", this.config, "--server", ":5678"], done(function () {
                 assert.match(browserRunner.run.args[0][1], {
                     server: "http://127.0.0.1:5678"
@@ -142,7 +142,7 @@ buster.testCase("Test cli", {
             }));
         },
 
-        "should allow full server url, including protocol": function (done) {
+        "allows full server url, including protocol": function (done) {
             helper.run(this, ["-c", this.config, "-s", "http://lol:1234"], done(function () {
                 assert.match(browserRunner.run.args[0][1], {
                     server: "http://lol:1234"
@@ -150,7 +150,7 @@ buster.testCase("Test cli", {
             }));
         },
 
-        "should skip caching": function (done) {
+        "skips caching": function (done) {
             helper.run(this, ["-R", "-c", this.config], done(function () {
                 assert.calledOnce(browserRunner.run);
                 assert.match(browserRunner.run.args[0][1], {
@@ -159,7 +159,7 @@ buster.testCase("Test cli", {
             }));
         },
 
-        "should transfer filters": function (done) {
+        "transfers filters": function (done) {
             helper.run(this, ["-c", this.config, "//should-"], done(function () {
                 assert.equals(browserRunner.run.args[0][1].filters, ["//should-"]);
             }));
@@ -170,7 +170,7 @@ buster.testCase("Test cli", {
         setUp: function () {
             this.run = this.spy();
             this.stub(this.cli, "loadRunner").returns({ run: this.run });
-            this.stub(this.cli, "onConfig").yields(null, [{}]);
+            this.stub(this.cli, "onConfig").yields(null, { groups: [{}] });
             this.busterOptBlank = typeof process.env.BUSTER_TEST_OPT != "string";
             this.busterOpt = process.env.BUSTER_TEST_OPT;
         },
@@ -181,8 +181,7 @@ buster.testCase("Test cli", {
         },
 
         "adds command-line options set with $BUSTER_TEST_OPT": function (done) {
-            process.env.BUSTER_TEST_OPT = "--color dim -r specification"
-
+            process.env.BUSTER_TEST_OPT = "--color dim -r specification";
             helper.run(this, ["-c", this.config], done(function () {
                 assert.match(this.run.args[0][1], {
                     color: true,
@@ -192,20 +191,20 @@ buster.testCase("Test cli", {
             }));
         },
 
-        "should process one group at a time": function () {
+        "processes one group at a time": function () {
             var run = this.spy();
             this.cli.loadRunner.returns({ run: run });
-            this.cli.onConfig.yields(null, [{id: 1}, {id: 2}]);
+            this.cli.onConfig.yields(null, { groups: [{id: 1}, {id: 2}] });
 
             this.cli.run();
 
             assert.calledOnce(run);
         },
 
-        "should process next group when previous is done": function () {
+        "processes next group when previous is done": function () {
             var run = this.stub();
             this.cli.loadRunner.returns({ run: run });
-            this.cli.onConfig.yields(null, [{id: 1}, {id: 2}]);
+            this.cli.onConfig.yields(null, { groups: [{id: 1}, {id: 2}] });
 
             run.yields();
             this.cli.run();
@@ -217,7 +216,7 @@ buster.testCase("Test cli", {
     "with --color option": {
         setUp: function () {
             this.run = this.spy();
-            this.stub(this.cli, "onConfig").yields(null, [{}]);
+            this.stub(this.cli, "onConfig").yields(null, { groups: [{}] });
             this.stub(this.cli, "loadRunner").returns({ run: this.run });
         },
 

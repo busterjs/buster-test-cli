@@ -12,16 +12,22 @@ var progressReporter = helper.require("test-runner/progress-reporter");
 var bayeuxEmitter = require("buster-bayeux-emitter");
 var reporters = require("buster-test").reporters;
 var http = require("http");
+var when = require("when");
 
 buster.testCase("Browser runner", {
     setUp: function () {
         this.sessionPromise = busterPromise.create();
         this.client = { createSession: this.stub().returns(this.sessionPromise) };
         this.stub(busterClient, "create").returns(this.client);
-        this.stub(busterConfigExt, "extendConfigurationGroupWithWiring");
         this.options = { server: "http://127.0.0.1:1200" };
         this.runner = Object.create(browserRunner);
         this.runner.options = { clients: [{ id: 1 }]};
+        this.config = when.defer();
+        this.group = {
+            resolve: this.stub().returns(this.config.promise),
+            on: function () {},
+            bundleFramework: this.stub()
+        };
 
         var self = this;
         this.stdout = "";
@@ -32,50 +38,69 @@ buster.testCase("Browser runner", {
             { write: function (msg) { self.stderr += msg; } });
     },
 
-    "should create client for configured location": function () {
-        this.runner.run({ load: [] }, this.options);
+    "resolves config": function () {
+        this.runner.run(this.group, this.options);
+
+        assert.calledOnce(this.group.resolve);
+    },
+
+    "creates client for configured location": function () {
+        this.runner.run(this.group, this.options);
 
         assert.calledWith(busterClient.create, "1200", "127.0.0.1");
     },
 
-    "should create non-caching client": function () {
+    "creates non-caching client": function () {
         this.options.cacheResources = false;
-        this.runner.run({ load: [] }, this.options);
+        this.runner.run(this.group, this.options);
 
         var client = busterClient.create.returnValues[0];
         refute(client.cacheResources);
     },
 
-    "should create explicitly caching client": function () {
+    "creates explicitly caching client": function () {
         this.options.cacheResources = true;
-        this.runner.run({ load: [] }, this.options);
+        this.runner.run(this.group, this.options);
 
         var client = busterClient.create.returnValues[0];
         assert(client.cacheResources);
     },
 
-    "should extend configuration": function () {
-        var config = { id: 42 };
-        this.runner.run(config, this.options);
+    "extends configuration": function () {
+        this.spy(busterConfigExt, "bundleFramework");
+        this.runner.run(this.group, this.options);
 
-        assert.calledOnce(busterConfigExt.extendConfigurationGroupWithWiring);
-        assert.calledWith(busterConfigExt.extendConfigurationGroupWithWiring, config);
+        assert.calledOnce(busterConfigExt.bundleFramework);
+        assert.calledWith(busterConfigExt.bundleFramework, this.group);
     },
 
-    "should create unjoinable session using provided resource set": function () {
-        this.runner.run({ resourceSet: { id: 41 } }, this.options);
+    "does not create session before resolving config": function () {
+        this.runner.run(this.group, this.options);
 
+        refute.called(this.client.createSession);
+
+        this.config.resolver.resolve({});
         assert.calledOnce(this.client.createSession);
-        assert.calledWith(this.client.createSession, {
-            resourceSet: { id: 41 },
-            joinable: false,
-            managed: true
-        });
     },
 
-    "should be run with runSession": function () {
+    "creates unjoinable session using provided resource set": function (done) {
+        this.client.createSession = done(function (options) {
+            assert.equals(options, {
+                resourceSet: { id: 41 },
+                joinable: false,
+                managed: true
+            });
+            return { then: function () {} };
+        });
+
+        this.config.resolver.resolve({ id: 41 });
+        this.runner.run(this.group, this.options);
+    },
+
+    "is run with runSession": function () {
         this.stub(this.runner, "runSession");
-        this.runner.run({ resourceSet: { id: 41 } }, this.options);
+        this.config.resolver.resolve({ id: 41 });
+        this.runner.run(this.group, this.options);
 
         this.sessionPromise.resolve({ id: 47 });
 
@@ -103,7 +128,7 @@ buster.testCase("Browser runner", {
             buster.stackFilter.filters = this.stackFilter;
         },
 
-        "should listen for uncaught exceptions": function () {
+        "listens for uncaught exceptions": function () {
             this.runner.runSession(this.session);
 
             this.emitSessionMessage("uncaughtException", { message: "Oh noes" });
@@ -112,7 +137,7 @@ buster.testCase("Browser runner", {
             assert.match(this.stderr, "Oh noes");
         },
 
-        "should create remote runner": function () {
+        "creates remote runner": function () {
             this.spy(remoteRunner, "create");
             this.runner.runSession(this.session);
 
@@ -123,7 +148,7 @@ buster.testCase("Browser runner", {
             });
         },
 
-        "should create remote runner that fails on no assertions": function () {
+        "creates remote runner that fails on no assertions": function () {
             this.spy(remoteRunner, "create");
             this.runner.options.failOnNoAssertions = true;
             this.runner.runSession(this.session);
@@ -133,7 +158,7 @@ buster.testCase("Browser runner", {
                 this.session.messagingClient, [{id: 1}], { failOnNoAssertions: true });
         },
 
-        "should create remote runner that does not auto run": function () {
+        "creates remote runner that does not auto run": function () {
             this.spy(remoteRunner, "create");
             this.runner.options.autoRun = true;
             this.runner.runSession(this.session);
@@ -141,7 +166,7 @@ buster.testCase("Browser runner", {
             assert(remoteRunner.create.args[0][2].autoRun);
         },
 
-        "should create remote runner with filters": function () {
+        "creates remote runner with filters": function () {
             this.spy(remoteRunner, "create");
             this.runner.options.filters = ["1", "2"];
             this.runner.runSession(this.session);
@@ -176,7 +201,7 @@ buster.testCase("Browser runner", {
             refute.called(this.runner.callback);
         },
 
-        "should create progress reporter": function () {
+        "creates progress reporter": function () {
             this.spy(progressReporter, "create");
 
             this.runner.runSession(this.session);
@@ -197,7 +222,7 @@ buster.testCase("Browser runner", {
             assert.calledOnce(reporters.specification.create);
         },
 
-        "should load reporter using buster-test's loader": function () {
+        "loads reporter using buster-test's loader": function () {
             this.spy(reporters, "load");
             this.runner.options = { reporter: "dots" };
             this.runner.runSession(this.session);
@@ -216,7 +241,7 @@ buster.testCase("Browser runner", {
             });
         },
 
-        "should use logger as io backend for remote reporter": function () {
+        "uses logger as io backend for remote reporter": function () {
             this.spy(progressReporter, "create");
 
             this.runner.runSession(this.session);
@@ -228,7 +253,7 @@ buster.testCase("Browser runner", {
             assert.match(this.stdout, ".. OK!");
         },
 
-        "should add client on progress reporter when client connects": function () {
+        "adds client on progress reporter when client connects": function () {
             var runner = buster.eventEmitter.create();
             this.stub(remoteRunner, "create").returns(runner);
             this.stub(progressReporter, "addClient");
@@ -241,7 +266,7 @@ buster.testCase("Browser runner", {
             assert.calledWith(progressReporter.addClient, 42, client);
         },
 
-        "should initialize reporter": function () {
+        "initializes reporter": function () {
             this.spy(reporters.dots, "create");
 
             this.runner.runSession(this.session);
@@ -251,7 +276,7 @@ buster.testCase("Browser runner", {
             });
         },
 
-        "should initialize reporter with custom properties": function () {
+        "initializes reporter with custom properties": function () {
             this.spy(reporters.dots, "create");
 
             this.runner.options = { color: true, bright: true, displayProgress: true };
@@ -262,7 +287,7 @@ buster.testCase("Browser runner", {
             });
         },
 
-        "should build cwd from session server and root": function () {
+        "builds cwd from session server and root": function () {
             this.runner.server = { hostname: "localhost", port: 1111 };
             this.session.rootPath = "/aaa-bbb";
             this.spy(reporters.dots, "create");
@@ -274,7 +299,7 @@ buster.testCase("Browser runner", {
             });
         },
 
-        "should build cwd from non-default session server and root": function () {
+        "builds cwd from non-default session server and root": function () {
             this.runner.server = { hostname: "somewhere", port: 2524 };
             this.session.rootPath = "/aaa-ccc";
             this.spy(reporters.dots, "create");
@@ -286,7 +311,7 @@ buster.testCase("Browser runner", {
             });
         },
 
-        "should set number of contexts in package name": function () {
+        "sets number of contexts in package name": function () {
             this.spy(reporters.dots, "create");
 
             this.runner.runSession(this.session);
@@ -294,14 +319,14 @@ buster.testCase("Browser runner", {
             assert.equals(reporters.dots.create.returnValues[0].contextsInPackageName, 2);
         },
 
-        "should set stackFilter.filters": function () {
+        "sets stackFilter.filters": function () {
             this.runner.runSession(this.session);
 
             assert.equals(buster.stackFilter.filters,
                           ["/buster/bundle-", "buster/wiring"]);
         },
 
-        "should close session on suite:end": function () {
+        "closes session on suite:end": function () {
             var runner = buster.eventEmitter.create();
             this.stub(remoteRunner, "create").returns(runner);
 
@@ -334,7 +359,7 @@ buster.testCase("Browser runner", {
             }
         },
 
-        "should print to stderr on unsuccesful session close": function () {
+        "prints to stderr on unsuccesful session close": function () {
             var runner = buster.eventEmitter.create();
             this.stub(remoteRunner, "create").returns(runner);
             this.closePromise.reject({ message: "Oops" });
@@ -348,17 +373,17 @@ buster.testCase("Browser runner", {
     },
 
     "error handling": {
-        setUp: function () {
-            this.runner.run({ resourceSet: { id: 41 } }, this.options);
-        },
-
-        "should print session creation error to stderr": function () {
+        "prints session creation error to stderr": function () {
+            this.config.resolver.resolve();
+            this.runner.run(this.group, this.options);
             this.sessionPromise.reject({ id: 47 });
 
             assert.match(this.stderr, "Failed creating session");
         },
 
-        "should print understandable error if server cannot be reached": function () {
+        "prints understandable error if server cannot be reached": function () {
+            this.config.resolver.resolve();
+            this.runner.run(this.group, this.options);
             this.sessionPromise.reject(new Error("ECONNREFUSED, Connection refused"));
 
             assert.match(this.stderr, "Unable to connect to server");
@@ -366,18 +391,29 @@ buster.testCase("Browser runner", {
             assert.match(this.stderr, "Please make sure that buster-server is running");
         },
 
-        "should print understandable error if pattern matches no files": function () {
+        "prints understandable error if pattern matches no files": function () {
+            this.config.resolver.resolve();
+            this.runner.run(this.group, this.options);
             this.stub(process, "cwd").returns("/home/christian/projects/buster/sample");
             this.sessionPromise.reject(new Error("ENOENT, No such file or directory '/home/christian/projects/buster/sample/src/*.js'"));
 
             assert.match(this.stderr, "pattern 'src/*.js' does not match any files");
         },
 
-        "should print understandable error if a file could not be found": function () {
+        "prints understandable error if a file could not be found": function () {
+            this.config.resolver.resolve();
+            this.runner.run(this.group, this.options);
             this.stub(process, "cwd").returns("/home/christian/projects/buster/sample");
             this.sessionPromise.reject(new Error("ENOENT, No such file or directory '/home/christian/projects/buster/sample/src/trim.js'"));
 
             assert.match(this.stderr, "Configured path 'src/trim.js' is not a file or directory");
+        },
+
+        "prints understandable error if config fails to resolve": function () {
+            this.config.resolver.reject({ message: "Failed loading configuration: Oh noes" });
+            this.runner.run(this.group, this.options);
+
+            assert.match(this.stderr, "Failed loading configuration: Oh noes");
         }
     }
 });
