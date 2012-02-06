@@ -66,7 +66,7 @@ buster.testCase("buster-server binary", {
         "should redirect client when capturing": function (done) {
             helper.get("/capture", done(function (res, body) {
                 assert.equals(res.statusCode, 302);
-                assert.match(res.headers.location, /\/clients\/[0-9a-z\-]+$/);
+                assert.match(res.headers.location, /\/slaves\/[0-9a-z\-]+\/browser$/);
             }));
         },
 
