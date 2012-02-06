@@ -81,7 +81,24 @@ buster.testCase("Node runner", {
             promise.then.yield(this.resourceSet);
             throw new Error("Didn't fail");
         } catch (e) {
-            assert.match(e.message, "/here/hey.js");
+            assert.match(this.stderr, "/here/hey.js");
+        }
+    },
+
+    "logs load errors": function () {
+        var promise = { then: this.stub() };
+        this.group.resolve.returns(promise);
+        this.runner.run(this.group, {});
+
+        try {
+            promise.then.yield({
+                loadPath: {
+                    paths: this.stub().throws("Error", "Ay caramba")
+                }
+            });
+            throw new Error("Didn't fail");
+        } catch (e) {
+            assert.match(this.stderr, "Ay caramba");
         }
     },
 
