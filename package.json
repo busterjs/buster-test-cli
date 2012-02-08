@@ -31,6 +31,8 @@
         "buster-format": "~0.5",
         "buster-test": "~0.3",
         "buster-args": "~0.3",
+        "buster-analyzer": "~*",
+        "buster-syntax": "~*",
         "buster-user-agent-parser": "~0.2",
         "buster-bayeux-emitter": "~0.1",
         "rimraf": "~1",

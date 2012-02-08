@@ -159,6 +159,42 @@ buster.testCase("Test cli", {
             }));
         },
 
+        "sets warning level": function (done) {
+            helper.run(this, ["-W", "all", "-c", this.config], done(function () {
+                assert.calledOnce(browserRunner.run);
+                assert.match(browserRunner.run.args[0][1], {
+                    warnings: "all"
+                });
+            }));
+        },
+
+        "sets warning level with long option": function (done) {
+            helper.run(this, ["--warnings", "warning", "-c", this.config], done(function () {
+                assert.calledOnce(browserRunner.run);
+                assert.match(browserRunner.run.args[0][1], {
+                    warnings: "warning"
+                });
+            }));
+        },
+
+        "sets warning fail level": function (done) {
+            helper.run(this, ["-F", "fatal", "-c", this.config], done(function () {
+                assert.calledOnce(browserRunner.run);
+                assert.match(browserRunner.run.args[0][1], {
+                    failOn: "fatal"
+                });
+            }));
+        },
+
+        "sets warning fail level with long option": function (done) {
+            helper.run(this, ["--fail-on", "error", "-c", this.config], done(function () {
+                assert.calledOnce(browserRunner.run);
+                assert.match(browserRunner.run.args[0][1], {
+                    failOn: "error"
+                });
+            }));
+        },
+
         "transfers filters": function (done) {
             helper.run(this, ["-c", this.config, "//should-"], done(function () {
                 assert.equals(browserRunner.run.args[0][1].filters, ["//should-"]);

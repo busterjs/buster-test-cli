@@ -16,17 +16,25 @@ var when = require("when");
 buster.testCase("Browser runner", {
     setUp: function () {
         this.session = when.defer();
-        this.client = { createSession: this.stub().returns(this.session.promise) };
+        this.client = {
+            createSession: this.stub().returns(this.session.promise),
+            abort: this.stub()
+        };
         this.stub(busterClient, "create").returns(this.client);
         this.options = { server: "http://127.0.0.1:1200" };
         this.runner = Object.create(browserRunner);
         this.runner.options = { clients: [{ id: 1 }]};
         this.config = when.defer();
-        this.group = {
+        this.group = buster.extend(buster.eventEmitter.create(), {
             resolve: this.stub().returns(this.config.promise),
-            on: function () {},
-            bundleFramework: this.stub()
-        };
+            bundleFramework: this.stub(),
+            runExtensionHook: this.stub(),
+            extensions: [],
+            resourceSet: {
+                addResource: this.stub(),
+                loadPath: { append: this.stub() }
+            }
+        });
 
         var self = this;
         this.stdout = "";
@@ -80,6 +88,112 @@ buster.testCase("Browser runner", {
 
         this.config.resolver.resolve({});
         assert.calledOnce(this.client.createSession);
+    },
+
+    "beforeRun extension hook": {
+        "runs": function () {
+            this.runner.run(this.group, this.options);
+
+            this.config.resolver.resolve({});
+            this.group.emit("load:resources", this.group.resourceSet);
+
+            assert.calledOnceWith(this.group.runExtensionHook, "beforeRun");
+            var resourceSet = this.group.runExtensionHook.args[0][1];
+            var analyzer = this.group.runExtensionHook.args[0][2];
+            assert.isFunction(resourceSet.addResource);
+            assert.isFunction(analyzer.fatal);
+        },
+
+        "aborts run if analysis fails": function () {
+            this.group.runExtensionHook = function (hook, resourceSet, analyzer) {
+                analyzer.fatal("Oh noes", "Disaster");
+            };
+
+            this.runner.run(this.group, this.options);
+            this.group.emit("load:resources", this.group.resourceSet);
+
+            assert.calledOnce(this.client.abort);
+        },
+
+        "forces syntax extension": function () {
+            this.runner.run(this.group, this.options);
+            this.group.emit("load:resources", this.group.resourceSet);
+
+            assert.equals(this.group.extensions.length, 1);
+        },
+
+        "logs analysis details": function () {
+            this.group.runExtensionHook = function (hook, resourceSet, analyzer) {
+                analyzer.fatal("Oh noes", {
+                    toString: function () { return "Disaster"; }
+                });
+            };
+
+            this.runner.run(this.group, this.options);
+            this.group.emit("load:resources", this.group.resourceSet);
+
+            assert.match(this.stderr, "[FATAL] Oh noes: Disaster");
+        },
+
+        "does not log ignored details": function () {
+            this.group.runExtensionHook = function (hook, resourceSet, analyzer) {
+                analyzer.warning("Oh noes", "Disaster");
+                analyzer.error("Oh noes", "Disaster");
+                analyzer.fatal("Oh noes", "Disaster");
+            };
+
+            this.options.warnings = "error";
+            this.runner.run(this.group, this.options);
+            this.group.emit("load:resources", this.group.resourceSet);
+
+            assert.match(this.stderr, "[FATAL]");
+            assert.match(this.stderr, "[ERROR]");
+            refute.match(this.stderr, "[WARNING]");
+        },
+
+        "logs all details": function () {
+            this.group.runExtensionHook = function (hook, resourceSet, analyzer) {
+                analyzer.warning("Oh noes", "Disaster");
+                analyzer.error("Oh noes", "Disaster");
+                analyzer.fatal("Oh noes", "Disaster");
+            };
+
+            this.options.warnings = "all";
+            this.runner.run(this.group, this.options);
+            this.group.emit("load:resources", this.group.resourceSet);
+
+            assert.match(this.stderr, "[FATAL]");
+            assert.match(this.stderr, "[ERROR]");
+            assert.match(this.stderr, "[WARNING]");
+        },
+
+        "only logs fatal details": function () {
+            this.group.runExtensionHook = function (hook, resourceSet, analyzer) {
+                analyzer.warning("Oh noes", "Disaster");
+                analyzer.error("Oh noes", "Disaster");
+                analyzer.fatal("Oh noes", "Disaster");
+            };
+
+            this.options.warnings = "fatal";
+            this.runner.run(this.group, this.options);
+            this.group.emit("load:resources", this.group.resourceSet);
+
+            assert.match(this.stderr, "[FATAL]");
+            refute.match(this.stderr, "[ERROR]");
+            refute.match(this.stderr, "[WARNING]");
+        },
+
+        "sets failOn level": function () {
+            this.group.runExtensionHook = function (hook, resourceSet, analyzer) {
+                analyzer.error("Crap");
+            };
+
+            this.options.failOn = "error";
+            this.runner.run(this.group, this.options);
+            this.group.emit("load:resources", this.group.resourceSet);
+
+            assert.calledOnce(this.client.abort);
+        }
     },
 
     "creates unjoinable session using provided resource set": function (done) {
