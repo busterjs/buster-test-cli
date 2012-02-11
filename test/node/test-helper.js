@@ -73,7 +73,7 @@ var helper = module.exports = {
         return this.request("POST", url, headers, callback);
     },
 
-    captureClient: function (ua, callback) {
+    captureSlave: function (ua, callback) {
         this.get("/capture", { "User-Agent": ua }, function (res, body) {
             var uid = res.headers.location.split("/").pop();
             var url = "/clients/" + uid + "/createMulticast";

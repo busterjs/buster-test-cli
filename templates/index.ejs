@@ -17,11 +17,11 @@
         it to automate test runs for you.
       </p>
       <p class="button"><a href="/capture">Capture browser</a></p>
-      <% if (clients.length > 0) { %>
-        <h2>Connected clients</h2>
+      <% if (slaves.length > 0) { %>
+        <h2>Captured slaves</h2>
         <ol class="browsers">
-          <% for (var i = 0, l = clients.length; i < l; ++i) { %>
-            <% var agent = clients[i] %>
+          <% for (var i = 0, l = slaves.length; i < l; ++i) { %>
+            <% var agent = slaves[i] %>
             <li class="<%= /internet explorer/i.test(agent.browser) ? 'ie' : agent.browser.toLowerCase() %> <%= agent.platform.toLowerCase() %>">
               <h3><%= agent.browser %> <%= agent.version %> <%= agent.platform %></h3>
               <p><%= agent.userAgent %></p>
@@ -29,7 +29,7 @@
           <% } %>
         </ol>
       <% } else { %>
-        <h2>No connected clients</h2>
+        <h2>No captured slaves</h2>
       <% } %>
     </div>
   </body>

@@ -50,7 +50,7 @@ buster.testCase("buster-server binary", {
                              "port with -p/--port to start buster-server");
             }));
         }
-    },
+   },
 
     "createServer": {
         setUp: function (done) {
@@ -72,7 +72,8 @@ buster.testCase("buster-server binary", {
 
         "should serve header when captured": function (done) {
             helper.get("/capture", function (res, body) {
-                helper.get("/clientHeader/", done(function (res, body) {
+                var headerUrl = res.headers.location.replace("/browser", "/header");
+                helper.get(headerUrl, done(function (res, body) {
                     assert.equals(res.statusCode, 200);
                     assert.match(body, "test slave");
                 }));
@@ -93,24 +94,24 @@ buster.testCase("buster-server binary", {
             }));
         },
 
-        "should report no clients initially": function (done) {
+        "should report no slaves initially": function (done) {
             helper.get("/", done(function (res, body) {
                 assert.equals(res.statusCode, 200);
-                assert.match(body, "<h2>No connected clients</h2>");
+                assert.match(body, "<h2>No captured slaves</h2>");
             }));
         },
 
-        "should report connected clients": function (done) {
-            helper.captureClient("Mozilla/5.0 (X11; Linux x86_64; rv:2.0.1) Gecko/20100101 Firefox/4.0.1", function () {
+        "should report connected slaves": function (done) {
+            helper.captureSlave("Mozilla/5.0 (X11; Linux x86_64; rv:2.0.1) Gecko/20100101 Firefox/4.0.1", function () {
                 helper.get("/", done(function (res, body) {
                     assert.equals(res.statusCode, 200);
-                    assert.match(body, "<h2>Connected clients</h2>");
+                    assert.match(body, "<h2>Captured slaves</h2>");
                 }));
             });
         },
 
         "should report name of connected clients": function (done) {
-            helper.captureClient("Mozilla/5.0 (X11; Linux x86_64; rv:2.0.1) Gecko/20100101 Firefox/4.0.1", function () {
+            helper.captureSlave("Mozilla/5.0 (X11; Linux x86_64; rv:2.0.1) Gecko/20100101 Firefox/4.0.1", function () {
                 helper.get("/", done(function (res, body) {
                     assert.match(body, "<li class=\"firefox linux\">");
                     assert.match(body, "<h3>Firefox 4.0.1 Linux</h3>");
@@ -120,7 +121,7 @@ buster.testCase("buster-server binary", {
 
         "should report name newly connected ones": function (done) {
             helper.get("/", function (res, body) {
-                helper.captureClient("Mozilla/5.0 (X11; Linux x86_64; rv:2.0.1) Gecko/20100101 Firefox/4.0.1", function () {
+                helper.captureSlave("Mozilla/5.0 (X11; Linux x86_64; rv:2.0.1) Gecko/20100101 Firefox/4.0.1", function () {
                     helper.get("/", done(function (res, body) {
                             assert.match(body, "<li class=\"firefox linux\">");
                             assert.match(body, "<h3>Firefox 4.0.1 Linux</h3>");

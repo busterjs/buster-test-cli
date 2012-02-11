@@ -35,6 +35,7 @@
         "buster-syntax": ">=0.1",
         "buster-user-agent-parser": ">=0.2.1",
         "buster-bayeux-emitter": ">=0.1",
+        "buster-resources": ">=0.2",
         "rimraf": "~1",
         "paperboy": "~0",
         "ejs": "~0.4",
