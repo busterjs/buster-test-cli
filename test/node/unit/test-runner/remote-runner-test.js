@@ -1,4 +1,4 @@
-var helper = require("../../test-helper")
+var helper = require("../../test-helper");
 var buster = require("buster");
 buster.remoteRunner = helper.require("test-runner/remote-runner");
 var assert = buster.assert;

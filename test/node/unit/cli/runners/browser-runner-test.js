@@ -95,12 +95,12 @@ buster.testCase("Browser runner", {
             this.runner.run(this.group, this.options);
 
             this.config.resolver.resolve({});
-            this.group.emit("load:resources", this.group.resourceSet);
+            this.group.emit("load:sources", this.group.resourceSet);
 
             assert.calledOnceWith(this.group.runExtensionHook, "beforeRun");
-            var resourceSet = this.group.runExtensionHook.args[0][1];
+            var group = this.group.runExtensionHook.args[0][1];
             var analyzer = this.group.runExtensionHook.args[0][2];
-            assert.isFunction(resourceSet.addResource);
+            assert.isFunction(group.bundleFramework);
             assert.isFunction(analyzer.fatal);
         },
 
@@ -110,14 +110,14 @@ buster.testCase("Browser runner", {
             };
 
             this.runner.run(this.group, this.options);
-            this.group.emit("load:resources", this.group.resourceSet);
+            this.group.emit("load:sources", this.group.resourceSet);
 
             assert.calledOnce(this.client.abort);
         },
 
         "forces syntax extension": function () {
             this.runner.run(this.group, this.options);
-            this.group.emit("load:resources", this.group.resourceSet);
+            this.group.emit("load:sources", this.group.resourceSet);
 
             assert.equals(this.group.extensions.length, 1);
         },
@@ -130,7 +130,7 @@ buster.testCase("Browser runner", {
             };
 
             this.runner.run(this.group, this.options);
-            this.group.emit("load:resources", this.group.resourceSet);
+            this.group.emit("load:sources", this.group.resourceSet);
 
             assert.match(this.stderr, "[FATAL] Oh noes: Disaster");
         },
@@ -144,7 +144,7 @@ buster.testCase("Browser runner", {
 
             this.options.warnings = "error";
             this.runner.run(this.group, this.options);
-            this.group.emit("load:resources", this.group.resourceSet);
+            this.group.emit("load:sources", this.group.resourceSet);
 
             assert.match(this.stderr, "[FATAL]");
             assert.match(this.stderr, "[ERROR]");
@@ -160,7 +160,7 @@ buster.testCase("Browser runner", {
 
             this.options.warnings = "all";
             this.runner.run(this.group, this.options);
-            this.group.emit("load:resources", this.group.resourceSet);
+            this.group.emit("load:sources", this.group.resourceSet);
 
             assert.match(this.stderr, "[FATAL]");
             assert.match(this.stderr, "[ERROR]");
@@ -176,7 +176,7 @@ buster.testCase("Browser runner", {
 
             this.options.warnings = "fatal";
             this.runner.run(this.group, this.options);
-            this.group.emit("load:resources", this.group.resourceSet);
+            this.group.emit("load:sources", this.group.resourceSet);
 
             assert.match(this.stderr, "[FATAL]");
             refute.match(this.stderr, "[ERROR]");
@@ -190,7 +190,7 @@ buster.testCase("Browser runner", {
 
             this.options.failOn = "error";
             this.runner.run(this.group, this.options);
-            this.group.emit("load:resources", this.group.resourceSet);
+            this.group.emit("load:sources", this.group.resourceSet);
 
             assert.calledOnce(this.client.abort);
         }

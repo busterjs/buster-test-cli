@@ -28,7 +28,7 @@ buster.testCase("Test client configuration", {
 
     "preloads session configuration with library": function (done) {
         extendConfigGroup(this.config, "browser", done(function (rs) {
-            assert.equals(rs.length, 34);
+            assert.equals(rs.length, 36);
             assert.isObject(rs.get("/buster/buster-core.js"));
             assert.isObject(rs.get("/buster/buster-event-emitter.js"));
             assert.isObject(rs.get("/buster/buster-evented-logger.js"));
