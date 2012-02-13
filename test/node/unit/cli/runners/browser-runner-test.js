@@ -183,6 +183,18 @@ buster.testCase("Browser runner", {
             refute.match(this.stderr, "[WARNING]");
         },
 
+        "logs multi-line details indented": function () {
+            this.group.runExtensionHook = function (hook, resourceSet, analyzer) {
+                analyzer.fatal("Oh noes", "Disaster\nOMG\nWTF\nBBQ");
+            };
+
+            this.runner.run(this.group, this.options);
+            this.group.emit("load:sources", this.group.resourceSet);
+
+            assert.match(this.stderr, "[FATAL] Oh noes:\n" +
+                         "    Disaster\n    OMG\n    WTF\n    BBQ");
+        },
+
         "sets failOn level": function () {
             this.group.runExtensionHook = function (hook, resourceSet, analyzer) {
                 analyzer.error("Crap");
