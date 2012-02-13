@@ -1,0 +1,3 @@
+[submodule "public/images"]
+	path = public/images
+	url = https://github.com/busterjs/browser-logos.git
