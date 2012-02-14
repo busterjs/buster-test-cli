@@ -23,7 +23,7 @@ buster.testCase("Browser runner", {
         this.stub(busterClient, "create").returns(this.client);
         this.options = { server: "http://127.0.0.1:1200" };
         this.runner = Object.create(browserRunner);
-        this.runner.options = { clients: [{ id: 1 }]};
+        this.runner.options = { slaves: [{ id: 1 }]};
         this.config = when.defer();
         this.group = buster.extend(buster.eventEmitter.create(), {
             resolve: this.stub().returns(this.config.promise),
@@ -239,7 +239,7 @@ buster.testCase("Browser runner", {
             this.session = buster.eventEmitter.create();
             this.session.onMessage = function () {};
             this.session.messagingClient = this.session;
-            this.session.clients = [{ id: 1 }];
+            this.session.slaves = [{ id: 1 }];
             this.close = when.defer();
             this.session.close = this.stub().returns(this.close.promise);
             this.stackFilter = buster.stackFilter.filters;
@@ -299,10 +299,10 @@ buster.testCase("Browser runner", {
             assert.equals(remoteRunner.create.args[0][2].filters, ["1", "2"]);
         },
 
-        "with no connected clients": {
+        "with no connected slaves": {
             setUp: function () {
                 this.spy(remoteRunner, "create");
-                this.session.clients = [];
+                this.session.slaves = [];
                 this.runner.runSession(this.session);
             },
 
@@ -311,7 +311,7 @@ buster.testCase("Browser runner", {
             },
 
             "prints understandable error": function () {
-                assert.match(this.stderr, "No clients connected, nothing to do");
+                assert.match(this.stderr, "No slaves connected, nothing to do");
             },
 
             "closes session": function () {
@@ -319,7 +319,7 @@ buster.testCase("Browser runner", {
             }
         },
 
-        "should not call done callback when no clients until session closes": function () {
+        "should not call done callback when no slaves until session closes": function () {
             this.runner.callback = this.spy();
             this.runner.runSession(this.session);
 
