@@ -116,5 +116,25 @@ buster.testCase("Node runner", {
         this.runner.run(this.group, {});
 
         assert.calledOnceWith(this.group.runExtensionHook, "beforeRun", this.group);
+    },
+
+    "processes all resource sets": function () {
+        this.stub(this.group, "on");
+
+        this.runner.run(this.group, {});
+        assert.equals(this.group.on.callCount, 4);
+
+        var process = this.spy();
+        this.group.on.args[0][1]({ process: process });
+        assert.calledOnce(process);
+    },
+
+    "aborts run if analyzer fails": function (done) {
+        this.stub(nodeRunner, "beforeRunHook").yields();
+        this.config.resolver.resolve({});
+
+        nodeRunner.run(this.group, {}, done(function () {
+            refute.called(buster.autoRun);
+        }));
     }
 });
