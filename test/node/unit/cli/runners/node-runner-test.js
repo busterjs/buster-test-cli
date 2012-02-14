@@ -8,6 +8,7 @@ var run = helper.runTest;
 var nodeRunner = helper.require("cli/runners/node-runner");
 var stdioLogger = require("buster-stdio-logger");
 var when = require("when");
+var fs = require("fs");
 
 buster.testCase("Node runner", {
     setUp: function () {
@@ -17,7 +18,8 @@ buster.testCase("Node runner", {
         this.analyzer = when.defer();
         this.group = buster.extend(buster.eventEmitter.create(), {
             resolve: this.stub().returns(this.config.promise),
-            runExtensionHook: this.stub()
+            runExtensionHook: this.stub(),
+            tmpFile: this.stub().returns("/file")
         });
         var loadPaths = this.loadPaths = [];
         this.resourceSet = {
@@ -33,6 +35,7 @@ buster.testCase("Node runner", {
             { write: function (msg) { self.stdout += msg; } },
             { write: function (msg) { self.stderr += msg; } }
         );
+        this.stub(fs, "writeFileSync");
     },
 
     "resolves config": function () {
@@ -143,6 +146,28 @@ buster.testCase("Node runner", {
         assert.calledOnce(process);
     },
 
+    "processes resource sets with existing manifest": function () {
+        this.stub(fs, "readFileSync").returns('{"/somewhere.js": ["1234"]}');
+        this.stub(this.group, "on");
+
+        this.runner.run(this.group, {});
+        assert.equals(this.group.on.callCount, 4);
+
+        var process = this.stub().returns({ then: function () {} });
+        this.group.on.args[0][1]({ process: process });
+        assert.calledWith(process, { "/somewhere.js": ["1234"] });
+    },
+
+    "writes manifest when successful": function () {
+        this.stub(nodeRunner, "beforeRunHook").returns(this.analyzer.promise);
+        this.analyzer.resolver.resolve();
+        this.config.resolver.resolve(this.resourceSet);
+
+        this.runner.run(this.group, this.options);
+
+        assert.calledOnce(fs.writeFileSync);
+    },
+
     "aborts run if analyzer fails": function (done) {
         this.stub(nodeRunner, "beforeRunHook").returns(this.analyzer.promise);
         this.analyzer.resolver.reject();
@@ -150,6 +175,16 @@ buster.testCase("Node runner", {
 
         nodeRunner.run(this.group, {}, done(function () {
             refute.called(buster.autoRun);
+        }));
+    },
+
+    "does not write manifest if analyzer fails": function (done) {
+        this.stub(nodeRunner, "beforeRunHook").returns(this.analyzer.promise);
+        this.analyzer.resolver.reject();
+        this.config.resolver.resolve({});
+
+        nodeRunner.run(this.group, {}, done(function () {
+            refute.called(fs.writeFileSync);
         }));
     }
 });
