@@ -14,7 +14,10 @@ buster.testCase("Node runner", {
         this.stub(buster, "autoRun");
         this.options = {};
         this.config = when.defer();
-        this.group = { resolve: this.stub().returns(this.config.promise) };
+        this.group = buster.extend(buster.eventEmitter.create(), {
+            resolve: this.stub().returns(this.config.promise),
+            runExtensionHook: this.stub()
+        });
         var loadPaths = this.loadPaths = [];
         this.resourceSet = {
             loadPath: {
@@ -107,5 +110,11 @@ buster.testCase("Node runner", {
         this.runner.run(this.group, {});
 
         assert.match(this.stderr, "Oh noes");
+    },
+
+    "runs beforeRun extension hook": function () {
+        this.runner.run(this.group, {});
+
+        assert.calledOnceWith(this.group.runExtensionHook, "beforeRun", this.group);
     }
 });
