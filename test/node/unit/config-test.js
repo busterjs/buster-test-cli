@@ -8,10 +8,18 @@ var version = testConfig.VERSION;
 
 buster.assertions.add("isObject", {
     assert: function (object) {
-        return typeof object == "object" && !!object;
+        return typeof object === "object" && !!object;
     },
     assertMessage: "Expected ${0} to be object and not null"
 });
+
+function extendConfigGroup(config, env, callback) {
+    var group = config.filterEnv(env).groups[0];
+    configHelper.bundleFramework(group).resolve().then(
+        callback,
+        function (err) { buster.log(err); }
+    );
+}
 
 buster.testCase("Test client configuration", {
     setUp: function () {
@@ -44,15 +52,21 @@ buster.testCase("Test client configuration", {
             assert.isObject(rs.get("/buster/sinon/test.js"));
             assert.isObject(rs.get("/buster/sinon/test_case.js"));
             assert.isObject(rs.get("/buster/sinon/assert.js"));
-            assert.isObject(rs.get("/buster/sinon/util/fake_xml_http_request.js"));
+            assert.isObject(
+                rs.get("/buster/sinon/util/fake_xml_http_request.js")
+            );
             assert.isObject(rs.get("/buster/sinon/util/fake_timers.js"));
             assert.isObject(rs.get("/buster/sinon/util/fake_server.js"));
-            assert.isObject(rs.get("/buster/sinon/util/fake_server_with_clock.js"));
+            assert.isObject(
+                rs.get("/buster/sinon/util/fake_server_with_clock.js")
+            );
             assert.isObject(rs.get("/buster/buster-test/spec.js"));
             assert.isObject(rs.get("/buster/buster-test/test-case.js"));
             assert.isObject(rs.get("/buster/buster-test/test-context.js"));
             assert.isObject(rs.get("/buster/buster-test/test-runner.js"));
-            assert.isObject(rs.get("/buster/buster-test/reporters/json-proxy.js"));
+            assert.isObject(
+                rs.get("/buster/buster-test/reporters/json-proxy.js")
+            );
             assert.isObject(rs.get("/buster/sinon-buster.js"));
             assert.isObject(rs.get("/buster/bundle-" + version + ".js"));
             assert.isObject(rs.get("/buster/sinon/util/timers_ie.js"));
@@ -85,11 +99,3 @@ buster.testCase("Test client configuration", {
         }));
     }
 });
-
-function extendConfigGroup(config, env, callback) {
-    var group = config.filterEnv(env).groups[0];
-    configHelper.bundleFramework(group).resolve().then(
-        callback,
-        function (err) { buster.log(err); }
-    );
-}
