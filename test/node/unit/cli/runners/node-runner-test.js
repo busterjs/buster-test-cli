@@ -14,6 +14,7 @@ buster.testCase("Node runner", {
         this.stub(buster, "autoRun");
         this.options = {};
         this.config = when.defer();
+        this.analyzer = when.defer();
         this.group = buster.extend(buster.eventEmitter.create(), {
             resolve: this.stub().returns(this.config.promise),
             runExtensionHook: this.stub()
@@ -47,7 +48,10 @@ buster.testCase("Node runner", {
     },
 
     "uses buster.autoRun to run tests": function () {
+        this.stub(nodeRunner, "beforeRunHook").returns(this.analyzer.promise);
+        this.analyzer.resolver.resolve();
         this.config.resolver.resolve(this.resourceSet);
+
         this.runner.run(this.group, this.options);
 
         assert.calledOnce(buster.autoRun);
@@ -55,6 +59,8 @@ buster.testCase("Node runner", {
     },
 
     "registers listener for created test cases": function () {
+        this.stub(nodeRunner, "beforeRunHook").returns(this.analyzer.promise);
+        this.analyzer.resolver.resolve();
         this.config.resolver.resolve(this.resourceSet);
         var runner = function () {};
         buster.autoRun.returns(runner);
@@ -65,6 +71,8 @@ buster.testCase("Node runner", {
     },
 
     "calls done callback when complete": function () {
+        this.stub(nodeRunner, "beforeRunHook").returns(this.analyzer.promise);
+        this.analyzer.resolver.resolve();
         this.config.resolver.resolve(this.resourceSet);
         var callback = this.spy();
         buster.autoRun.yields();
@@ -74,6 +82,8 @@ buster.testCase("Node runner", {
     },
 
     "requires absolute paths": function () {
+        this.stub(nodeRunner, "beforeRunHook").returns(this.analyzer.promise);
+        this.analyzer.resolver.resolve();
         var promise = { then: this.stub() };
         this.group.resolve.returns(promise);
         this.resourceSet.rootPath = "/here";
@@ -89,6 +99,8 @@ buster.testCase("Node runner", {
     },
 
     "logs load errors": function () {
+        this.stub(nodeRunner, "beforeRunHook").returns(this.analyzer.promise);
+        this.analyzer.resolver.resolve();
         var promise = { then: this.stub() };
         this.group.resolve.returns(promise);
         this.runner.run(this.group, {});
@@ -106,6 +118,8 @@ buster.testCase("Node runner", {
     },
 
     "logs config resolution errors": function () {
+        this.stub(nodeRunner, "beforeRunHook").returns(this.analyzer.promise);
+        this.analyzer.resolver.resolve();
         this.config.resolver.reject({ message: "Oh noes" });
         this.runner.run(this.group, {});
 
@@ -124,13 +138,14 @@ buster.testCase("Node runner", {
         this.runner.run(this.group, {});
         assert.equals(this.group.on.callCount, 4);
 
-        var process = this.spy();
+        var process = this.stub().returns({ then: function () {} });
         this.group.on.args[0][1]({ process: process });
         assert.calledOnce(process);
     },
 
     "aborts run if analyzer fails": function (done) {
-        this.stub(nodeRunner, "beforeRunHook").yields();
+        this.stub(nodeRunner, "beforeRunHook").returns(this.analyzer.promise);
+        this.analyzer.resolver.reject();
         this.config.resolver.resolve({});
 
         nodeRunner.run(this.group, {}, done(function () {
