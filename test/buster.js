@@ -1,8 +1,22 @@
 var config = module.exports;
 
 config["Node tests"] = {
+    rootPath: "../",
     environment: "node",
-    tests: ["node/**/*.js"]
+    sources: ["lib/**/*.js"],
+    tests: ["test/node/**/*.js"]/*,
+    extensions: ["buster-lint"],
+    "buster-lint": {
+        "linterOptions": {
+            sloppy: true,
+            nomen: true,
+            predef: [
+                "require",
+                "process",
+                "__dirname"
+            ]
+        }
+    }*/
 };
 
 config["Browser tests"] = {
