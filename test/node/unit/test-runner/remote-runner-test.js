@@ -43,6 +43,7 @@ buster.testCase("Remote runner", {
         setUp: function () {
             this.runner = buster.remoteRunner.create(
                 this.emitter, [{id:1}, {id:2}], { config: 42 });
+            this.runner.logger = { debug: this.stub() };
         },
 
         "should emit tests:run when client emits ready": function () {
@@ -86,6 +87,7 @@ buster.testCase("Remote runner", {
         "should keep enumerating clients from same browser": function () {
             this.runner = buster.remoteRunner.create(
                 this.emitter, [{id:1}, {id:2}, {id: 3}, {id: 4}]);
+            this.runner.logger = { debug: this.stub() };
             this.emit("ready", this.clients[0], 1, buster.eventEmitter.create());
             this.emit("ready", this.clients[0], 2, buster.eventEmitter.create());
             this.emit("ready", this.clients[0], 3, buster.eventEmitter.create());
@@ -112,6 +114,7 @@ buster.testCase("Remote runner", {
     "while tests are running": {
         setUp: function () {
             this.runner = buster.remoteRunner.create(this.emitter, [{id:1}, {id:2}]);
+            this.runner.logger = { debug: this.stub() };
             this.emit("ready", this.clients[0], 1, buster.eventEmitter.create());
             this.emit("ready", this.clients[1], 2, buster.eventEmitter.create());
         },
@@ -261,6 +264,7 @@ buster.testCase("Remote runner", {
     "when context is completed": {
         setUp: function () {
             this.runner = buster.remoteRunner.create(this.emitter, [{id:1}, {id:2}]);
+            this.runner.logger = { debug: this.stub() };
             this.emit("ready", this.clients[0], 1, buster.eventEmitter.create());
             this.emit("ready", this.clients[1], 2, buster.eventEmitter.create());
         },
@@ -426,12 +430,13 @@ buster.testCase("Remote runner", {
                 var self = this;
                 this.runner = buster.remoteRunner.create(
                     this.emitter, clients);
+                this.runner.logger = { debug: this.stub() };
 
                 for (var i = 0, l = clients.length; i < l; ++i) {
                     self.emit("ready", clients[i], clients[i].id,
                               buster.eventEmitter.create());
                 }
-            }
+            };
         },
 
         "should emit suite:start only once": function () {
@@ -502,6 +507,7 @@ buster.testCase("Remote runner", {
 
         "should not skip client that starts after others finished": function () {
             this.runner = buster.remoteRunner.create(this.emitter, [{id: 1}, {id: 2}]);
+            this.runner.logger = { debug: this.stub() };
             var listener = this.subscribeTo("suite:end");
 
             this.emit("ready", {id: 1}, 1, buster.eventEmitter.create());
@@ -517,6 +523,7 @@ buster.testCase("Remote runner", {
 
         "should ignore unknown clients": function () {
             this.runner = buster.remoteRunner.create(this.emitter, [{id: 1}, {id: 2}]);
+            this.runner.logger = { debug: this.stub() };
             var listener = this.subscribeTo("suite:end");
 
             this.emit("ready", {id: 1}, 1, buster.eventEmitter.create());
@@ -576,6 +583,7 @@ buster.testCase("Remote runner", {
     "client timeouts": {
         setUp: function () {
             this.runner = buster.remoteRunner.create(this.emitter, [{id:1}, {id:2}]);
+            this.runner.logger = { debug: this.stub() };
             this.connect = function () {
                 this.emit("ready", this.clients[0], 1, buster.eventEmitter.create());
                 this.emit("ready", this.clients[1], 2, buster.eventEmitter.create());
