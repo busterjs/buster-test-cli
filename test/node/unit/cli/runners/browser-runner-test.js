@@ -412,7 +412,7 @@ buster.testCase("Browser runner", {
 
         "builds cwd from session server and root": function () {
             this.runner.server = { hostname: "localhost", port: 1111 };
-            this.session.rootPath = "/aaa-bbb";
+            this.session.resourcesPath = "/aaa-bbb/resources";
             this.spy(reporters.dots, "create");
 
             this.runner.runSession(this.session);
@@ -424,7 +424,7 @@ buster.testCase("Browser runner", {
 
         "builds cwd from non-default session server and root": function () {
             this.runner.server = { hostname: "somewhere", port: 2524 };
-            this.session.rootPath = "/aaa-ccc";
+            this.session.resourcesPath = "/aaa-ccc/resources";
             this.spy(reporters.dots, "create");
 
             this.runner.runSession(this.session);
@@ -446,7 +446,8 @@ buster.testCase("Browser runner", {
             this.runner.runSession(this.session);
 
             assert.equals(buster.stackFilter.filters,
-                          ["/buster/bundle-", "buster/wiring"]);
+                          ["/buster/bundle-", "buster/wiring",
+                           "buster-capture-server/node_modules"]);
         },
 
         "closes session on suite:end": function () {
