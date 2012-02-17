@@ -49,6 +49,15 @@ buster.testCase("buster-server binary", {
                 assert.match(this.stderr, "Address already in use. Pick another " +
                              "port with -p/--port to start buster-server");
             }));
+        },
+
+        "should bind to specified address": function (done) {
+            var createServer = this.stub(this.cli, "createServer");
+
+            helper.run(this, ["-b", "0.0.0.0"], done(function () {
+                assert.calledOnce(createServer);
+                assert.calledWith(createServer, 1111, "0.0.0.0");
+            }));
         }
    },
 
