@@ -44,7 +44,6 @@
         "sinon-buster": ">=0.4.1"
     },
     "devDependencies": {
-        "faye": "~0.7",
         "buster-util": ">=0.5",
         "buster-stdio-logger": ">=0.2.1"
     }
