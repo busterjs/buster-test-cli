@@ -382,6 +382,24 @@ buster.testCase("Remote runner", {
             assert.calledOnce(listener);
         },
 
+        "should emit timed out setup": function () {
+            var listeners = [
+                this.subscribeTo("test:setUp"),
+                this.subscribeTo("test:async"),
+                this.subscribeTo("test:timeout")
+            ];
+
+            this.emit("context:start", { name: "Test case" }, 1);
+            this.emit("test:setUp", { name: "test #1" }, 1);
+            this.emit("test:async", { name: "test #1" }, 1);
+            this.emit("test:timeout", { name: "test #1" }, 1);
+            this.emit("context:end", { name: "Test case" }, 1);
+
+            assert.calledOnce(listeners[0]);
+            assert.calledOnce(listeners[1]);
+            assert.calledOnce(listeners[2]);
+        },
+
         "should emit context start/stop in correct order": function () {
             var out = [];
 
