@@ -225,6 +225,13 @@
             this.emitter.emit("tests:run", { autoRun: false });
 
             assertTrue(this.listener.calledOnce);
+        },
+
+        "should remove all script tags": function () {
+            buster.run();
+            this.emitter.emit("tests:run", { autoRun: false });
+
+            assertEquals(0, document.body.getElementsByTagName("script").length);
         }
     });
 }(buster));
