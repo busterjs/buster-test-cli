@@ -145,17 +145,17 @@
 
         "should create test runner with options": function () {
             this.emitter.emit("tests:run", {
-                timeout: 25, failOnNoAssertions: false
+                timeout: 25,
+                failOnNoAssertions: false
             });
 
             assertEquals(25, buster.wiredRunner.timeout);
             assertFalse(buster.wiredRunner.failOnNoAssertions);
         },
 
-        "should configure assertions to not throw": function () {
+        "should configure assertions to throw": function () {
             this.emitter.emit("tests:run");
-
-            assertFalse(buster.assertions.throwOnFailure);
+            assertTrue(buster.assertions.throwOnFailure);
         },
 
         "should count assertions": function () {
