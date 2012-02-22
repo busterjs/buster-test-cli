@@ -297,6 +297,14 @@ buster.testCase("Browser runner", {
             assert.equals(remoteRunner.create.args[0][2].filters, ["1", "2"]);
         },
 
+        "creates remote runner with captureConsole option": function () {
+            this.spy(remoteRunner, "create");
+            this.runner.options.captureConsole = true;
+            this.runner.runSession(this.session);
+
+            assert(remoteRunner.create.args[0][2].captureConsole);
+        },
+
         "with no connected slaves": {
             setUp: function () {
                 this.spy(remoteRunner, "create");

@@ -192,6 +192,18 @@
 
             assertTrue(tests[0].calledOnce);
             assertFalse(tests[1].called);
+        },
+
+        "should capture console": function () {
+            this.stub(buster, "captureConsole");
+            this.emitter.emit("tests:run", { captureConsole: true });
+            assert(buster.captureConsole.calledOnce);
+        },
+
+        "should not always capture console": function () {
+            this.stub(buster, "captureConsole");
+            this.emitter.emit("tests:run", { captureConsole: false });
+            assert(!buster.captureConsole.called);
         }
     });
 
