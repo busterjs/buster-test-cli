@@ -56,7 +56,16 @@ buster.testCase("buster-server binary", {
 
             helper.run(this, ["-b", "0.0.0.0"], done(function () {
                 assert.calledOnce(createServer);
-                assert.calledWith(createServer, 1111, "0.0.0.0");
+                assert.calledWithExactly(createServer, 1111, "0.0.0.0");
+            }));
+        },
+
+        "should bind to undefined when address not specified": function (done) {
+            var createServer = this.stub(this.cli, "createServer");
+
+            helper.run(this, [], done(function () {
+                assert.calledOnce(createServer);
+                assert.calledWithExactly(createServer, 1111, undefined);
             }));
         }
    },
