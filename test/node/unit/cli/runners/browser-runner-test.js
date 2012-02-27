@@ -267,18 +267,21 @@ buster.testCase("Browser runner", {
             assert.calledOnce(remoteRunner.create);
             assert.calledWith(remoteRunner.create,
                               this.session.messagingClient, [{id: 1}], {
-                failOnNoAssertions: false
+                failOnNoAssertions: true
             });
         },
 
-        "creates remote runner that fails on no assertions": function () {
+        "creates remote runner that does not fail on no assertions": function () {
             this.spy(remoteRunner, "create");
-            this.runner.options.failOnNoAssertions = true;
+            this.runner.options.failOnNoAssertions = false;
             this.runner.runSession(this.session);
 
             assert.calledWith(
                 remoteRunner.create,
-                this.session.messagingClient, [{id: 1}], { failOnNoAssertions: true });
+                this.session.messagingClient,
+                [{id: 1}],
+                { failOnNoAssertions: false }
+            );
         },
 
         "creates remote runner that does not auto run": function () {
