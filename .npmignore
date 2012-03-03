@@ -2,3 +2,4 @@
 .npmignore
 todo.org
 node_modules
+public/images/.git
