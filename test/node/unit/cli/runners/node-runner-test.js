@@ -186,5 +186,18 @@ buster.testCase("Node runner", {
         nodeRunner.run(this.group, {}, done(function () {
             refute.called(fs.writeFileSync);
         }));
+    },
+
+    "captures console if configured thusly": function () {
+        this.stub(nodeRunner, "beforeRunHook").returns(this.analyzer.promise);
+        this.analyzer.resolver.resolve();
+        this.config.resolver.resolve(this.resourceSet);
+        this.stub(buster, "captureConsole");
+
+        this.runner.run(this.group, {
+            captureConsole: true
+        });
+
+        assert.calledOnce(buster.captureConsole);
     }
 });
