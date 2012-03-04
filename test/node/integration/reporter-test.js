@@ -1,8 +1,9 @@
 var helper = require("../test-helper");
+var util = require("util");
 
 if (require.main != module) {
-    console.log("Integration test must be run manually - it is a visual test");
-    console.log("node test/node/integration/reporter-test.js\n");
+    util.puts("Integration test must be run manually - it is a visual test");
+    util.puts("node test/node/integration/reporter-test.js\n");
 } else {
     run();
 }
@@ -36,8 +37,8 @@ function run() {
         color: true, bright: true
     }).listen(runner);
 
-    console.log("If this output looks good, we're fine. Control-C to abort");
-    console.log("\"Fine\": List of browsers with growing list of dots and letters");
+    util.puts("If this output looks good, we're fine. Control-C to abort");
+    util.puts("\"Fine\": List of browsers with growing list of dots and letters");
 
     setTimeout(function () {
         addClient(1, clients[0]);
