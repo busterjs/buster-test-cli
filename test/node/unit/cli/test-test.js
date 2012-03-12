@@ -221,6 +221,24 @@ buster.testCase("Test cli", {
             }));
         },
 
+        "sets static resource path": function (done) {
+            helper.run(this, ["--static-paths", "-c", this.config], done(function () {
+                assert.calledOnce(browserRunner.run);
+                assert.match(browserRunner.run.args[0][1], {
+                    staticResourcePath: true
+                });
+            }));
+        },
+
+        "sets static resource path with short option": function (done) {
+            helper.run(this, ["-p", "-c", this.config], done(function () {
+                assert.calledOnce(browserRunner.run);
+                assert.match(browserRunner.run.args[0][1], {
+                    staticResourcePath: true
+                });
+            }));
+        },
+
         "transfers filters": function (done) {
             helper.run(this, ["-c", this.config, "//should-"], done(function () {
                 assert.equals(browserRunner.run.args[0][1].filters, ["//should-"]);

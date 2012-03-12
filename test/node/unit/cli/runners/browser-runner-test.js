@@ -208,7 +208,7 @@ buster.testCase("Browser runner", {
 
     "creates unjoinable session using provided resource set": function (done) {
         this.client.createSession = done(function (options) {
-            assert.equals(options, {
+            assert.match(options, {
                 resourceSet: { id: 41 },
                 joinable: false,
                 managed: true
@@ -217,6 +217,17 @@ buster.testCase("Browser runner", {
         });
 
         this.config.resolver.resolve({ id: 41 });
+        this.runner.run(this.group, this.options);
+    },
+
+    "creates session with static resource path": function (done) {
+        this.client.createSession = done(function (options) {
+            assert(options.staticResourcePath);
+            return { then: function () {} };
+        });
+
+        this.config.resolver.resolve({ id: 41 });
+        this.options.staticResourcePath = true;
         this.runner.run(this.group, this.options);
     },
 
