@@ -309,5 +309,61 @@ buster.testCase("Test cli", {
                 });
             }));
         }
+    },
+
+    "exit code": {
+        setUp: function () {
+            var self = this;
+            this.nextGroup = -1;
+            this.stub(this.cli, "loadRunner").returns({
+                run: function (group, options, callback) {
+                    self.nextGroup += 1;
+                    callback.apply(null, self.results[self.nextGroup]);
+                }
+            });
+        },
+
+        "is 0 when single test configuration passes": function () {
+            this.results = [[null, { ok: true }]];
+            this.cli.runConfig([{}], {});
+            assert.calledOnceWith(process.exit, 0);
+        },
+
+        "is 0 when two test configurations pass": function () {
+            this.results = [[null, { ok: true }], [null, { ok: true }]];
+            this.cli.runConfig([{}, {}], {});
+            assert.calledOnceWith(process.exit, 0);
+        },
+
+        "is 1 when single test configuration fails": function () {
+            this.results = [[null, { ok: false }]];
+            this.cli.runConfig([{}], {});
+            assert.calledOnceWith(process.exit, 1);
+        },
+
+        "is 1 when one of several test configurations fails": function () {
+            this.results = [[null, { ok: true }], [null, { ok: false }]];
+            this.cli.runConfig([{}, {}], {});
+            assert.calledOnceWith(process.exit, 1);
+        },
+
+        "uses exception status code": function () {
+            this.results = [[{ code: 13 }]];
+            this.cli.runConfig([{}], {});
+            assert.calledOnceWith(process.exit, 13);
+        },
+
+        "defaults error code to 70 (EX_SOFTWARE) for code-less exception": function () {
+            this.results = [[{}]];
+            this.cli.runConfig([{}], {});
+            assert.calledOnceWith(process.exit, 70);
+        },
+
+        "fails for single failed configuration": function () {
+            var ok = [null, { ok: true }];
+            this.results = [ok, ok, [{ code: 99 }], ok];
+            this.cli.runConfig([{}, {}, {}, {}], {});
+            assert.calledOnceWith(process.exit, 99);
+        }
     }
 });
