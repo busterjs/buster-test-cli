@@ -9,6 +9,7 @@ var nodeRunner = helper.require("cli/runners/node-runner");
 var stdioLogger = require("buster-stdio-logger");
 var when = require("when");
 var fs = require("fs");
+var beforeRun = helper.require("cli/runners/before-run");
 
 buster.testCase("Node runner", {
     setUp: function () {
@@ -103,6 +104,28 @@ buster.testCase("Node runner", {
         }
     },
 
+    "calls callback with error if using relative paths": function () {
+        this.stub(nodeRunner, "beforeRunHook").returns(this.analyzer.promise);
+        this.analyzer.resolver.resolve();
+        var promise = { then: this.stub() };
+        this.group.resolve.returns(promise);
+        this.resourceSet.rootPath = "/here";
+        this.loadPaths.push("hey.js");
+        var callback = this.spy();
+        this.runner.run(this.group, {}, callback);
+
+        try {
+            promise.then.yield(this.resourceSet);
+        } catch (e) {
+            assert.match(this.stderr, "/here/hey.js");
+        }
+
+        assert.calledOnce(callback);
+        assert.match(callback.args[0][0], {
+            code: 65
+        });
+    },
+
     "logs load errors": function () {
         this.stub(nodeRunner, "beforeRunHook").returns(this.analyzer.promise);
         this.analyzer.resolver.resolve();
@@ -171,13 +194,17 @@ buster.testCase("Node runner", {
     },
 
     "aborts run if analyzer fails": function (done) {
-        this.stub(nodeRunner, "beforeRunHook").returns(this.analyzer.promise);
-        this.analyzer.resolver.reject();
+        this.stub(beforeRun, "beforeRunHook");
         this.config.resolver.resolve({});
 
-        nodeRunner.run(this.group, {}, done(function () {
+        nodeRunner.run(this.group, {}, done(function (err) {
             refute.called(buster.autoRun);
+            assert.match(err, {
+                code: 70
+            });
         }));
+
+        beforeRun.beforeRunHook.yield({});
     },
 
     "does not write manifest if analyzer fails": function (done) {
