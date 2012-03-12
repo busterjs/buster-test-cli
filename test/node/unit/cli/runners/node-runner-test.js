@@ -36,6 +36,7 @@ buster.testCase("Node runner", {
             { write: function (msg) { self.stderr += msg; } }
         );
         this.stub(fs, "writeFileSync");
+        this.stub(process, "exit");
     },
 
     "resolves config": function () {
@@ -78,10 +79,11 @@ buster.testCase("Node runner", {
         this.analyzer.resolver.resolve();
         this.config.resolver.resolve(this.resourceSet);
         var callback = this.spy();
-        buster.autoRun.yields();
+        buster.autoRun.yields({ ok: true, tests: 42 });
         this.runner.run(this.group, {}, callback);
 
         assert.calledOnce(callback);
+        assert.calledWith(callback, null, { ok: true, tests: 42 });
     },
 
     "requires absolute paths": function () {

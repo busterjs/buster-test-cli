@@ -321,6 +321,7 @@ buster.testCase("Browser runner", {
 
         "with no connected slaves": {
             setUp: function () {
+                this.runner.callback = this.spy();
                 this.spy(remoteRunner, "create");
                 this.session.slaves = [];
                 this.runner.runSession(this.session);
@@ -336,14 +337,24 @@ buster.testCase("Browser runner", {
 
             "closes session": function () {
                 assert.calledOnce(this.session.close);
+            },
+
+            "does not call done until session closes": function () {
+                this.runner.callback = this.spy();
+                this.runner.runSession(this.session);
+
+                refute.called(this.runner.callback);
+            },
+
+            "calls callback with error": function () {
+                this.close.resolver.resolve();
+
+                assert.calledOnce(this.runner.callback);
+                assert.match(this.runner.callback.args[0][0], {
+                    type: "NoSlavesError",
+                    code: 76
+                });
             }
-        },
-
-        "should not call done callback when no slaves until session closes": function () {
-            this.runner.callback = this.spy();
-            this.runner.runSession(this.session);
-
-            refute.called(this.runner.callback);
         },
 
         "creates progress reporter": function () {
@@ -499,9 +510,10 @@ buster.testCase("Browser runner", {
             },
 
             "calls callback": function () {
-                this.remoteRunner.emit("suite:end");
+                this.remoteRunner.emit("suite:end", { ok: true, tests: 42 });
 
-                assert.calledOnce(this.runner.callback);
+                var callback = this.runner.callback;
+                assert.calledOnceWith(callback, null, { ok: true, tests: 42 });
             }
         },
 
@@ -515,6 +527,24 @@ buster.testCase("Browser runner", {
             runner.emit("suite:end");
 
             refute.equals(this.stderr, stderr);
+        },
+
+        "calls done with error on failed session close": function () {
+            var runner = buster.eventEmitter.create();
+            this.stub(remoteRunner, "create").returns(runner);
+            this.runner.callback = this.spy();
+            this.close.resolver.reject({ message: "Oops" });
+
+            this.runner.runSession(this.session);
+            var stderr = this.stderr;
+            runner.emit("suite:end");
+
+            assert.calledOnce(this.runner.callback);
+            assert.match(this.runner.callback.args[0][0], {
+                message: "Failed closing session: Oops",
+                code: 75,
+                type: "SessionCloseError"
+            });
         }
     },
 
@@ -537,6 +567,16 @@ buster.testCase("Browser runner", {
             assert.match(this.stderr, "Please make sure that buster-server is running");
         },
 
+        "calls callback whith error when server cannot be reached": function () {
+            var callback = this.spy();
+            this.config.resolver.resolve();
+            this.runner.run(this.group, this.options, callback);
+            this.session.resolver.reject(new Error("ECONNREFUSED, Connection refused"));
+
+            assert.calledOnce(callback);
+            assert.match(callback.args[0][0], { code: 75 });
+        },
+
         "prints understandable error if pattern matches no files": function () {
             this.config.resolver.resolve();
             this.runner.run(this.group, this.options);
@@ -544,6 +584,17 @@ buster.testCase("Browser runner", {
             this.session.resolver.reject(new Error("ENOENT, No such file or directory '/home/christian/projects/buster/sample/src/*.js'"));
 
             assert.match(this.stderr, "pattern 'src/*.js' does not match any files");
+        },
+
+        "calls callback whith error when pattern matches no files": function () {
+            var callback = this.spy();
+            this.config.resolver.resolve();
+            this.runner.run(this.group, this.options, callback);
+            this.stub(process, "cwd").returns("/home/christian/projects/buster/sample");
+            this.session.resolver.reject(new Error("ENOENT, No such file or directory '/home/christian/projects/buster/sample/src/*.js'"));
+
+            assert.calledOnce(callback);
+            assert.match(callback.args[0][0], { code: 65 });
         },
 
         "prints understandable error if a file could not be found": function () {
@@ -555,11 +606,41 @@ buster.testCase("Browser runner", {
             assert.match(this.stderr, "Configured path 'src/trim.js' is not a file or directory");
         },
 
+        "calls callback whith error when file not found": function () {
+            var callback = this.spy();
+            this.config.resolver.resolve();
+            this.runner.run(this.group, this.options, callback);
+            this.stub(process, "cwd").returns("/home/christian/projects/buster/sample");
+            this.session.resolver.reject(new Error("ENOENT, No such file or directory '/home/christian/projects/buster/sample/src/trim.js'"));
+
+            assert.calledOnce(callback);
+            assert.match(callback.args[0][0], { code: 65 });
+        },
+
         "prints understandable error if config fails to resolve": function () {
             this.config.resolver.reject({ message: "Failed loading configuration: Oh noes" });
             this.runner.run(this.group, this.options);
 
             assert.match(this.stderr, "Failed loading configuration: Oh noes");
+        },
+
+        "calls callback whith error when config fails to resolve": function () {
+            var callback = this.spy();
+            this.config.resolver.reject({ message: "Failed loading configuration: Oh noes" });
+            this.runner.run(this.group, this.options, callback);
+
+            assert.calledOnce(callback);
+            assert.match(callback.args[0][0], { code: 78 });
+        },
+
+        "calls callback whith error when analyzer precondition fails": function () {
+            var callback = this.spy();
+            this.config.resolver.resolve();
+            this.runner.run(this.group, this.options, callback);
+            this.session.resolver.reject({ name: "AbortedError" });
+
+            assert.calledOnce(callback);
+            assert.match(callback.args[0][0], { code: 70 });
         }
     }
 });
