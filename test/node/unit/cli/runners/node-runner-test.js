@@ -52,6 +52,13 @@ buster.testCase("Node runner", {
         refute.called(buster.autoRun);
     },
 
+    "exits if beforeRunHook fails": function () {
+        this.group.runExtensionHook.throws();
+        this.runner.run(this.group, this.options);
+
+        assert.calledOnceWith(process.exit, 70);
+    },
+
     "uses buster.autoRun to run tests": function () {
         this.stub(nodeRunner, "beforeRunHook").returns(this.analyzer.promise);
         this.analyzer.resolver.resolve();
