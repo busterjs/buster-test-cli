@@ -5,7 +5,7 @@ config["Node tests"] = {
     environment: "node",
     sources: ["lib/**/*.js"],
     tests: ["test/node/**/*.js"]/*,
-    extensions: ["buster-lint"],
+    extensions: [require("buster-lint")],
     "buster-lint": {
         "linterOptions": {
             sloppy: true,
