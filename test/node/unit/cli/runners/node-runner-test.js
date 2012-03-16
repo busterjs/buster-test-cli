@@ -204,7 +204,7 @@ buster.testCase("Node runner", {
         this.stub(beforeRun, "beforeRunHook");
         this.config.resolver.resolve({});
 
-        nodeRunner.run(this.group, {}, done(function (err) {
+        this.runner.run(this.group, {}, done(function (err) {
             refute.called(buster.autoRun);
             assert.match(err, {
                 code: 70
@@ -219,7 +219,7 @@ buster.testCase("Node runner", {
         this.analyzer.resolver.reject();
         this.config.resolver.resolve({});
 
-        nodeRunner.run(this.group, {}, done(function () {
+        this.runner.run(this.group, {}, done(function () {
             refute.called(fs.writeFileSync);
         }));
     },

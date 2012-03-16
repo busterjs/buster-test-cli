@@ -130,7 +130,7 @@ buster.testCase("Browser runner", {
             this.runner.run(this.group, this.options);
             this.group.emit("load:sources", this.group.resourceSet);
 
-            assert.match(this.stderr, "[FATAL] Oh noes: Disaster");
+            assert.match(this.stderr, "[FATAL] Oh noes");
         },
 
         "does not log ignored details": function () {
@@ -144,9 +144,9 @@ buster.testCase("Browser runner", {
             this.runner.run(this.group, this.options);
             this.group.emit("load:sources", this.group.resourceSet);
 
-            assert.match(this.stderr, "[FATAL]");
-            assert.match(this.stderr, "[ERROR]");
-            refute.match(this.stderr, "[WARNING]");
+            assert.match(this.stderr, "[Fatal]");
+            assert.match(this.stderr, "[Error]");
+            refute.match(this.stderr, "[Warning]");
         },
 
         "logs all details": function () {
@@ -160,9 +160,9 @@ buster.testCase("Browser runner", {
             this.runner.run(this.group, this.options);
             this.group.emit("load:sources", this.group.resourceSet);
 
-            assert.match(this.stderr, "[FATAL]");
-            assert.match(this.stderr, "[ERROR]");
-            assert.match(this.stderr, "[WARNING]");
+            assert.match(this.stderr, "[Fatal]");
+            assert.match(this.stderr, "[Error]");
+            assert.match(this.stderr, "[Warning]");
         },
 
         "only logs fatal details": function () {
@@ -176,21 +176,9 @@ buster.testCase("Browser runner", {
             this.runner.run(this.group, this.options);
             this.group.emit("load:sources", this.group.resourceSet);
 
-            assert.match(this.stderr, "[FATAL]");
-            refute.match(this.stderr, "[ERROR]");
-            refute.match(this.stderr, "[WARNING]");
-        },
-
-        "logs multi-line details indented": function () {
-            this.group.runExtensionHook = function (hook, resourceSet, analyzer) {
-                analyzer.fatal("Oh noes", "Disaster\nOMG\nWTF\nBBQ");
-            };
-
-            this.runner.run(this.group, this.options);
-            this.group.emit("load:sources", this.group.resourceSet);
-
-            assert.match(this.stderr, "[FATAL] Oh noes:\n" +
-                         "    Disaster\n    OMG\n    WTF\n    BBQ");
+            assert.match(this.stderr, "[Fatal]");
+            refute.match(this.stderr, "[Error]");
+            refute.match(this.stderr, "[Warning]");
         },
 
         "sets failOn level": function () {
@@ -552,7 +540,10 @@ buster.testCase("Browser runner", {
         "prints session creation error to stderr": function () {
             this.config.resolver.resolve();
             this.runner.run(this.group, this.options);
-            this.session.resolver.reject({ id: 47 });
+            this.session.resolver.reject({
+                id: 47,
+                message: "Failed creating session"
+            });
 
             assert.match(this.stderr, "Failed creating session");
         },
