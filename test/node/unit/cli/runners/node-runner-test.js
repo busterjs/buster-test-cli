@@ -70,6 +70,17 @@ buster.testCase("Node runner", {
         assert.calledWith(buster.autoRun, this.options);
     },
 
+    "fires testRun extension hook with test runner": function () {
+        this.stub(nodeRunner, "beforeRunHook").returns(this.analyzer.promise);
+        this.analyzer.resolver.resolve();
+        this.config.resolver.resolve(this.resourceSet);
+
+        this.runner.run(this.group, this.options);
+        buster.autoRun.yieldTo("start", { id: 42 });
+
+        assert.calledOnceWith(this.group.runExtensionHook, "testRun", { id: 42 });
+    },
+
     "registers listener for created test cases": function () {
         this.stub(nodeRunner, "beforeRunHook").returns(this.analyzer.promise);
         this.analyzer.resolver.resolve();
@@ -87,7 +98,7 @@ buster.testCase("Node runner", {
         this.analyzer.resolver.resolve();
         this.config.resolver.resolve(this.resourceSet);
         var callback = this.spy();
-        buster.autoRun.yields({ ok: true, tests: 42 });
+        buster.autoRun.yieldsTo("end", { ok: true, tests: 42 });
         this.runner.run(this.group, {}, callback);
 
         assert.calledOnce(callback);
