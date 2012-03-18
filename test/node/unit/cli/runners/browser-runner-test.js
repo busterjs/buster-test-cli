@@ -278,8 +278,8 @@ buster.testCase("Browser runner", {
             assert.calledOnce(this.group.runExtensionHook);
             assert.calledOnceWith(this.group.runExtensionHook,
                                   "testRun",
-                                  this.session.messagingClient,
-                                  remoteRunner.create.getCall(0).returnValue);
+                                  remoteRunner.create.getCall(0).returnValue,
+                                  this.session.messagingClient);
         },
 
         "creates remote runner that does not fail on no assertions": function () {
