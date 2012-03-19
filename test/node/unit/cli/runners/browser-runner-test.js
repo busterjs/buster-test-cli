@@ -10,6 +10,7 @@ var bayeuxEmitter = require("buster-bayeux-emitter");
 var reporters = require("buster-test").reporters;
 var http = require("http");
 var when = require("when");
+var busterBeforeRun = helper.require("cli/runners/before-run");
 
 buster.testCase("Browser runner", {
     setUp: function () {
@@ -100,6 +101,19 @@ buster.testCase("Browser runner", {
             var analyzer = this.group.runExtensionHook.args[0][2];
             assert.isFunction(group.bundleFramework);
             assert.isFunction(analyzer.fatal);
+        },
+
+        "is given logger": function () {
+            var hook = { addExtension: this.stub().returns({
+                beforeRunHook: this.spy()
+            }) };
+            this.stub(busterBeforeRun, "create").returns(hook);
+            this.runner.run(this.group, this.options);
+
+            this.config.resolver.resolve({});
+            this.group.emit("load:sources", this.group.resourceSet);
+
+            assert.defined(hook.logger);
         },
 
         "aborts run if analysis fails": function () {
