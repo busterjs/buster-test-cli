@@ -259,6 +259,8 @@ buster.testCase("Browser runner", {
             this.emitSessionMessage = function (event, data) {
                 this.session.emit(event, { data: data });
             };
+
+            this.stub(process, "exit");
         },
 
         tearDown: function () {
@@ -281,8 +283,8 @@ buster.testCase("Browser runner", {
             assert.calledOnce(remoteRunner.create);
             assert.calledWith(remoteRunner.create,
                               this.session.messagingClient, [{id: 1}], {
-                failOnNoAssertions: true
-            });
+                                  failOnNoAssertions: true
+                              });
         },
 
         "triggers testRun extension hook with runners": function () {
@@ -294,6 +296,14 @@ buster.testCase("Browser runner", {
                                   "testRun",
                                   remoteRunner.create.getCall(0).returnValue,
                                   this.session.messagingClient);
+        },
+
+        "aborts run if running extension hook throws": function () {
+            this.group.runExtensionHook.throws("Oh noes");
+            this.spy(remoteRunner, "create");
+            this.runner.runSession(this.session);
+
+            assert.calledOnceWith(process.exit, 70);
         },
 
         "creates remote runner that does not fail on no assertions": function () {
