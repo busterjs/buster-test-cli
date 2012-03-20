@@ -10,6 +10,7 @@ var bayeuxEmitter = require("buster-bayeux-emitter");
 var reporters = require("buster-test").reporters;
 var http = require("http");
 var when = require("when");
+var busterBeforeRun = helper.require("cli/runners/before-run");
 
 buster.testCase("Browser runner", {
     setUp: function () {
@@ -100,6 +101,19 @@ buster.testCase("Browser runner", {
             var analyzer = this.group.runExtensionHook.args[0][2];
             assert.isFunction(group.bundleFramework);
             assert.isFunction(analyzer.fatal);
+        },
+
+        "is given logger": function () {
+            var hook = { addExtension: this.stub().returns({
+                beforeRunHook: this.spy()
+            }) };
+            this.stub(busterBeforeRun, "create").returns(hook);
+            this.runner.run(this.group, this.options);
+
+            this.config.resolver.resolve({});
+            this.group.emit("load:sources", this.group.resourceSet);
+
+            assert.defined(hook.logger);
         },
 
         "aborts run if analysis fails": function () {
@@ -245,6 +259,8 @@ buster.testCase("Browser runner", {
             this.emitSessionMessage = function (event, data) {
                 this.session.emit(event, { data: data });
             };
+
+            this.stub(process, "exit");
         },
 
         tearDown: function () {
@@ -267,8 +283,8 @@ buster.testCase("Browser runner", {
             assert.calledOnce(remoteRunner.create);
             assert.calledWith(remoteRunner.create,
                               this.session.messagingClient, [{id: 1}], {
-                failOnNoAssertions: true
-            });
+                                  failOnNoAssertions: true
+                              });
         },
 
         "triggers testRun extension hook with runners": function () {
@@ -280,6 +296,14 @@ buster.testCase("Browser runner", {
                                   "testRun",
                                   remoteRunner.create.getCall(0).returnValue,
                                   this.session.messagingClient);
+        },
+
+        "aborts run if running extension hook throws": function () {
+            this.group.runExtensionHook.throws("Oh noes");
+            this.spy(remoteRunner, "create");
+            this.runner.runSession(this.session);
+
+            assert.calledOnceWith(process.exit, 70);
         },
 
         "creates remote runner that does not fail on no assertions": function () {
