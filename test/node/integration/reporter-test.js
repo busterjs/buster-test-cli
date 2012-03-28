@@ -13,10 +13,10 @@ function run() {
     buster.remoteRunner = helper.require("test-runner/remote-runner");
     buster.progressReporter = helper.require("test-runner/progress-reporter");
 
-    var multicaster = buster.eventEmitter.create();
+    var emitter = buster.eventEmitter.create();
 
     function emit(event, data, client) {
-        return multicaster.emit(event, {
+        return emitter.emit(event, {
             topic: event,
             data: data,
             clientId: client
@@ -26,11 +26,13 @@ function run() {
     function addClient(id, client) {
         emit("ready", client, id);
         emit("suite:start", {}, id);
-        reporter.addClient(id, runner.clients[id]);
+        reporter.addClient(id, clients[id - 1]);
     }
 
-    var runner = buster.remoteRunner.create(multicaster);
-    var clients = ["Mozilla/5.0 (X11; Linux x86_64; rv:2.0.1) Gecko/20100101 Firefox/4.0.1", "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/534.24 (KHTML, like Gecko) Chrome/11.0.696.71 Safari/534.24"];
+    var clients = ["Firefox 4.0.1", "Chrome 11", "Safari/534.24"];
+    var runner = buster.remoteRunner.create(emitter, [
+        { id: 1 }, { id: 2 }, { id: 3 }
+    ]);
 
     var reporter = buster.progressReporter.create({
         io: require("util"),
