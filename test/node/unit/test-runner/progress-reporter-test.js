@@ -1,8 +1,9 @@
-var helper = require("../../test-helper")
+var helper = require("../../test-helper");
 var buster = require("buster");
 buster.remoteRunner = helper.require("test-runner/remote-runner");
 buster.progressReporter = helper.require("test-runner/progress-reporter");
 var assert = buster.assert;
+var S = require("buster-terminal");
 
 buster.testCase("Progress reporter", {
     setUp: function () {
@@ -52,15 +53,15 @@ buster.testCase("Progress reporter", {
     "should not print anything without clients": function () {
         this.emit("test:success", {});
 
-        assert.equals(this.io.toString(), "");
+        assert.equals(S.stripSeq(this.io.toString()), "");
     },
 
     "should print client when adding": function () {
         this.reporter.addClient(1, this.clients[0]);
         this.reporter.addClient(2, this.clients[1]);
 
-        assert.equals(this.io.toString(), "Chrome 9.0.597.107 Linux: \n" +
-                                          "Firefox 4.0 Linux:        \n");
+        assert.match(this.io.toString(), "Chrome 9.0.597.107 Linux:");
+        assert.match(this.io.toString(), "Firefox 4.0 Linux:");
     },
 
     "should print dot for test success": function () {
