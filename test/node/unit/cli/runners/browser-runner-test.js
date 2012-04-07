@@ -267,7 +267,16 @@ buster.testCase("Browser runner", {
             buster.stackFilter.filters = this.stackFilter;
         },
 
+        "does not listen for uncaught exceptions with dots reporter": function () {
+            this.runner.runSession(this.session);
+
+            this.emitSessionMessage("uncaughtException", { message: "Oh noes" });
+
+            refute.match(this.stderr, "Uncaught exception:");
+        },
+
         "listens for uncaught exceptions": function () {
+            this.runner.options.reporter = "specification";
             this.runner.runSession(this.session);
 
             this.emitSessionMessage("uncaughtException", { message: "Oh noes" });

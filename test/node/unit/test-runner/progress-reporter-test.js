@@ -98,5 +98,18 @@ buster.testCase("Progress reporter", {
         this.emit("test:timeout", {}, 1);
 
         assert.match(this.io.toString(), "T");
+    },
+
+    "should save uncaught exceptions until browser connects": function () {
+        this.reporter.uncaughtException(1, "Oops");
+        refute.match(this.io.toString(), "Oops");
+        this.reporter.addClient(1, this.clients[0]);
+        assert.match(this.io.toString(), "Oops");
+    },
+
+    "immediately prints uncaught exception for known client": function () {
+        this.reporter.addClient(1, this.clients[0]);
+        this.reporter.uncaughtException(1, "Oops");
+        assert.match(this.io.toString(), "Oops");
     }
 });
