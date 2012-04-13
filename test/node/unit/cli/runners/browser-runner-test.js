@@ -233,6 +233,17 @@ buster.testCase("Browser runner", {
         this.runner.run(this.group, this.options);
     },
 
+    "resolves config options after config is resolved": function (done) {
+        this.client.createSession = done(function () {
+            assert(this.runner.options.autoRun);
+            return { then: function () {} };
+        }.bind(this));
+
+        this.runner.run(this.group, this.options);
+        this.options.autoRun = true;
+        this.config.resolver.resolve({ id: 41 });
+    },
+
     "is run with runSession": function () {
         this.stub(this.runner, "runSession");
         this.config.resolver.resolve({ id: 41 });
@@ -328,7 +339,7 @@ buster.testCase("Browser runner", {
             );
         },
 
-        "creates remote runner that does not auto run": function () {
+        "creates remote runner that does not auto-run": function () {
             this.spy(remoteRunner, "create");
             this.runner.options.autoRun = true;
             this.runner.runSession(this.session);
