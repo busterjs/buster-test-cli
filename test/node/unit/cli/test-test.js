@@ -195,28 +195,28 @@ buster.testCase("Test cli", {
             }));
         },
 
-        "does not capture console by default": function (done) {
+        "captures console by default": function (done) {
             helper.run(this, ["-c", this.config], done(function () {
-                refute.match(browserRunner.run.args[0][1], {
-                    captureConsole: true
-                });
-            }));
-        },
-
-        "sets capture console": function (done) {
-            helper.run(this, ["--capture-console", "-c", this.config], done(function () {
-                assert.calledOnce(browserRunner.run);
                 assert.match(browserRunner.run.args[0][1], {
                     captureConsole: true
                 });
             }));
         },
 
-        "sets capture console with short option": function (done) {
-            helper.run(this, ["-a", "-c", this.config], done(function () {
+        "releases console": function (done) {
+            helper.run(this, ["--release-console", "-c", this.config], done(function () {
                 assert.calledOnce(browserRunner.run);
                 assert.match(browserRunner.run.args[0][1], {
-                    captureConsole: true
+                    captureConsole: false
+                });
+            }));
+        },
+
+        "sets release console with short option": function (done) {
+            helper.run(this, ["-o", "-c", this.config], done(function () {
+                assert.calledOnce(browserRunner.run);
+                assert.match(browserRunner.run.args[0][1], {
+                    captureConsole: false
                 });
             }));
         },
