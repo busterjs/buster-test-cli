@@ -51,6 +51,18 @@ buster.testCase("buster-server binary", {
             }));
         },
 
+        "should print message if address is already in use (async)": function (done) {
+            var server = buster.eventEmitter.create();
+            this.stub(http, "createServer").returns(server);
+
+            helper.run(this, ["-p", "3200"], done(function () {
+                assert.match(this.stderr, "Address already in use. Pick another " +
+                             "port with -p/--port to start buster-server");
+            }));
+
+            server.emit("error", new Error("EADDRINUSE, Address already in use"));
+        },
+
         "should bind to specified address": function (done) {
             var createServer = this.stub(this.cli, "createServer");
 
