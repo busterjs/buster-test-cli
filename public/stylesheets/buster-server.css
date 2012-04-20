@@ -56,3 +56,17 @@ h2 {
 .browsers .safari-mobile {
     background-image: url(../images/safari-mobile-64.png);
 }
+
+.browsers li > div {
+    padding-left: 85px;
+    margin-left: 10px;
+    background: url(../images/linux-64.png) no-repeat;
+}
+
+.browsers .windows > div {
+    background: url(../images/windows-64.png) no-repeat;
+}
+
+.browsers .os_x > div {
+    background: url(../images/osx-colored-64.png) no-repeat;
+}
