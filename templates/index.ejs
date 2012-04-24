@@ -21,10 +21,19 @@
         <h2>Captured slaves</h2>
         <ol class="browsers">
           <% for (var i = 0, l = slaves.length; i < l; ++i) { %>
-            <% var agent = slaves[i] %>
-            <li class="<%= /internet explorer/i.test(agent.browser) ? 'ie' : agent.browser.toLowerCase() %> <%= agent.platform.toLowerCase() %>">
-              <h3><%= agent.browser %> <%= agent.version %> <%= agent.platform %></h3>
-              <p><%= agent.userAgent %></p>
+            <%
+              var agent       = slaves[i]
+                , css_classes = []
+
+              css_classes.push(/internet explorer/i.test(agent.browser) ? 'ie' : agent.browser.toLowerCase())
+              css_classes.push(agent.platform.toLowerCase().replace(/\s/g, '_'))
+            %>
+
+            <li class="<%= css_classes.join(' ') %>">
+              <div>
+                <h3><%= agent.browser %> <%= agent.version %> | <%= agent.os %></h3>
+                <p><%= agent.userAgent %></p>
+              </div>
             </li>
           <% } %>
         </ol>
