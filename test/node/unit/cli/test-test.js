@@ -221,6 +221,24 @@ buster.testCase("Test cli", {
             }));
         },
 
+        "logs all messages": function (done) {
+            helper.run(this, ["--log-all", "-c", this.config], done(function () {
+                assert.calledOnce(browserRunner.run);
+                assert.match(browserRunner.run.args[0][1], {
+                    logPassedMessages: true
+                });
+            }));
+        },
+
+        "logs all messages with short option": function (done) {
+            helper.run(this, ["-L", "-c", this.config], done(function () {
+                assert.calledOnce(browserRunner.run);
+                assert.match(browserRunner.run.args[0][1], {
+                    logPassedMessages: true
+                });
+            }));
+        },
+
         "sets static resource path": function (done) {
             helper.run(this, ["--static-paths", "-c", this.config], done(function () {
                 assert.calledOnce(browserRunner.run);

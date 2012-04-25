@@ -472,7 +472,21 @@ buster.testCase("Browser runner", {
             this.runner.runSession(this.session);
 
             assert.match(reporters.dots.create.args[0][0], {
-                color: false, bright: false, displayProgress: false
+                color: false,
+                bright: false,
+                displayProgress: false,
+                logPassedMessages: false
+            });
+        },
+
+        "logs messages for passed tests": function () {
+            this.spy(reporters.dots, "create");
+
+            this.runner.options.logPassedMessages = true;
+            this.runner.runSession(this.session);
+
+            assert.match(reporters.dots.create.args[0][0], {
+                logPassedMessages: true
             });
         },
 
