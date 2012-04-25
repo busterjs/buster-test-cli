@@ -80,8 +80,8 @@ buster.testCase("Remote runner", {
             this.emit("ready", this.clients[0], 1, buster.eventEmitter.create());
             this.emit("ready", this.clients[0], 2, buster.eventEmitter.create());
 
-            assert.equals(this.runner.getClient(1).toString(), "Firefox 4.0 Linux");
-            assert.equals(this.runner.getClient(2).toString(), "Firefox 4.0 Linux (2)");
+            assert.equals(this.runner.getClient(1).toString(), "Firefox 4.0, Ubuntu 10.10 (Maverick Meerkat)");
+            assert.equals(this.runner.getClient(2).toString(), "Firefox 4.0, Ubuntu 10.10 (Maverick Meerkat) (2)");
         },
 
         "should keep enumerating clients from same browser": function () {
@@ -93,7 +93,7 @@ buster.testCase("Remote runner", {
             this.emit("ready", this.clients[0], 3, buster.eventEmitter.create());
             this.emit("ready", this.clients[0], 4, buster.eventEmitter.create());
 
-            assert.equals(this.runner.getClient(4).toString(), "Firefox 4.0 Linux (4)");
+            assert.equals(this.runner.getClient(4).toString(), "Firefox 4.0, Ubuntu 10.10 (Maverick Meerkat) (4)");
         },
 
         "should emit client:connect when client emits ready": function () {
@@ -285,11 +285,11 @@ buster.testCase("Remote runner", {
             this.emit("context:end", { name: "Test case" }, 1);
 
             assert.calledTwice(listeners[0]);
-            assert.equals(listeners[0].args[0][0], { name: "Firefox 4.0 Linux" });
+            assert.equals(listeners[0].args[0][0], { name: "Firefox 4.0, Ubuntu 10.10 (Maverick Meerkat)" });
             assert.equals(listeners[0].args[1][0], { name: "Test case" });
             assert.calledTwice(listeners[1]);
             assert.equals(listeners[1].args[0][0], { name: "Test case" });
-            assert.equals(listeners[1].args[1][0], { name: "Firefox 4.0 Linux" });
+            assert.equals(listeners[1].args[1][0], { name: "Firefox 4.0, Ubuntu 10.10 (Maverick Meerkat)" });
             assert.calledOnce(listeners[2]);
             assert.calledWith(listeners[2], { name: "test #1" });
             assert.calledOnce(listeners[3]);
@@ -430,14 +430,14 @@ buster.testCase("Remote runner", {
             this.emit("context:end", { name: "Test case" }, 1);
 
             assert.equals(out, [
-                "START Firefox 4.0 Linux",
+                "START Firefox 4.0, Ubuntu 10.10 (Maverick Meerkat)",
                 "START Test case", "YAY test #1",
                 "START Inner", "YAY test #2",
                 "START Inner inner", "YAY test #3", "STOP Inner inner",
                 "STOP Inner",
                 "START Inner #2", "YAY test #4", "STOP Inner #2",
                 "STOP Test case",
-                "STOP Firefox 4.0 Linux"
+                "STOP Firefox 4.0, Ubuntu 10.10 (Maverick Meerkat)"
             ]);
         }
     },
