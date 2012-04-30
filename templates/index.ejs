@@ -18,7 +18,7 @@
       </p>
       <p class="button"><a href="/capture">Capture browser</a></p>
       <% if (slaves.length > 0) { %>
-        <h2>Captured slaves</h2>
+        <h2>Captured slaves (<%= slaves.length %>)</h2>
         <ol class="browsers">
           <% for (var i = 0, l = slaves.length; i < l; ++i) { %>
             <%
