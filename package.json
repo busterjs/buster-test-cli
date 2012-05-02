@@ -1,6 +1,6 @@
 {
     "name": "buster-test-cli",
-    "version": "0.5.0",
+    "version": "0.5.1",
     "description": "Cli tools for Buster.JS test runners",
     "homepage": "http://busterjs.org/docs/buster-test-cli",
     "author": { "name": "August Lilleaas and Christian Johansen" },
@@ -20,7 +20,7 @@
     },
     "dependencies": {
         "buster-core": ">=0.6.0",
-        "buster-client": ">=0.5.3",
+        "buster-client": ">=0.5.4",
         "buster-cli": ">=0.4.2",
         "buster-configuration": ">=0.4.1",
         "buster-terminal": ">=0.4",
