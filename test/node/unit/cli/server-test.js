@@ -135,7 +135,7 @@ buster.testCase("buster-server binary", {
             helper.captureSlave("Mozilla/5.0 (X11; Linux x86_64; rv:2.0.1) Gecko/20100101 Firefox/4.0.1", function () {
                 helper.get("/", done(function (res, body) {
                     assert.equals(res.statusCode, 200);
-                    assert.match(body, "<h2>Captured slaves</h2>");
+                    assert.match(body, "<h2>Captured slaves (1)</h2>");
                 }));
             });
         },
