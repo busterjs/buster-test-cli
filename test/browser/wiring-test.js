@@ -176,7 +176,7 @@
 
             this.emitter.emit("tests:run");
 
-            assertEquals(counts, [1, 2]);
+            assertEquals(counts.sort(), [1, 2]);
         },
 
         "should filter contexts prior to running": function () {
