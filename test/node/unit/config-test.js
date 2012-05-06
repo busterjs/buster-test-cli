@@ -36,7 +36,7 @@ buster.testCase("Test client configuration", {
 
     "preloads session configuration with library": function (done) {
         extendConfigGroup(this.config, "browser", done(function (rs) {
-            assert.equals(rs.length, 36);
+            assert.equals(rs.length, 37);
             assert.isObject(rs.get("/buster/buster-core.js"));
             assert.isObject(rs.get("/buster/buster-event-emitter.js"));
             assert.isObject(rs.get("/buster/buster-evented-logger.js"));
@@ -73,6 +73,7 @@ buster.testCase("Test client configuration", {
             assert.isObject(rs.get("/buster/sinon/util/timers_ie.js"));
             assert.isObject(rs.get("/buster/sinon/util/xhr_ie.js"));
             assert.isObject(rs.get("/buster/buster/buster-wiring.js"));
+            assert.isObject(rs.get("/buster/buster/browser-wiring.js"));
             assert.isObject(rs.get("/buster/wiring.js"));
 
             assert.equals(rs.loadPath.paths(), [
