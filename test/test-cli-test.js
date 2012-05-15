@@ -116,6 +116,82 @@ buster.testCase("Test CLI", {
         }
     },
 
+    "with preferences": {
+        setUp: function () {
+            this.preferences = { get: this.stub() };
+            this.config = cliHelper.writeFile(
+                "buster2.js", "var config = module.exports;" +
+                    "config.server = { environment: 'browser' }");
+            this.cli = testCli.create(this.stdout, this.stderr, {
+                runners: this.runners,
+                preferences: this.preferences
+            });
+            this.cli.cli.exit = this.spy();
+        },
+
+        "uses color preference": function (done) {
+            this.preferences.get.withArgs("test.color").returns("none");
+
+            this.cli.run(["-c", this.config], done(function () {
+                assert.match(this.runners.browser.run.args[0][1], {
+                    color: false
+                });
+            }.bind(this)));
+        },
+
+        "uses color option as default": function (done) {
+            this.preferences.get.withArgs("test.color").returns("none");
+
+            this.cli.run(["-c", this.config, "-C", "dim"], done(function () {
+                assert.match(this.runners.browser.run.args[0][1], {
+                    color: true,
+                    bright: false
+                });
+            }.bind(this)));
+        },
+
+        "uses release console preference": function (done) {
+            this.preferences.get.withArgs("test.releaseConsole").returns(true);
+
+            this.cli.run(["-c", this.config], done(function () {
+                assert.match(this.runners.browser.run.args[0][1], {
+                    captureConsole: false
+                });
+            }.bind(this)));
+        },
+
+        "uses release console argument": function (done) {
+            this.preferences.get.withArgs("test.releaseConsole").returns(false);
+
+            this.cli.run(["-c", this.config, "--release-console"], done(function () {
+                assert.match(this.runners.browser.run.args[0][1], {
+                    captureConsole: false
+                });
+            }.bind(this)));
+        },
+
+
+        "uses log all preference": function (done) {
+            this.preferences.get.withArgs("test.logAll").returns(true);
+
+            this.cli.run(["-c", this.config], done(function () {
+                assert.match(this.runners.browser.run.args[0][1], {
+                    logPassedMessages: true
+                });
+            }.bind(this)));
+        },
+
+        "uses log all argument": function (done) {
+            this.preferences.get.withArgs("test.logAll").returns(false);
+
+            this.cli.run(["-c", this.config, "--log-all"], done(function () {
+                assert.match(this.runners.browser.run.args[0][1], {
+                    logPassedMessages: true
+                });
+            }.bind(this)));
+        }
+    },
+
     "browser runs": {
         setUp: function () {
             this.config = cliHelper.writeFile(
