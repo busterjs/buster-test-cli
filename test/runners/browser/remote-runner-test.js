@@ -1,8 +1,5 @@
-var helper = require("../../test-helper");
 var buster = require("buster");
-buster.remoteRunner = helper.require("test-runner/remote-runner");
-var assert = buster.assert;
-var refute = buster.refute;
+var remoteRunner = require("../../../lib/runners/browser/remote-runner");
 
 buster.testCase("Remote runner", {
     setUp: function () {
@@ -41,12 +38,12 @@ buster.testCase("Remote runner", {
 
     "starting a run": {
         setUp: function () {
-            this.runner = buster.remoteRunner.create(
-                this.emitter, [{id:1}, {id:2}], { config: 42 });
+            this.runner = remoteRunner.create(
+                this.emitter, [{ id: 1 }, { id: 2 }], { config: 42 });
             this.runner.logger = { debug: this.stub() };
         },
 
-        "should emit tests:run when client emits ready": function () {
+        "emits tests:run when client emits ready": function () {
             var client = buster.eventEmitter.create();
             var listener = this.spy();
             client.on("tests:run", listener);
@@ -56,7 +53,7 @@ buster.testCase("Remote runner", {
             assert.calledOnce(listener);
         },
 
-        "should emit tests:run with config": function () {
+        "emits tests:run with config": function () {
             var client = buster.eventEmitter.create();
             var listener = this.spy();
             client.on("tests:run", listener);
@@ -66,7 +63,7 @@ buster.testCase("Remote runner", {
             assert.calledWith(listener, { config: 42 });
         },
 
-        "should set client info when client is ready": function () {
+        "sets client info when client is ready": function () {
             this.emit("ready", this.clients[0], 1, buster.eventEmitter.create());
 
             assert.match(this.runner.getClient(1), {
@@ -76,7 +73,7 @@ buster.testCase("Remote runner", {
             });
         },
 
-        "should enumerate client if a similar one exists": function () {
+        "enumerates client if a similar one exists": function () {
             this.emit("ready", this.clients[0], 1, buster.eventEmitter.create());
             this.emit("ready", this.clients[0], 2, buster.eventEmitter.create());
 
@@ -84,8 +81,8 @@ buster.testCase("Remote runner", {
             assert.equals(this.runner.getClient(2).toString(), "Firefox 4.0, Ubuntu 10.10 (Maverick Meerkat) (2)");
         },
 
-        "should keep enumerating clients from same browser": function () {
-            this.runner = buster.remoteRunner.create(
+        "keeps enumerating clients from same browser": function () {
+            this.runner = remoteRunner.create(
                 this.emitter, [{id:1}, {id:2}, {id: 3}, {id: 4}]);
             this.runner.logger = { debug: this.stub() };
             this.emit("ready", this.clients[0], 1, buster.eventEmitter.create());
@@ -96,7 +93,7 @@ buster.testCase("Remote runner", {
             assert.equals(this.runner.getClient(4).toString(), "Firefox 4.0, Ubuntu 10.10 (Maverick Meerkat) (4)");
         },
 
-        "should emit client:connect when client emits ready": function () {
+        "emits client:connect when client emits ready": function () {
             var listener = this.spy();
             this.runner.on("client:connect", listener);
 
@@ -113,13 +110,13 @@ buster.testCase("Remote runner", {
 
     "while tests are running": {
         setUp: function () {
-            this.runner = buster.remoteRunner.create(this.emitter, [{id:1}, {id:2}]);
+            this.runner = remoteRunner.create(this.emitter, [{id:1}, {id:2}]);
             this.runner.logger = { debug: this.stub() };
             this.emit("ready", this.clients[0], 1, buster.eventEmitter.create());
             this.emit("ready", this.clients[1], 2, buster.eventEmitter.create());
         },
 
-        "should emit progress:suite:start event": function () {
+        "emits progress:suite:start event": function () {
             var listener = this.subscribeTo("progress:suite:start");
             this.emit("suite:start", null, 1);
 
@@ -129,7 +126,7 @@ buster.testCase("Remote runner", {
             });
         },
 
-        "should emit progress:suite:start event for all clients": function () {
+        "emits progress:suite:start event for all clients": function () {
             var listener = this.subscribeTo("progress:suite:start");
             this.emit("suite:start", null, 1);
             this.emit("suite:start", null, 2);
@@ -139,7 +136,7 @@ buster.testCase("Remote runner", {
             assert.match(listener.args[1][0], {client: {id: 2, browser: "Chrome"}});
         },
 
-        "should emit progress:suite:end event": function () {
+        "emits progress:suite:end event": function () {
             var listener = this.subscribeTo("progress:suite:end");
             this.emit("suite:end", null, 1);
 
@@ -149,7 +146,7 @@ buster.testCase("Remote runner", {
             });
         },
 
-        "should emit progress:suite:end event for all clients": function () {
+        "emits progress:suite:end event for all clients": function () {
             var listener = this.subscribeTo("progress:suite:end");
             this.emit("suite:end", null, 1);
             this.emit("suite:end", null, 2);
@@ -159,7 +156,7 @@ buster.testCase("Remote runner", {
             assert.match(listener.args[1][0], {client: {id: 2, browser: "Chrome"}});
         },
 
-        "should emit progress:test:success event": function () {
+        "emits progress:test:success event": function () {
             var listener = this.subscribeTo("progress:test:success");
             this.emit("context:start", { name: "Test case" }, 1);
             this.emit("test:success", { name: "test #1" }, 1);
@@ -172,7 +169,7 @@ buster.testCase("Remote runner", {
             });
         },
 
-        "should emit progress:test:success event for different clients": function () {
+        "emits progress:test:success event for different clients": function () {
             var listener = this.subscribeTo("progress:test:success");
             this.emit("context:start", { name: "Test case" }, 1);
             this.emit("context:start", { name: "Test case" }, 2);
@@ -187,7 +184,7 @@ buster.testCase("Remote runner", {
             assert.equals(listener.args[0][0].contexts, ["Test case"]);
         },
 
-        "should emit progress:test:error event": function () {
+        "emits progress:test:error event": function () {
             var listener = this.subscribeTo("progress:test:error");
             this.emit("context:start", { name: "Test case" }, 1);
             this.emit("test:error", { name: "test #1", error: { message: "!" } }, 1);
@@ -201,7 +198,7 @@ buster.testCase("Remote runner", {
             });
         },
 
-        "should emit progress:test:failure event": function () {
+        "emits progress:test:failure event": function () {
             var listener = this.subscribeTo("progress:test:failure");
             this.emit("context:start", { name: "Test case" }, 1);
             this.emit("test:failure", { name: "test #1", error: { message: "!" } }, 1);
@@ -215,7 +212,7 @@ buster.testCase("Remote runner", {
             });
         },
 
-        "should emit progress:test:failure event for nested test": function () {
+        "emits progress:test:failure event for nested test": function () {
             var listener = this.subscribeTo("progress:test:failure");
             this.emit("context:start", { name: "Test case" }, 1);
             this.emit("context:start", { name: "In situation" }, 1);
@@ -230,7 +227,7 @@ buster.testCase("Remote runner", {
             });
         },
 
-        "should emit progress:test:failure event for middle nested test": function () {
+        "emits progress:test:failure event for middle nested test": function () {
             var listener = this.subscribeTo("progress:test:failure");
             this.emit("context:start", { name: "Test case" }, 1);
             this.emit("context:start", { name: "In situation" }, 1);
@@ -247,7 +244,7 @@ buster.testCase("Remote runner", {
             });
         },
 
-        "should emit progress:test:timeout event": function () {
+        "emits progress:test:timeout event": function () {
             var listener = this.subscribeTo("progress:test:timeout");
             this.emit("context:start", { name: "Test case" }, 1);
             this.emit("test:timeout", { name: "test #1" }, 1);
@@ -263,13 +260,13 @@ buster.testCase("Remote runner", {
 
     "when context is completed": {
         setUp: function () {
-            this.runner = buster.remoteRunner.create(this.emitter, [{id:1}, {id:2}]);
+            this.runner = remoteRunner.create(this.emitter, [{id:1}, {id:2}]);
             this.runner.logger = { debug: this.stub() };
             this.emit("ready", this.clients[0], 1, buster.eventEmitter.create());
             this.emit("ready", this.clients[1], 2, buster.eventEmitter.create());
         },
 
-        "should emit test runner events": function () {
+        "emits test runner events": function () {
             var listeners = this.subscribeToMany(
                 "context:start", "context:end", "test:success",
                 "test:setUp", "test:tearDown", "test:start");
@@ -300,7 +297,7 @@ buster.testCase("Remote runner", {
             assert.calledWith(listeners[5], { name: "test #1" });
         },
 
-        "should emit log through console property": function () {
+        "emits log through console property": function () {
             var logger = { log: this.spy() };
             this.runner.console.bind(logger, "log");
 
@@ -312,7 +309,7 @@ buster.testCase("Remote runner", {
             assert.calledWith(logger.log, { level: "log", message: "Hey" });
         },
 
-        "should emit context:unsupported event": function () {
+        "emits context:unsupported event": function () {
             var listener = this.spy();
             this.runner.on("context:unsupported", listener);
 
@@ -333,7 +330,7 @@ buster.testCase("Remote runner", {
             assert.calledOnce(listener);
         },
 
-        "should emit test runner test status events": function () {
+        "emits test runner test status events": function () {
             var listeners = this.subscribeToMany(
                 "test:error", "test:failure", "test:timeout", "test:deferred");
 
@@ -382,7 +379,7 @@ buster.testCase("Remote runner", {
             assert.calledOnce(listener);
         },
 
-        "should emit timed out setup": function () {
+        "emits timed out setup": function () {
             var listeners = [
                 this.subscribeTo("test:setUp"),
                 this.subscribeTo("test:async"),
@@ -400,7 +397,7 @@ buster.testCase("Remote runner", {
             assert.calledOnce(listeners[2]);
         },
 
-        "should emit context start/stop in correct order": function () {
+        "emits context start/stop in correct order": function () {
             var out = [];
 
             this.runner.on("context:start", function (ctx) {
@@ -446,7 +443,7 @@ buster.testCase("Remote runner", {
         setUp: function () {
             this.createRunner = function (clients) {
                 var self = this;
-                this.runner = buster.remoteRunner.create(
+                this.runner = remoteRunner.create(
                     this.emitter, clients);
                 this.runner.logger = { debug: this.stub() };
 
@@ -457,7 +454,7 @@ buster.testCase("Remote runner", {
             };
         },
 
-        "should emit suite:start only once": function () {
+        "emits suite:start only once": function () {
             this.createRunner([{id: 1}, {id: 2}]);
             var listener = this.subscribeTo("suite:start");
 
@@ -478,7 +475,7 @@ buster.testCase("Remote runner", {
             refute.called(listener);
         },
 
-        "should emit suite:end when all clients are finished": function () {
+        "emits suite:end when all clients are finished": function () {
             this.createRunner([{id: "23-df"}, {id: "24-ef"}]);
             var listener = this.subscribeTo("suite:end");
 
@@ -524,7 +521,7 @@ buster.testCase("Remote runner", {
         },
 
         "should not skip client that starts after others finished": function () {
-            this.runner = buster.remoteRunner.create(this.emitter, [{id: 1}, {id: 2}]);
+            this.runner = remoteRunner.create(this.emitter, [{id: 1}, {id: 2}]);
             this.runner.logger = { debug: this.stub() };
             var listener = this.subscribeTo("suite:end");
 
@@ -539,8 +536,8 @@ buster.testCase("Remote runner", {
             assert.calledOnce(listener);
         },
 
-        "should ignore unknown clients": function () {
-            this.runner = buster.remoteRunner.create(this.emitter, [{id: 1}, {id: 2}]);
+        "ignores unknown clients": function () {
+            this.runner = remoteRunner.create(this.emitter, [{id: 1}, {id: 2}]);
             this.runner.logger = { debug: this.stub() };
             var listener = this.subscribeTo("suite:end");
 
@@ -555,7 +552,7 @@ buster.testCase("Remote runner", {
             refute.called(listener);
         },
 
-        "should summarize stats for suite:end": function () {
+        "summarizes stats for suite:end": function () {
             this.createRunner([{id: 1}, {id: 2}]);
             var listener = this.subscribeTo("suite:end");
 
@@ -600,7 +597,7 @@ buster.testCase("Remote runner", {
 
     "client timeouts": {
         setUp: function () {
-            this.runner = buster.remoteRunner.create(this.emitter, [{id:1}, {id:2}]);
+            this.runner = remoteRunner.create(this.emitter, [{id:1}, {id:2}]);
             this.runner.logger = { debug: this.stub() };
             this.connect = function () {
                 this.emit("ready", this.clients[0], 1, buster.eventEmitter.create());
@@ -608,7 +605,7 @@ buster.testCase("Remote runner", {
             };
         },
 
-        "should emit client:timeout if client is unresponsive for 15s": function () {
+        "emits client:timeout if client is unresponsive for 15s": function () {
             this.connect();
             var listener = this.spy();
             this.runner.on("client:timeout", listener);
@@ -622,7 +619,7 @@ buster.testCase("Remote runner", {
             assert.match(listener.args[0][0], { browser: "Chrome" });
         },
 
-        "should emit client:timeout if client is unresponsive for custom timeout": function () {
+        "emits client:timeout if client is unresponsive for custom timeout": function () {
             this.runner.timeout = 2000;
             this.connect();
             var listener = this.spy();
@@ -650,7 +647,7 @@ buster.testCase("Remote runner", {
             refute.called(listener);
         },
 
-        "should complete run with only one client if other timed out": function () {
+        "completes run with only one client if other timed out": function () {
             this.connect();
             var listener = this.spy();
             this.runner.on("suite:end", listener);
@@ -665,7 +662,7 @@ buster.testCase("Remote runner", {
             assert.calledOnce(listener);
         },
 
-        "should clean up timers when suite completes": function () {
+        "cleans up timers when suite completes": function () {
             this.connect();
             var listener = this.spy();
             this.runner.on("client:timeout", listener);
@@ -680,7 +677,7 @@ buster.testCase("Remote runner", {
             refute.called(listener);
         },
 
-        "should ignore suite messages from timed out client": function () {
+        "ignores suite messages from timed out client": function () {
             this.connect();
             var listener = this.spy();
             this.runner.on("suite:start", listener);
@@ -695,7 +692,7 @@ buster.testCase("Remote runner", {
             refute.called(listener);
         },
 
-        "should ignore context messages from timed out client": function () {
+        "ignores context messages from timed out client": function () {
             this.connect();
             var listener = this.spy();
             this.runner.on("context:start", listener);
@@ -710,7 +707,7 @@ buster.testCase("Remote runner", {
             refute.called(listener);
         },
 
-        "should ignore test messages from timed out client": function () {
+        "ignores test messages from timed out client": function () {
             this.connect();
             var listener = this.spy();
             this.runner.on("progress:test:success", listener);
