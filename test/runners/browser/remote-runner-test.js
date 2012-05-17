@@ -738,5 +738,23 @@ buster.testCase("Remote runner", {
 
             refute.called(listener);
         }
+    },
+
+    "custom events": {
+        setUp: function () {
+            this.runner = remoteRunner.create(this.emitter, [{ id: 1 }]);
+            this.emit("ready", this.clients[0], 1, buster.eventEmitter.create());
+        },
+
+        "emits custom event": function () {
+            var listener = this.subscribeTo("some:event");
+            this.emit("some:event", { id: 42, name: "Hey!" }, 1);
+
+            assert.calledOnce(listener);
+            assert.match(listener.args[0][0], {
+                client: { id: 1, browser: "Firefox" },
+                data: { id: 42, name: "Hey!" }
+            });
+        }
     }
 });
