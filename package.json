@@ -13,7 +13,7 @@
         "email": "christian@cjohansen.no",
         "url": "http://cjohansen.no"
     }],
-    "main": "./lib/buster-test-cli",
+    "main": "./lib/test-cli",
     "repository": {
         "type": "git",
         "url": "git://gitorious.org/buster/buster-test-cli.git"

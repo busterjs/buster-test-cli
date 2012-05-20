@@ -1,7 +1,7 @@
 var buster = require("buster");
 var cliHelper = require("buster-cli/lib/test-helper");
 var testCli = require("../lib/test-cli");
-var cli = require("buster-cli");
+var analyzer = require("buster-analyzer").analyzer;
 
 function fakeRunner(thisp, environment) {
     return { environment: environment, run: thisp.stub().yields() };
@@ -228,7 +228,23 @@ buster.testCase("Test CLI", {
             }
         ),
 
-        "skips caching": testArgumentOption(["-R"], { cacheResources: false }),
+        "skips caching": function (done) {
+            var runner = { run: this.stub().yields() };
+            this.stub(this.cli, "loadRunner").yields(null, runner);
+
+            this.cli.run(["-c", this.config, "-R"], done(function () {
+                refute(runner.cacheable);
+            }.bind(this)));
+        },
+
+        "is cacheable by default": function (done) {
+            var runner = { run: this.stub().yields() };
+            this.stub(this.cli, "loadRunner").yields(null, runner);
+
+            this.cli.run(["-c", this.config], done(function () {
+                assert(runner.cacheable);
+            }.bind(this)));
+        },
 
         "sets warning level": testArgumentOption(
             ["-W", "all"], { warnings: "all" }
@@ -277,6 +293,69 @@ buster.testCase("Test CLI", {
         "transfers filters": testArgumentOption(
             ["//should-"], { filters: ["//should-"] }
         )
+    },
+
+    "analyzer": {
+        setUp: function () {
+            this.analyzer = buster.eventEmitter.create();
+            this.analyzer.failOn = function () {};
+            this.stub(analyzer, "create").returns(this.analyzer);
+
+            this.runner = { run: this.stub(), abort: this.spy() };
+            this.stub(this.cli, "loadRunner").yields(null, this.runner);
+        },
+
+        "prevents caching on warning": function () {
+            this.cli.run(["-c", this.config]);
+            this.analyzer.emit("warning", {});
+            assert.isFalse(this.runner.cacheable);                
+        },
+
+        "prevents caching on error": function () {
+            this.cli.run(["-c", this.config]);
+            this.analyzer.emit("error", {});
+            assert.isFalse(this.runner.cacheable);
+        },
+
+        "prevents caching on fatal": function () {
+            this.cli.run(["-c", this.config]);
+            this.analyzer.emit("fatal", {});
+            assert.isFalse(this.runner.cacheable);
+        },
+
+        "aborts run if analyzer fails": function () {
+            this.cli.run(["-c", this.config]);
+            this.analyzer.emit("fail", { errors: 42 });
+            assert.calledOnce(this.runner.abort);
+            assert.match(this.runner.abort.args[0][0], {
+                stats: { errors: 42 },
+                type: "AnalyzerError",
+                message: "Pre-condition failed"
+            });
+        },
+
+        "calls callback when analyzer fails run": function () {
+            var callback = this.spy();
+            this.cli.run(["-c", this.config], callback);
+            this.analyzer.emit("fail", { errors: 42 });
+            assert.calledOnce(callback);
+        },
+
+        "only calls callback once": function () {
+            var callback = this.spy();
+            this.cli.run(["-c", this.config], callback);
+            this.analyzer.emit("fail", { errors: 42 });
+            this.runner.run.yield(null);
+            assert.calledOnce(callback);
+        },
+
+        "only calls callback once when analyzer fails after run": function () {
+            var callback = this.spy();
+            this.cli.run(["-c", this.config], callback);
+            this.runner.run.yield(null);
+            this.analyzer.emit("fail", { errors: 42 });
+            assert.calledOnce(callback);
+        }
     },
 
     "configuration": {
