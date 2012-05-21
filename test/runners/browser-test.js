@@ -9,7 +9,6 @@ var bayeuxEmitter = require("buster-bayeux-emitter");
 var reporters = require("buster-test").reporters;
 var http = require("http");
 var when = require("when");
-var busterBeforeRun = helper.require("cli/runners/before-run");
 
 buster.testCase("Browser runner", {
     setUp: function () {
@@ -106,7 +105,7 @@ buster.testCase("Browser runner", {
             var hook = { addExtension: this.stub().returns({
                 beforeRunHook: this.spy()
             }) };
-            this.stub(busterBeforeRun, "create").returns(hook);
+            //this.stub(busterBeforeRun, "create").returns(hook);
             this.runner.run(this.group, this.options);
 
             this.config.resolver.resolve({});

@@ -4,7 +4,6 @@ var nodeRunner = require("../../lib/runners/node");
 var stdioLogger = require("buster-stdio-logger");
 var when = require("when");
 var fs = require("fs");
-var beforeRun = require("../../lib/before-run-hook");
 var cliHelper = require("buster-cli/lib/test-helper");
 
 function fakeConfig(tc) {
@@ -72,7 +71,7 @@ buster.testCase("Node runner", {
 
     "test running": {
         "uses autoRun": function () {
-            this.stub(nodeRunner, "beforeRunHook").returns(this.analyzer.promise);
+            //this.stub(nodeRunner, "beforeRunHook").returns(this.analyzer.promise);
             this.analyzer.resolver.resolve();
             this.config.resolver.resolve(this.resourceSet);
 
