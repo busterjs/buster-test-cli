@@ -1,7 +1,7 @@
 var buster = require("buster");
 var cliHelper = require("buster-cli/lib/test-helper");
 var testCli = require("../lib/test-cli");
-var analyzer = require("buster-analyzer").analyzer;
+var runAnalyzer = require("../lib/run-analyzer");
 
 function fakeRunner(thisp, environment) {
     return { environment: environment, run: thisp.stub().yields() };
@@ -296,80 +296,23 @@ buster.testCase("Test CLI", {
     },
 
     "analyzer": {
-        setUp: function () {
-            this.analyzer = buster.eventEmitter.create();
-            this.analyzer.failOn = function () {};
-            this.stub(analyzer, "create").returns(this.analyzer);
-
-            this.runner = { run: this.stub(), abort: this.spy() };
-            this.stub(this.cli, "loadRunner").yields(null, this.runner);
-        },
-
-        "prevents caching on warning": function () {
+        "creates run analyzer": function () {
+            this.spy(runAnalyzer, "create");
             this.cli.run(["-c", this.config]);
-            this.analyzer.emit("warning", {});
-            assert.isFalse(this.runner.cacheable);                
-        },
 
-        "prevents caching on error": function () {
-            this.cli.run(["-c", this.config]);
-            this.analyzer.emit("error", {});
-            assert.isFalse(this.runner.cacheable);
-        },
-
-        "prevents caching on fatal": function () {
-            this.cli.run(["-c", this.config]);
-            this.analyzer.emit("fatal", {});
-            assert.isFalse(this.runner.cacheable);
-        },
-
-        "aborts run if analyzer fails": function () {
-            this.cli.run(["-c", this.config]);
-            this.analyzer.emit("fail", { errors: 42 });
-            assert.calledOnce(this.runner.abort);
-            assert.match(this.runner.abort.args[0][0], {
-                stats: { errors: 42 },
-                type: "AnalyzerError",
-                message: "Pre-condition failed"
+            assert.calledOnceWith(runAnalyzer.create, this.cli.logger);
+            assert.match(runAnalyzer.create.args[0][1], {
+                bright: true,
+                color: true
             });
         },
 
-        "calls callback when analyzer fails run": function () {
-            var callback = this.spy();
-            this.cli.run(["-c", this.config], callback);
-            this.analyzer.emit("fail", { errors: 42 });
-            assert.calledOnce(callback);
-        },
+        "runs configuration group": function () {
+            var run = this.spy();
+            this.stub(runAnalyzer, "create").returns({ run: run });
+            this.cli.run(["-c", this.config]);
 
-        "only calls callback once": function () {
-            var callback = this.spy();
-            this.cli.run(["-c", this.config], callback);
-            this.analyzer.emit("fail", { errors: 42 });
-            this.runner.run.yield(null);
-            assert.calledOnce(callback);
-        },
-
-        "only calls callback once when analyzer fails after run": function () {
-            var callback = this.spy();
-            this.cli.run(["-c", this.config], callback);
-            this.runner.run.yield(null);
-            this.analyzer.emit("fail", { errors: 42 });
-            assert.calledOnce(callback);
-        },
-
-        "triggers analyze configuration hook": function () {
-            var hook = this.spy();
-            var cli = testCli.create(this.stdout, this.stderr, {
-                extensions: [{ analyze: hook }]
-            });
-            cli.cli.exit = this.spy();
-            cli.loadRunner = this.stub().yields(null, this.runner);
-
-            cli.run(["-c", this.config]);
-            this.runner.run.yield(null);
-
-            assert.calledOnce(hook);
-            assert.calledOnceWith(hook, this.analyzer);
+            assert.calledOnce(run);
         }
     },
 
