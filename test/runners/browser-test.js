@@ -1,4 +1,3 @@
-var helper = require("../../../test-helper");
 var buster = require("buster");
 var stdioLogger = require("buster-stdio-logger");
 var browserRunner = helper.require("cli/runners/browser-runner");

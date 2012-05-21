@@ -1,250 +1,251 @@
-var helper = require("../../../test-helper");
 var buster = require("buster");
-buster.autoRun = require("buster-test").autoRun;
-buster.testCase = require("buster-test").testCase;
-buster.spec = require("buster-test").spec;
-assert = buster.assert;
-var run = helper.runTest;
-var nodeRunner = helper.require("cli/runners/node-runner");
+var bTest = require("buster-test");
+var nodeRunner = require("../../lib/runners/node");
 var stdioLogger = require("buster-stdio-logger");
 var when = require("when");
 var fs = require("fs");
-var beforeRun = helper.require("cli/runners/before-run");
+var beforeRun = require("../../lib/before-run-hook");
+var cliHelper = require("buster-cli/lib/test-helper");
+
+function fakeConfig(tc) {
+    return buster.extend(buster.eventEmitter.create(), {
+        resolve: tc.stub(),
+        runExtensionHook: tc.stub()
+    });
+}
+
+function createNodeRunner() {
+    var stdout = cliHelper.writableStream("stdout");
+    var stderr = cliHelper.writableStream("stderr");
+    return nodeRunner.create({ logger: stdioLogger(stdout, stderr) });
+}
 
 buster.testCase("Node runner", {
     setUp: function () {
-        this.stub(buster, "autoRun");
-        this.options = {};
-        this.config = when.defer();
-        this.analyzer = when.defer();
-        this.group = buster.extend(buster.eventEmitter.create(), {
-            resolve: this.stub().returns(this.config.promise),
-            runExtensionHook: this.stub(),
-            tmpFile: this.stub().returns("/file")
-        });
-        var loadPaths = this.loadPaths = [];
-        this.resourceSet = {
-            loadPath: {
-                paths: function () { return loadPaths; }
-            }
-        };
-        this.runner = Object.create(nodeRunner);
-        this.stdout = "";
-        this.stderr = "";
-        var self = this;
-        this.runner.logger = stdioLogger(
-            { write: function (msg) { self.stdout += msg; } },
-            { write: function (msg) { self.stderr += msg; } }
-        );
-        this.stub(fs, "writeFileSync");
         this.stub(process, "exit");
+        this.runner = createNodeRunner();
     },
 
-    "resolves config": function () {
-        this.runner.run(this.group, this.options);
+    "run configuration": {
+        "captures console if configured to": function () {
+            this.stub(buster, "captureConsole");
+            this.runner.run(fakeConfig(this), { captureConsole: true });
+            assert.calledOnce(buster.captureConsole);
+        },
 
-        assert.calledOnce(this.group.resolve);
-    },
+        "does not capture console if not configured to": function () {
+            this.stub(buster, "captureConsole");
+            this.runner.run(fakeConfig(this), { captureConsole: false });
+            refute.called(buster.captureConsole);
+        },
 
-    "does not autoRun until config is resolved": function () {
-        this.runner.run(this.group, this.options);
-
-        refute.called(buster.autoRun);
-    },
-
-    "exits if beforeRunHook fails": function () {
-        this.group.runExtensionHook.throws();
-        this.runner.run(this.group, this.options);
-
-        assert.calledOnceWith(process.exit, 70);
-    },
-
-    "uses buster.autoRun to run tests": function () {
-        this.stub(nodeRunner, "beforeRunHook").returns(this.analyzer.promise);
-        this.analyzer.resolver.resolve();
-        this.config.resolver.resolve(this.resourceSet);
-
-        this.runner.run(this.group, this.options);
-
-        assert.calledOnce(buster.autoRun);
-        assert.calledWith(buster.autoRun, this.options);
-    },
-
-    "fires testRun extension hook with test runner": function () {
-        this.stub(nodeRunner, "beforeRunHook").returns(this.analyzer.promise);
-        this.analyzer.resolver.resolve();
-        this.config.resolver.resolve(this.resourceSet);
-
-        this.runner.run(this.group, this.options);
-        buster.autoRun.yieldTo("start", { id: 42 });
-
-        assert.calledOnceWith(this.group.runExtensionHook, "testRun", { id: 42 });
-    },
-
-    "registers listener for created test cases": function () {
-        this.stub(nodeRunner, "beforeRunHook").returns(this.analyzer.promise);
-        this.analyzer.resolver.resolve();
-        this.config.resolver.resolve(this.resourceSet);
-        var runner = function () {};
-        buster.autoRun.returns(runner);
-        this.runner.run(this.group, this.options);
-
-        assert.equals(buster.testCase.onCreate, runner);
-        assert.equals(buster.spec.describe.onCreate, runner);
-    },
-
-    "calls done callback when complete": function () {
-        this.stub(nodeRunner, "beforeRunHook").returns(this.analyzer.promise);
-        this.analyzer.resolver.resolve();
-        this.config.resolver.resolve(this.resourceSet);
-        var callback = this.spy();
-        buster.autoRun.yieldsTo("end", { ok: true, tests: 42 });
-        this.runner.run(this.group, {}, callback);
-
-        assert.calledOnce(callback);
-        assert.calledWith(callback, null, { ok: true, tests: 42 });
-    },
-
-    "requires absolute paths": function () {
-        this.stub(nodeRunner, "beforeRunHook").returns(this.analyzer.promise);
-        this.analyzer.resolver.resolve();
-        var promise = { then: this.stub() };
-        this.group.resolve.returns(promise);
-        this.resourceSet.rootPath = "/here";
-        this.loadPaths.push("hey.js");
-        this.runner.run(this.group, {});
-
-        try {
-            promise.then.yield(this.resourceSet);
-            throw new Error("Didn't fail");
-        } catch (e) {
-            assert.match(this.stderr, "/here/hey.js");
+        "does not capture console by default": function () {
+            this.stub(buster, "captureConsole");
+            this.runner.run(fakeConfig(this), {});
+            refute.called(buster.captureConsole);
         }
     },
 
-    "calls callback with error if using relative paths": function () {
-        this.stub(nodeRunner, "beforeRunHook").returns(this.analyzer.promise);
-        this.analyzer.resolver.resolve();
-        var promise = { then: this.stub() };
-        this.group.resolve.returns(promise);
-        this.resourceSet.rootPath = "/here";
-        this.loadPaths.push("hey.js");
-        var callback = this.spy();
-        this.runner.run(this.group, {}, callback);
+    "config resolution": {
+        "resolves config": function () {
+            var config = fakeConfig(this);
+            this.runner.run(config, {});
+            assert.calledOnce(config.resolve);
+        },
 
-        try {
-            promise.then.yield(this.resourceSet);
-        } catch (e) {
-            assert.match(this.stderr, "/here/hey.js");
-        }
-
-        assert.calledOnce(callback);
-        assert.match(callback.args[0][0], {
-            code: 65
-        });
-    },
-
-    "logs load errors": function () {
-        this.stub(nodeRunner, "beforeRunHook").returns(this.analyzer.promise);
-        this.analyzer.resolver.resolve();
-        var promise = { then: this.stub() };
-        this.group.resolve.returns(promise);
-        this.runner.run(this.group, {});
-
-        try {
-            promise.then.yield({
-                loadPath: {
-                    paths: this.stub().throws("Error", "Ay caramba")
-                }
-            });
-            throw new Error("Didn't fail");
-        } catch (e) {
-            assert.match(this.stderr, "Ay caramba");
+        "does not autoRun until config is resolved": function () {
+            this.stub(bTest, "autoRun");
+            this.runner.run(fakeConfig(this), {});
+            refute.called(bTest.autoRun);
         }
     },
 
-    "logs config resolution errors": function () {
-        this.stub(nodeRunner, "beforeRunHook").returns(this.analyzer.promise);
-        this.analyzer.resolver.resolve();
-        this.config.resolver.reject({ message: "Oh noes" });
-        this.runner.run(this.group, {});
+    "before run hook": {
+        "exits if beforeRunHook fails": function () {
+            var config = fakeConfig(this);
+            config.runExtensionHook.throws();
+            this.runner.run(config, {});
 
-        assert.match(this.stderr, "Oh noes");
+            assert.calledOnceWith(process.exit, 70);
+        }
     },
 
-    "runs beforeRun extension hook": function () {
-        this.runner.run(this.group, {});
+    "test running": {
+        "uses autoRun": function () {
+            this.stub(nodeRunner, "beforeRunHook").returns(this.analyzer.promise);
+            this.analyzer.resolver.resolve();
+            this.config.resolver.resolve(this.resourceSet);
 
-        assert.calledOnceWith(this.group.runExtensionHook, "beforeRun", this.group);
+            this.runner.run(this.group, this.options);
+
+            assert.calledOnce(bTest.autoRun);
+            assert.calledWith(bTest.autoRun, this.options);
+        }
     },
 
-    "processes all resource sets": function () {
-        this.stub(this.group, "on");
+    // "fires testRun extension hook with test runner": function () {
+    //     this.stub(nodeRunner, "beforeRunHook").returns(this.analyzer.promise);
+    //     this.analyzer.resolver.resolve();
+    //     this.config.resolver.resolve(this.resourceSet);
 
-        this.runner.run(this.group, {});
-        assert.equals(this.group.on.callCount, 4);
+    //     this.runner.run(this.group, this.options);
+    //     bTest.autoRun.yieldTo("start", { id: 42 });
 
-        var process = this.stub().returns({ then: function () {} });
-        this.group.on.args[0][1]({ process: process });
-        assert.calledOnce(process);
-    },
+    //     assert.calledOnceWith(this.group.runExtensionHook, "testRun", { id: 42 });
+    // },
 
-    "processes resource sets with existing manifest": function () {
-        this.stub(fs, "readFileSync").returns('{"/somewhere.js": ["1234"]}');
-        this.stub(this.group, "on");
+    // "registers listener for created test cases": function () {
+    //     this.stub(nodeRunner, "beforeRunHook").returns(this.analyzer.promise);
+    //     this.analyzer.resolver.resolve();
+    //     this.config.resolver.resolve(this.resourceSet);
+    //     var runner = this.spy();
+    //     bTest.autoRun.returns(runner);
+    //     this.runner.run(this.group, this.options);
 
-        this.runner.run(this.group, {});
-        assert.equals(this.group.on.callCount, 4);
+    //     bTest.testContext.emit("create", { id: 42 });
 
-        var process = this.stub().returns({ then: function () {} });
-        this.group.on.args[0][1]({ process: process });
-        assert.calledWith(process, { "/somewhere.js": ["1234"] });
-    },
+    //     assert.calledOnce(runner, { id: 42 });
+    // },
 
-    "writes manifest when successful": function () {
-        this.stub(nodeRunner, "beforeRunHook").returns(this.analyzer.promise);
-        this.analyzer.resolver.resolve();
-        this.config.resolver.resolve(this.resourceSet);
+    // "calls done callback when complete": function () {
+    //     this.stub(nodeRunner, "beforeRunHook").returns(this.analyzer.promise);
+    //     this.analyzer.resolver.resolve();
+    //     this.config.resolver.resolve(this.resourceSet);
+    //     var callback = this.spy();
+    //     bTest.autoRun.yieldsTo("end", { ok: true, tests: 42 });
+    //     this.runner.run(this.group, {}, callback);
 
-        this.runner.run(this.group, this.options);
+    //     assert.calledOnce(callback);
+    //     assert.calledWith(callback, null, { ok: true, tests: 42 });
+    // },
 
-        assert.calledOnce(fs.writeFileSync);
-    },
+    // "requires absolute paths": function () {
+    //     this.stub(nodeRunner, "beforeRunHook").returns(this.analyzer.promise);
+    //     this.analyzer.resolver.resolve();
+    //     var promise = { then: this.stub() };
+    //     this.group.resolve.returns(promise);
+    //     this.resourceSet.rootPath = "/here";
+    //     this.loadPaths.push("hey.js");
+    //     this.runner.run(this.group, {});
 
-    "aborts run if analyzer fails": function (done) {
-        this.stub(beforeRun, "beforeRunHook");
-        this.config.resolver.resolve({});
+    //     try {
+    //         promise.then.yield(this.resourceSet);
+    //         throw new Error("Didn't fail");
+    //     } catch (e) {
+    //         assert.match(this.stderr, "/here/hey.js");
+    //     }
+    // },
 
-        this.runner.run(this.group, {}, done(function (err) {
-            refute.called(buster.autoRun);
-            assert.match(err, {
-                code: 70
-            });
-        }));
+    // "calls callback with error if using relative paths": function () {
+    //     this.stub(nodeRunner, "beforeRunHook").returns(this.analyzer.promise);
+    //     this.analyzer.resolver.resolve();
+    //     var promise = { then: this.stub() };
+    //     this.group.resolve.returns(promise);
+    //     this.resourceSet.rootPath = "/here";
+    //     this.loadPaths.push("hey.js");
+    //     var callback = this.spy();
+    //     this.runner.run(this.group, {}, callback);
 
-        beforeRun.beforeRunHook.yield({});
-    },
+    //     try {
+    //         promise.then.yield(this.resourceSet);
+    //     } catch (e) {
+    //         assert.match(this.stderr, "/here/hey.js");
+    //     }
 
-    "does not write manifest if analyzer fails": function (done) {
-        this.stub(nodeRunner, "beforeRunHook").returns(this.analyzer.promise);
-        this.analyzer.resolver.reject();
-        this.config.resolver.resolve({});
+    //     assert.calledOnce(callback);
+    //     assert.match(callback.args[0][0], {
+    //         code: 65
+    //     });
+    // },
 
-        this.runner.run(this.group, {}, done(function () {
-            refute.called(fs.writeFileSync);
-        }));
-    },
+    // "logs load errors": function () {
+    //     this.stub(nodeRunner, "beforeRunHook").returns(this.analyzer.promise);
+    //     this.analyzer.resolver.resolve();
+    //     var promise = { then: this.stub() };
+    //     this.group.resolve.returns(promise);
+    //     this.runner.run(this.group, {});
 
-    "captures console if configured thusly": function () {
-        this.stub(nodeRunner, "beforeRunHook").returns(this.analyzer.promise);
-        this.analyzer.resolver.resolve();
-        this.config.resolver.resolve(this.resourceSet);
-        this.stub(buster, "captureConsole");
+    //     try {
+    //         promise.then.yield({
+    //             loadPath: {
+    //                 paths: this.stub().throws("Error", "Ay caramba")
+    //             }
+    //         });
+    //         throw new Error("Didn't fail");
+    //     } catch (e) {
+    //         assert.match(this.stderr, "Ay caramba");
+    //     }
+    // },
 
-        this.runner.run(this.group, {
-            captureConsole: true
-        });
+    // "logs config resolution errors": function () {
+    //     this.stub(nodeRunner, "beforeRunHook").returns(this.analyzer.promise);
+    //     this.analyzer.resolver.resolve();
+    //     this.config.resolver.reject({ message: "Oh noes" });
+    //     this.runner.run(this.group, {});
 
-        assert.calledOnce(buster.captureConsole);
-    }
+    //     assert.match(this.stderr, "Oh noes");
+    // },
+
+    // "runs beforeRun extension hook": function () {
+    //     this.runner.run(this.group, {});
+
+    //     assert.calledOnceWith(this.group.runExtensionHook, "beforeRun", this.group);
+    // },
+
+    // "processes all resource sets": function () {
+    //     this.stub(this.group, "on");
+
+    //     this.runner.run(this.group, {});
+    //     assert.equals(this.group.on.callCount, 4);
+
+    //     var process = this.stub().returns({ then: function () {} });
+    //     this.group.on.args[0][1]({ process: process });
+    //     assert.calledOnce(process);
+    // },
+
+    // "processes resource sets with existing manifest": function () {
+    //     this.stub(fs, "readFileSync").returns('{"/somewhere.js": ["1234"]}');
+    //     this.stub(this.group, "on");
+
+    //     this.runner.run(this.group, {});
+    //     assert.equals(this.group.on.callCount, 4);
+
+    //     var process = this.stub().returns({ then: function () {} });
+    //     this.group.on.args[0][1]({ process: process });
+    //     assert.calledWith(process, { "/somewhere.js": ["1234"] });
+    // },
+
+    // "writes manifest when successful": function () {
+    //     this.stub(nodeRunner, "beforeRunHook").returns(this.analyzer.promise);
+    //     this.analyzer.resolver.resolve();
+    //     this.config.resolver.resolve(this.resourceSet);
+
+    //     this.runner.run(this.group, this.options);
+
+    //     assert.calledOnce(fs.writeFileSync);
+    // },
+
+    // "aborts run if analyzer fails": function (done) {
+    //     this.stub(beforeRun, "beforeRunHook");
+    //     this.config.resolver.resolve({});
+
+    //     this.runner.run(this.group, {}, done(function (err) {
+    //         refute.called(bTest.autoRun);
+    //         assert.match(err, {
+    //             code: 70
+    //         });
+    //     }));
+
+    //     beforeRun.beforeRunHook.yield({});
+    // },
+
+    // "does not write manifest if analyzer fails": function (done) {
+    //     this.stub(nodeRunner, "beforeRunHook").returns(this.analyzer.promise);
+    //     this.analyzer.resolver.reject();
+    //     this.config.resolver.resolve({});
+
+    //     this.runner.run(this.group, {}, done(function () {
+    //         refute.called(fs.writeFileSync);
+    //     }));
+    // },
 });
