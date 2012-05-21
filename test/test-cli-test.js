@@ -355,6 +355,21 @@ buster.testCase("Test CLI", {
             this.runner.run.yield(null);
             this.analyzer.emit("fail", { errors: 42 });
             assert.calledOnce(callback);
+        },
+
+        "triggers analyze configuration hook": function () {
+            var hook = this.spy();
+            var cli = testCli.create(this.stdout, this.stderr, {
+                extensions: [{ analyze: hook }]
+            });
+            cli.cli.exit = this.spy();
+            cli.loadRunner = this.stub().yields(null, this.runner);
+
+            cli.run(["-c", this.config]);
+            this.runner.run.yield(null);
+
+            assert.calledOnce(hook);
+            assert.calledOnceWith(hook, this.analyzer);
         }
     },
 
@@ -384,8 +399,8 @@ buster.testCase("Test CLI", {
             var callback = this.spy();
             this.runners.fake = { run: this.spy() };
             this.cli.runConfigGroups([
-                { environment: "fake", id: 1 },
-                { environment: "fake", id: 2 }
+                { environment: "fake", id: 1, runExtensionHook: this.spy()  },
+                { environment: "fake", id: 2, runExtensionHook: this.spy()  }
             ], {}, callback);
 
             assert.calledOnce(this.runners.fake.run);
@@ -396,8 +411,8 @@ buster.testCase("Test CLI", {
             var callback = this.spy();
             this.runners.fake = { run: this.stub().yields() };
             this.cli.runConfigGroups([
-                { environment: "fake", id: 1 },
-                { environment: "fake", id: 2 }
+                { environment: "fake", id: 1, runExtensionHook: this.spy() },
+                { environment: "fake", id: 2, runExtensionHook: this.spy() }
             ], {}, callback);
 
             assert.calledTwice(this.runners.fake.run);
@@ -432,52 +447,58 @@ buster.testCase("Test CLI", {
                     callback.apply(null, this.results[this.nextGroup]);
                 }.bind(this)
             };
+            this.fakeConfig = {
+                environment: "fake",
+                runExtensionHook: this.spy()
+            };
         },
 
         "is 0 when single test configuration passes": function () {
             this.results = [[null, { ok: true }]];
-            this.cli.runConfigGroups([{ environment: "fake" }], {}, this.done);
+            this.cli.runConfigGroups([this.fakeConfig], {}, this.done);
             assert.calledOnceWith(this.exit, 0);
         },
 
         "is 0 when two test configurations pass": function () {
             this.results = [[null, { ok: true }], [null, { ok: true }]];
-            this.cli.runConfigGroups([{ environment: "fake" }, {
-                environment: "fake"
+            this.cli.runConfigGroups([this.fakeConfig, {
+                environment: "fake",
+                runExtensionHook: this.spy()
             }], {}, this.done);
             assert.calledOnceWith(this.exit, 0);
         },
 
         "is 1 when single test configuration fails": function () {
             this.results = [[null, { ok: false }]];
-            this.cli.runConfigGroups([{ environment: "fake" }], {}, this.done);
+            this.cli.runConfigGroups([this.fakeConfig], {}, this.done);
             assert.calledOnceWith(this.exit, 1);
         },
 
         "is 1 when one of several test configurations fails": function () {
             this.results = [[null, { ok: true }], [null, { ok: false }]];
-            this.cli.runConfigGroups([{ environment: "fake" }, {
-                environment: "fake"
+            this.cli.runConfigGroups([this.fakeConfig, {
+                environment: "fake",
+                runExtensionHook: this.spy()
             }], {}, this.done);
             assert.calledOnceWith(this.exit, 1);
         },
 
         "uses exception status code": function () {
             this.results = [[{ code: 13 }]];
-            this.cli.runConfigGroups([{ environment: "fake" }], {}, this.done);
+            this.cli.runConfigGroups([this.fakeConfig], {}, this.done);
             assert.calledOnceWith(this.exit, 13);
         },
 
         "defaults error code to 70 (EX_SOFTWARE) for code-less exception": function () {
             this.results = [[{}]];
-            this.cli.runConfigGroups([{ environment: "fake" }], {}, this.done);
+            this.cli.runConfigGroups([this.fakeConfig], {}, this.done);
             assert.calledOnceWith(this.exit, 70);
         },
 
         "fails for single failed configuration": function () {
             var ok = [null, { ok: true }];
             this.results = [ok, ok, [{ code: 99 }], ok];
-            var group = { environment: "fake" };
+            var group = this.fakeConfig;
             this.cli.runConfigGroups([group, group, group, group], {}, this.done);
             assert.calledOnceWith(this.exit, 99);
         }
