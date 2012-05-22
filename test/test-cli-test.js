@@ -380,7 +380,7 @@ buster.testCase("Test CLI", {
         }
     },
 
-    "exit code": {
+    "exit": {
         setUp: function () {
             this.done = this.spy();
             this.nextGroup = -1;
@@ -396,13 +396,13 @@ buster.testCase("Test CLI", {
             };
         },
 
-        "is 0 when single test configuration passes": function () {
+        "with code 0 when single test configuration passes": function () {
             this.results = [[null, { ok: true }]];
             this.cli.runConfigGroups([this.fakeConfig], {}, this.done);
             assert.calledOnceWith(this.exit, 0);
         },
 
-        "is 0 when two test configurations pass": function () {
+        "with code 0 when two test configurations pass": function () {
             this.results = [[null, { ok: true }], [null, { ok: true }]];
             this.cli.runConfigGroups([this.fakeConfig, {
                 environment: "fake",
@@ -411,13 +411,13 @@ buster.testCase("Test CLI", {
             assert.calledOnceWith(this.exit, 0);
         },
 
-        "is 1 when single test configuration fails": function () {
+        "with code 1 when single test configuration fails": function () {
             this.results = [[null, { ok: false }]];
             this.cli.runConfigGroups([this.fakeConfig], {}, this.done);
             assert.calledOnceWith(this.exit, 1);
         },
 
-        "is 1 when one of several test configurations fails": function () {
+        "with code 1 when one of several test configurations fails": function () {
             this.results = [[null, { ok: true }], [null, { ok: false }]];
             this.cli.runConfigGroups([this.fakeConfig, {
                 environment: "fake",
@@ -444,6 +444,14 @@ buster.testCase("Test CLI", {
             var group = this.fakeConfig;
             this.cli.runConfigGroups([group, group, group, group], {}, this.done);
             assert.calledOnceWith(this.exit, 99);
+        },
+
+        "logs error before exit": function () {
+            this.results = [[{ code: 99, message: "Oh snap" }]];
+            var group = this.fakeConfig;
+            this.cli.runConfigGroups([group, group, group, group], {}, this.done);
+
+            assert.stderr("Oh snap");
         }
     }
 });
