@@ -1,17 +1,16 @@
-var helper = require("../test-helper");
 var util = require("util");
 
 if (require.main != module) {
     util.puts("Integration test must be run manually - it is a visual test");
-    util.puts("node test/node/integration/reporter-test.js\n");
+    util.puts("node " + __filename.replace(process.cwd(), ".") + "\n");
 } else {
     run();
 }
 
 function run() {
     var buster = require("buster");
-    buster.remoteRunner = helper.require("test-runner/remote-runner");
-    buster.progressReporter = helper.require("test-runner/progress-reporter");
+    var remoteRunner = require("../lib/runners/browser/remote-runner");
+    var progressReporter = require("../lib/runners/browser/progress-reporter");
 
     var emitter = buster.eventEmitter.create();
 
@@ -30,12 +29,12 @@ function run() {
     }
 
     var clients = ["Firefox 4.0.1", "Chrome 11", "Safari/534.24"];
-    var runner = buster.remoteRunner.create(emitter, [
+    var runner = remoteRunner.create(emitter, [
         { id: 1 }, { id: 2 }, { id: 3 }
     ]);
 
-    var reporter = buster.progressReporter.create({
-        io: require("util"),
+    var reporter = progressReporter.create({
+        outputStream: { write: require("util").print },
         color: true, bright: true
     }).listen(runner);
 
