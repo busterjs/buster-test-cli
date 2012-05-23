@@ -453,5 +453,50 @@ buster.testCase("Test CLI", {
 
             assert.stderr("Oh snap");
         }
+    },
+
+    "extensions": {
+        setUp: function () {
+            this.extensions = {
+                node: [{ id: 42 }, { id: 13 }],
+                browser: [{ id: 1 }, { id: 2 }]
+            };
+            this.runners = {
+                node: { run: this.spy() },
+                browser: { run: this.spy() }
+            };
+            this.config = { environment: "node", runExtensionHook: this.spy() };
+        },
+
+        "are preloaded for environment": function () {
+            var cli = testCli.create(this.stdout, this.stderr, {
+                extensions: this.extensions,
+                runners: this.runners
+            });
+
+            cli.runConfig(this.config, {}, function () {});
+
+            assert.equals(this.config.extensions, [{ id: 42 }, { id: 13 }]);
+        },
+
+        "are initialized empty": function () {
+            var cli = testCli.create(this.stdout, this.stderr, {
+                runners: this.runners
+            });
+            cli.runConfig(this.config, {}, function () {});
+
+            assert.equals(this.config.extensions, []);
+        },
+
+        "are prepended to existing extensions": function () {
+            var cli = testCli.create(this.stdout, this.stderr, {
+                extensions: this.extensions,
+                runners: this.runners
+            });
+            this.config.extensions = [{ id: 4 }];
+            cli.runConfig(this.config, {}, function () {});
+
+            assert.equals(this.config.extensions, [{ id: 42 }, { id: 13 }, { id: 4 }]);
+        }
     }
 });
