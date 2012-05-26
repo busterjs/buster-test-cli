@@ -283,11 +283,11 @@ buster.testCase("Test CLI", {
         ),
 
         "sets static resource path": testArgumentOption(
-            ["--static-paths"], { staticResourcePath: true }
+            ["--static-paths"], { staticResourcesPath: true }
         ),
 
         "sets static resource path with short option": testArgumentOption(
-            ["-p"], { staticResourcePath: true }
+            ["-p"], { staticResourcesPath: true }
         ),
 
         "transfers filters": testArgumentOption(
