@@ -18,6 +18,9 @@
         "type": "git",
         "url": "git://gitorious.org/buster/buster-test-cli.git"
     },
+    "scripts": {
+        "test": "buster test"
+    },
     "dependencies": {
         "buster-core": ">=0.6.1",
         "buster-client": ">=0.5.4",
