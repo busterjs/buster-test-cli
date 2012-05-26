@@ -1,7 +1,6 @@
 var config = module.exports;
 
 config["Node tests"] = {
-    rootPath: "../",
     environment: "node",
     sources: ["lib/**/*.js"],
     tests: ["test/node/**/*.js"]/*,
@@ -20,7 +19,6 @@ config["Node tests"] = {
 };
 
 config["Browser tests"] = {
-    rootPath: "../",
     environment: "browser",
     src: ["lib/buster-test-cli/browser/wiring.js"],
     tests: ["test/browser/test-helper.js",
