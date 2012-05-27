@@ -17,17 +17,25 @@ function fakeConfig(tc) {
     });
 }
 
+function fakeSession(tc) {
+    return buster.extend(buster.eventEmitter.create(), {
+        started: tc.stub(),
+        loaded: tc.stub(),
+        ended: tc.stub(),
+        unloaded: tc.stub()
+    });
+}
+
 function fakeServerClient(tc) {
     return {
-        connect: tc.stub(),
-        disconnect: tc.stub(),
-        createSession: tc.stub().returns(when.defer())
+        createSession: tc.stub().returns(when(fakeSession(tc)))
     };
 }
 
 buster.testCase("Browser runner", {
     setUp: function () {
         this.runner = buster.create(browserRunner);
+        this.runner.logger = { info: this.spy() };
     },
 
     //     setUp: function () {
@@ -80,7 +88,7 @@ buster.testCase("Browser runner", {
         }
     },
 
-    "session": {
+    "session creation": {
         setUp: function () {
             var client = this.serverClient = fakeServerClient(this);
             this.stub(captureServer, "createServerClient").returns(this.serverClient);
@@ -96,19 +104,13 @@ buster.testCase("Browser runner", {
             });
         },
 
-        "connects client": function () {
-            this.runner.run(this.config, {});
-
-            assert.calledOnce(this.serverClient.connect);
-        },
-
-        "is not created when config is not resolved": function () {
+        "not when config is not resolved": function () {
             this.runner.run(this.config, {});
 
             refute.called(this.serverClient.createSession);
         },
 
-        "is created with config resource set": function (done) {
+        "with configured resource set": function (done) {
             this.config.resolve.returns(when({ id: 42 }));
 
             this.runner.run(this.config, {}, done(function () {
@@ -187,266 +189,334 @@ buster.testCase("Browser runner", {
             }.bind(this)));
         },
 
-        "// is managed(?)": "pending augustl feedback"
+        "is managed": function (done) {
+            this.config.resolve.returns(when({ id: 42 }));
+
+            this.runner.run(this.config, {}, done(function () {
+                assert.sessionOptions({ managed: true });
+            }.bind(this)));
+        },
+
+        "runs session with runSession": function (done) {
+            var session = { id: 42 };
+            this.serverClient.createSession.returns(when(session));
+            this.stub(this.runner, "runSession").yields();
+            this.config.resolve.returns(when({}));
+
+            this.runner.run(this.config, {}, done(function () {
+                assert.calledOnce(this.runner.runSession);
+                assert.calledWith(this.runner.runSession, session);
+            }.bind(this)));
+        },
+
+        "runs session with all options": function (done) {
+            this.stub(this.runner, "runSession").yields();
+            var deferred = when.defer();
+            this.config.resolve.returns(deferred.promise);
+
+            this.runner.run(this.config, { id: 42 }, done(function () {
+                assert.equals(this.runner.runSession.args[0][1], {
+                    id: 42,
+                    things: "stuff"
+                });
+            }.bind(this)));
+
+            this.config.options = { things: "stuff" };
+            deferred.resolve({});
+        }
     },
 
     "abort": {
-        "//todo":
-        "- Stop session creation, if applicable " +
-            "- Stop session if running" +
-            "- Produce error object and call run-callback"
+        setUp: function () {
+            this.serverClient = fakeServerClient(this);
+            this.stub(captureServer, "createServerClient").returns(this.serverClient);
+            this.config = fakeConfig(this);
+        },
+
+        "prevents session creation": function (done) {
+            var deferred = when.defer();
+            this.config.resolve.returns(deferred.promise);
+
+            this.runner.run(this.config, {}, done(function () {
+                refute.called(this.serverClient.createSession);
+            }.bind(this)));
+
+            this.runner.abort();
+            deferred.resolve({});
+        },
+
+        "ends session if running": function (done) {
+            this.config.resolve.returns(when({}));
+            var session = { end: this.spy() };
+            var deferred = when.defer();
+            deferred.promise.id = 42;
+            this.serverClient.createSession.returns(deferred.promise);
+
+            this.runner.run(this.config, {}, function () {
+                process.nextTick(done(function () {
+                    assert.calledOnce(session.end);
+                }));
+            });
+
+            this.runner.abort();
+            deferred.resolve(session);
+        },
+
+        "calls run-callback with abort error": function (done) {
+            var deferred = when.defer();
+            this.config.resolve.returns(deferred);
+
+            this.runner.run(this.config, {}, done(function (err) {
+                assert.equals(err.code, 42);
+            }));
+
+            this.runner.abort({ code: 42 });
+            deferred.resolve({});
+        },
+
+        "sets error code if not present": function (done) {
+            var deferred = when.defer();
+            this.config.resolve.returns(deferred);
+
+            this.runner.run(this.config, {}, done(function (err) {
+                assert.equals(err.code, 70);
+            }));
+
+            this.runner.abort({});
+            deferred.resolve({});
+        }
     },
 
-    "remote runner": {
-        //     "resolves config options after config is resolved": function (done) {
-        //         this.client.createSession = done(function () {
-        //             assert(this.runner.options.autoRun);
-        //             return { then: function () {} };
-        //         }.bind(this));
+    "runSession": {
+        setUp: function () {
+            this.session = fakeSession(this);
+        },
 
-        //         this.runner.run(this.group, this.options);
-        //         this.options.autoRun = true;
-        //         this.config.resolver.resolve({ id: 41 });
-        //     },
-    },
+        //     "session": {
+        //         setUp: function () {
+        //             this.session = buster.eventEmitter.create();
+        //             this.session.onMessage = function () {};
+        //             this.session.messagingClient = this.session;
+        //             this.session.slaves = [{ id: 1 }];
+        //             this.close = when.defer();
+        //             this.session.close = this.stub().returns(this.close.promise);
+        //             this.stackFilter = buster.stackFilter.filters;
+        //             this.runner.config = this.group;
 
-    //     "is run with runSession": function () {
-    //         this.stub(this.runner, "runSession");
-    //         this.config.resolver.resolve({ id: 41 });
-    //         this.runner.run(this.group, this.options);
+        //             this.emitSessionMessage = function (event, data) {
+        //                 this.session.emit(event, { data: data });
+        //             };
 
-    //         this.session.resolver.resolve({ id: 47 });
+        //             this.stub(process, "exit");
+        //         },
 
-    //         assert.calledOnce(this.runner.runSession);
-    //         assert.calledOn(this.runner.runSession, this.runner);
-    //         assert.calledWith(this.runner.runSession, { id: 47 });
-    //     },
+        //         tearDown: function () {
+        //             buster.stackFilter.filters = this.stackFilter;
+        //         },
 
-    //     "session": {
-    //         setUp: function () {
-    //             this.session = buster.eventEmitter.create();
-    //             this.session.onMessage = function () {};
-    //             this.session.messagingClient = this.session;
-    //             this.session.slaves = [{ id: 1 }];
-    //             this.close = when.defer();
-    //             this.session.close = this.stub().returns(this.close.promise);
-    //             this.stackFilter = buster.stackFilter.filters;
-    //             this.runner.config = this.group;
+        "does not listen for uncaught exceptions with dots reporter": function () {
+            this.runner.runSession(this.session, {}, function () {});
 
-    //             this.emitSessionMessage = function (event, data) {
-    //                 this.session.emit(event, { data: data });
-    //             };
+            this.emitSessionMessage("uncaughtException", { message: "Oh noes" });
 
-    //             this.stub(process, "exit");
-    //         },
+            refute.match(this.stderr, "Uncaught exception:");
+        },
 
-    //         tearDown: function () {
-    //             buster.stackFilter.filters = this.stackFilter;
-    //         },
+        //         "listens for uncaught exceptions": function () {
+        //             this.runner.options.reporter = "specification";
+        //             this.runner.runSession(this.session);
 
-    //         "does not listen for uncaught exceptions with dots reporter": function () {
-    //             this.runner.runSession(this.session);
+        //             this.emitSessionMessage("uncaughtException", { message: "Oh noes" });
 
-    //             this.emitSessionMessage("uncaughtException", { message: "Oh noes" });
+        //             assert.match(this.stderr, "Uncaught exception:");
+        //             assert.match(this.stderr, "Oh noes");
+        //         },
 
-    //             refute.match(this.stderr, "Uncaught exception:");
-    //         },
+        //         "creates remote runner": function () {
+        //             this.spy(remoteRunner, "create");
+        //             this.runner.runSession(this.session);
 
-    //         "listens for uncaught exceptions": function () {
-    //             this.runner.options.reporter = "specification";
-    //             this.runner.runSession(this.session);
+        //             assert.calledOnce(remoteRunner.create);
+        //             assert.calledWith(remoteRunner.create,
+        //                               this.session.messagingClient, [{id: 1}], {
+        //                                   failOnNoAssertions: true
+        //                               });
+        //         },
 
-    //             this.emitSessionMessage("uncaughtException", { message: "Oh noes" });
+        //         "triggers testRun extension hook with runners": function () {
+        //             this.spy(remoteRunner, "create");
+        //             this.runner.runSession(this.session);
 
-    //             assert.match(this.stderr, "Uncaught exception:");
-    //             assert.match(this.stderr, "Oh noes");
-    //         },
+        //             assert.calledOnce(this.group.runExtensionHook);
+        //             assert.calledOnceWith(this.group.runExtensionHook,
+        //                                   "testRun",
+        //                                   remoteRunner.create.getCall(0).returnValue,
+        //                                   this.session.messagingClient);
+        //         },
 
-    //         "creates remote runner": function () {
-    //             this.spy(remoteRunner, "create");
-    //             this.runner.runSession(this.session);
+        //         "aborts run if running extension hook throws": function () {
+        //             this.group.runExtensionHook.throws("Oh noes");
+        //             this.spy(remoteRunner, "create");
+        //             this.runner.runSession(this.session);
 
-    //             assert.calledOnce(remoteRunner.create);
-    //             assert.calledWith(remoteRunner.create,
-    //                               this.session.messagingClient, [{id: 1}], {
-    //                                   failOnNoAssertions: true
-    //                               });
-    //         },
+        //             assert.calledOnceWith(process.exit, 70);
+        //         },
 
-    //         "triggers testRun extension hook with runners": function () {
-    //             this.spy(remoteRunner, "create");
-    //             this.runner.runSession(this.session);
+        //         "creates remote runner that does not fail on no assertions": function () {
+        //             this.spy(remoteRunner, "create");
+        //             this.runner.options.failOnNoAssertions = false;
+        //             this.runner.runSession(this.session);
 
-    //             assert.calledOnce(this.group.runExtensionHook);
-    //             assert.calledOnceWith(this.group.runExtensionHook,
-    //                                   "testRun",
-    //                                   remoteRunner.create.getCall(0).returnValue,
-    //                                   this.session.messagingClient);
-    //         },
+        //             assert.calledWith(
+        //                 remoteRunner.create,
+        //                 this.session.messagingClient,
+        //                 [{id: 1}],
+        //                 { failOnNoAssertions: false }
+        //             );
+        //         },
 
-    //         "aborts run if running extension hook throws": function () {
-    //             this.group.runExtensionHook.throws("Oh noes");
-    //             this.spy(remoteRunner, "create");
-    //             this.runner.runSession(this.session);
+        //         "creates remote runner that does not auto-run": function () {
+        //             this.spy(remoteRunner, "create");
+        //             this.runner.options.autoRun = true;
+        //             this.runner.runSession(this.session);
 
-    //             assert.calledOnceWith(process.exit, 70);
-    //         },
+        //             assert(remoteRunner.create.args[0][2].autoRun);
+        //         },
 
-    //         "creates remote runner that does not fail on no assertions": function () {
-    //             this.spy(remoteRunner, "create");
-    //             this.runner.options.failOnNoAssertions = false;
-    //             this.runner.runSession(this.session);
+        //         "creates remote runner with filters": function () {
+        //             this.spy(remoteRunner, "create");
+        //             this.runner.options.filters = ["1", "2"];
+        //             this.runner.runSession(this.session);
 
-    //             assert.calledWith(
-    //                 remoteRunner.create,
-    //                 this.session.messagingClient,
-    //                 [{id: 1}],
-    //                 { failOnNoAssertions: false }
-    //             );
-    //         },
+        //             assert.equals(remoteRunner.create.args[0][2].filters, ["1", "2"]);
+        //         },
 
-    //         "creates remote runner that does not auto-run": function () {
-    //             this.spy(remoteRunner, "create");
-    //             this.runner.options.autoRun = true;
-    //             this.runner.runSession(this.session);
+        //         "creates remote runner with captureConsole option": function () {
+        //             this.spy(remoteRunner, "create");
+        //             this.runner.options.captureConsole = true;
+        //             this.runner.runSession(this.session);
 
-    //             assert(remoteRunner.create.args[0][2].autoRun);
-    //         },
+        //             assert(remoteRunner.create.args[0][2].captureConsole);
+        //         },
 
-    //         "creates remote runner with filters": function () {
-    //             this.spy(remoteRunner, "create");
-    //             this.runner.options.filters = ["1", "2"];
-    //             this.runner.runSession(this.session);
+        //         "with no connected slaves": {
+        //             setUp: function () {
+        //                 this.runner.callback = this.spy();
+        //                 this.spy(remoteRunner, "create");
+        //                 this.session.slaves = [];
+        //                 this.runner.runSession(this.session);
+        //             },
 
-    //             assert.equals(remoteRunner.create.args[0][2].filters, ["1", "2"]);
-    //         },
+        //             "does not create remote runner": function () {
+        //                 refute.called(remoteRunner.create);
+        //             },
 
-    //         "creates remote runner with captureConsole option": function () {
-    //             this.spy(remoteRunner, "create");
-    //             this.runner.options.captureConsole = true;
-    //             this.runner.runSession(this.session);
+        //             "prints understandable error": function () {
+        //                 assert.match(this.stderr, "No slaves connected, nothing to do");
+        //             },
 
-    //             assert(remoteRunner.create.args[0][2].captureConsole);
-    //         },
+        //             "closes session": function () {
+        //                 assert.calledOnce(this.session.close);
+        //             },
 
-    //         "with no connected slaves": {
-    //             setUp: function () {
-    //                 this.runner.callback = this.spy();
-    //                 this.spy(remoteRunner, "create");
-    //                 this.session.slaves = [];
-    //                 this.runner.runSession(this.session);
-    //             },
+        //             "does not call done until session closes": function () {
+        //                 this.runner.callback = this.spy();
+        //                 this.runner.runSession(this.session);
 
-    //             "does not create remote runner": function () {
-    //                 refute.called(remoteRunner.create);
-    //             },
+        //                 refute.called(this.runner.callback);
+        //             },
 
-    //             "prints understandable error": function () {
-    //                 assert.match(this.stderr, "No slaves connected, nothing to do");
-    //             },
+        //             "calls callback with error": function () {
+        //                 this.close.resolver.resolve();
 
-    //             "closes session": function () {
-    //                 assert.calledOnce(this.session.close);
-    //             },
+        //                 assert.calledOnce(this.runner.callback);
+        //                 assert.match(this.runner.callback.args[0][0], {
+        //                     type: "NoSlavesError",
+        //                     code: 76
+        //                 });
+        //             }
+        //         },
 
-    //             "does not call done until session closes": function () {
-    //                 this.runner.callback = this.spy();
-    //                 this.runner.runSession(this.session);
+        //         "creates progress reporter": function () {
+        //             this.spy(progressReporter, "create");
 
-    //                 refute.called(this.runner.callback);
-    //             },
+        //             this.runner.runSession(this.session);
 
-    //             "calls callback with error": function () {
-    //                 this.close.resolver.resolve();
+        //             assert.calledOnce(progressReporter.create);
+        //             assert.match(progressReporter.create.args[0][0], {
+        //                 color: false, bright: false
+        //             });
+        //         },
 
-    //                 assert.calledOnce(this.runner.callback);
-    //                 assert.match(this.runner.callback.args[0][0], {
-    //                     type: "NoSlavesError",
-    //                     code: 76
-    //                 });
-    //             }
-    //         },
+        //         "should not create progress reporter when providing reporter": function () {
+        //             this.spy(progressReporter, "create");
+        //             this.spy(reporters.specification, "create");
+        //             this.runner.options = { reporter: "specification" };
+        //             this.runner.runSession(this.session);
 
-    //         "creates progress reporter": function () {
-    //             this.spy(progressReporter, "create");
+        //             refute.called(progressReporter.create);
+        //             assert.calledOnce(reporters.specification.create);
+        //         },
 
-    //             this.runner.runSession(this.session);
+        //         "loads reporter using buster-test's loader": function () {
+        //             this.spy(reporters, "load");
+        //             this.runner.options = { reporter: "dots" };
+        //             this.runner.runSession(this.session);
 
-    //             assert.calledOnce(progressReporter.create);
-    //             assert.match(progressReporter.create.args[0][0], {
-    //                 color: false, bright: false
-    //             });
-    //         },
+        //             assert.calledOnceWith(reporters.load, "dots");
+        //         },
 
-    //         "should not create progress reporter when providing reporter": function () {
-    //             this.spy(progressReporter, "create");
-    //             this.spy(reporters.specification, "create");
-    //             this.runner.options = { reporter: "specification" };
-    //             this.runner.runSession(this.session);
+        //         "progress reporter should respect color settings": function () {
+        //             this.spy(progressReporter, "create");
 
-    //             refute.called(progressReporter.create);
-    //             assert.calledOnce(reporters.specification.create);
-    //         },
+        //             this.runner.options = { color: true, bright: true };
+        //             this.runner.runSession(this.session);
 
-    //         "loads reporter using buster-test's loader": function () {
-    //             this.spy(reporters, "load");
-    //             this.runner.options = { reporter: "dots" };
-    //             this.runner.runSession(this.session);
+        //             assert.match(progressReporter.create.args[0][0], {
+        //                 color: true, bright: true
+        //             });
+        //         },
 
-    //             assert.calledOnceWith(reporters.load, "dots");
-    //         },
+        //         "uses logger as io backend for remote reporter": function () {
+        //             this.spy(progressReporter, "create");
 
-    //         "progress reporter should respect color settings": function () {
-    //             this.spy(progressReporter, "create");
+        //             this.runner.runSession(this.session);
+        //             var io = progressReporter.create.args[0][0].io;
+        //             io.print(".");
+        //             io.print(".");
+        //             io.puts(" OK!");
 
-    //             this.runner.options = { color: true, bright: true };
-    //             this.runner.runSession(this.session);
+        //             assert.match(this.stdout, ".. OK!");
+        //         },
 
-    //             assert.match(progressReporter.create.args[0][0], {
-    //                 color: true, bright: true
-    //             });
-    //         },
+        //         "adds client on progress reporter when client connects": function () {
+        //             var runner = buster.eventEmitter.create();
+        //             this.stub(remoteRunner, "create").returns(runner);
+        //             this.stub(progressReporter, "addClient");
 
-    //         "uses logger as io backend for remote reporter": function () {
-    //             this.spy(progressReporter, "create");
+        //             this.runner.runSession(this.session);
+        //             var client = { id: 42 };
+        //             runner.emit("client:connect", client);
 
-    //             this.runner.runSession(this.session);
-    //             var io = progressReporter.create.args[0][0].io;
-    //             io.print(".");
-    //             io.print(".");
-    //             io.puts(" OK!");
+        //             assert.calledOnce(progressReporter.addClient);
+        //             assert.calledWith(progressReporter.addClient, 42, client);
+        //         },
 
-    //             assert.match(this.stdout, ".. OK!");
-    //         },
+        //         "initializes reporter": function () {
+        //             this.spy(reporters.dots, "create");
 
-    //         "adds client on progress reporter when client connects": function () {
-    //             var runner = buster.eventEmitter.create();
-    //             this.stub(remoteRunner, "create").returns(runner);
-    //             this.stub(progressReporter, "addClient");
+        //             this.runner.runSession(this.session);
 
-    //             this.runner.runSession(this.session);
-    //             var client = { id: 42 };
-    //             runner.emit("client:connect", client);
+        //             assert.match(reporters.dots.create.args[0][0], {
+        //                 color: false,
+        //                 bright: false,
+        //                 displayProgress: false,
+        //                 logPassedMessages: false
+        //             });
+        //         },
 
-    //             assert.calledOnce(progressReporter.addClient);
-    //             assert.calledWith(progressReporter.addClient, 42, client);
-    //         },
-
-    //         "initializes reporter": function () {
-    //             this.spy(reporters.dots, "create");
-
-    //             this.runner.runSession(this.session);
-
-    //             assert.match(reporters.dots.create.args[0][0], {
-    //                 color: false,
-    //                 bright: false,
-    //                 displayProgress: false,
-    //                 logPassedMessages: false
-    //             });
-    //         },
-
-    //         "logs messages for passed tests": function () {
-    //             this.spy(reporters.dots, "create");
+        //         "logs messages for passed tests": function () {
+        //             this.spy(reporters.dots, "create");
 
     //             this.runner.options.logPassedMessages = true;
     //             this.runner.runSession(this.session);
@@ -454,7 +524,7 @@ buster.testCase("Browser runner", {
     //             assert.match(reporters.dots.create.args[0][0], {
 //                 logPassedMessages: true
 //             });
-//         },
+        },
 
 //         "initializes reporter with custom properties": function () {
 //             this.spy(reporters.dots, "create");
