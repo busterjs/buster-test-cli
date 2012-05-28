@@ -89,7 +89,7 @@ buster.testCase("Progress reporter", {
     },
 
     "saves uncaught exceptions until browser connects": function () {
-        this.reporter.uncaughtException(1, "Oops");
+        this.emit("uncaughtException", { message: "Oops" }, 1);
         refute.stdout("Oops");
 
         this.reporter.addClient(1, this.clients[0]);
@@ -98,7 +98,7 @@ buster.testCase("Progress reporter", {
 
     "immediately prints uncaught exception for known client": function () {
         this.reporter.addClient(1, this.clients[0]);
-        this.reporter.uncaughtException(1, "Oops");
+        this.emit("uncaughtException", { message: "Oops" }, 1);
 
         assert.stdout("Oops");
     }
