@@ -189,14 +189,6 @@ buster.testCase("Browser runner", {
             }.bind(this)));
         },
 
-        "is managed": function (done) {
-            this.config.resolve.returns(when({ id: 42 }));
-
-            this.runner.run(this.config, {}, done(function () {
-                assert.sessionOptions({ managed: true });
-            }.bind(this)));
-        },
-
         "runs session with runSession": function (done) {
             var session = { id: 42 };
             this.serverClient.createSession.returns(when(session));
