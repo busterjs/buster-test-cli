@@ -3,6 +3,7 @@ var stdioLogger = require("buster-stdio-logger");
 var browserRunner = require("../../lib/runners/browser");
 var captureServer = require("buster-capture-server");
 var when = require("when");
+var cliHelper = require("buster-cli/lib/test-helper");
 // var busterClient = require("buster-client").client;
 // var remoteRunner = require("../../lib/runners/browser/remote-runner");
 // var progressReporter = require("../../lib/runners/browser/progress-reporter");
@@ -35,7 +36,9 @@ function fakeServerClient(tc) {
 buster.testCase("Browser runner", {
     setUp: function () {
         this.runner = buster.create(browserRunner);
-        this.runner.logger = { info: this.spy() };
+        this.stdout = cliHelper.writableStream("stdout");
+        this.stderr = cliHelper.writableStream("stderr");
+        this.runner.logger = stdioLogger(this.stdout, this.stderr);
     },
 
     "server client": {
@@ -250,50 +253,69 @@ buster.testCase("Browser runner", {
         }
     },
 
+    "uncaught exceptions": {
+        setUp: function () {
+            this.session = fakeSession(this);
+        },
+
+        "listens for uncaught exceptions": function () {
+            this.runner.runSession(this.session, {}, function () {});
+            this.session.emit("uncaughtException", { data: { message: "Oh" } });
+
+            assert.stderr("Uncaught exception:");
+            assert.stderr("Oh");
+        },
+
+        "does not listen for uncaught exceptions if already handled": function () {
+            this.session.on("uncaughtException", function () {});
+            this.runner.runSession(this.session, {}, function () {});
+            this.session.emit("uncaughtException", { data: { message: "Oh" } });
+
+            refute.stderr("Uncaught exception:");
+            refute.stderr("Oh");
+        },
+
+        "prints uncaught exceptions without colors": function () {
+            this.runner.runSession(this.session, {}, function () {});
+            this.session.emit("uncaughtException", { data: { message: "Oh" } });
+
+            var stderr = this.stderr.toString();
+            refute.match(this.stderr, "\x1b");
+        },
+
+        "prints uncaught exceptions in yellow": function () {
+            this.runner.runSession(this.session, { color: true }, function () {});
+            this.session.emit("uncaughtException", { data: { message: "Oh" } });
+
+            var stderr = this.stderr.toString();
+            assert.equals(stderr.indexOf("\x1b[33mUncaught exception:"), 0);
+        },
+
+        "prints uncaught exceptions in bright yellow": function () {
+            this.runner.runSession(this.session, {
+                color: true,
+                bright: true
+            }, function () {});
+            this.session.emit("uncaughtException", { data: { message: "Oh" } });
+
+            assert.match(this.stderr, "\x1b[1m\x1b[33mUncaught exception:");
+        }
+    },
+
     "runSession": {
         setUp: function () {
             this.session = fakeSession(this);
         },
 
-        //     "session": {
-        //         setUp: function () {
-        //             this.session = buster.eventEmitter.create();
-        //             this.session.onMessage = function () {};
-        //             this.session.messagingClient = this.session;
-        //             this.session.slaves = [{ id: 1 }];
-        //             this.close = when.defer();
-        //             this.session.close = this.stub().returns(this.close.promise);
-        //             this.stackFilter = buster.stackFilter.filters;
-        //             this.runner.config = this.group;
 
-        //             this.emitSessionMessage = function (event, data) {
-        //                 this.session.emit(event, { data: data });
-        //             };
 
-        //             this.stub(process, "exit");
-        //         },
+        // "does not listen for uncaught exceptions with dots reporter": function () {
+        //     this.runner.runSession(this.session, {}, function () {});
 
-        //         tearDown: function () {
-        //             buster.stackFilter.filters = this.stackFilter;
-        //         },
+        //     this.session.emit("uncaughtException", { data: { message: "Oh" } });
 
-        "does not listen for uncaught exceptions with dots reporter": function () {
-            this.runner.runSession(this.session, {}, function () {});
-
-            this.emitSessionMessage("uncaughtException", { message: "Oh noes" });
-
-            refute.match(this.stderr, "Uncaught exception:");
-        },
-
-        //         "listens for uncaught exceptions": function () {
-        //             this.runner.options.reporter = "specification";
-        //             this.runner.runSession(this.session);
-
-        //             this.emitSessionMessage("uncaughtException", { message: "Oh noes" });
-
-        //             assert.match(this.stderr, "Uncaught exception:");
-        //             assert.match(this.stderr, "Oh noes");
-        //         },
+        //     refute.match(this.stderr, "Uncaught exception:");
+        // },
 
         //         "creates remote runner": function () {
         //             this.spy(remoteRunner, "create");
