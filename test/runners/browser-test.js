@@ -96,46 +96,26 @@ buster.testCase("Browser runner", {
         },
 
         "caches resources when cacheable": function (done) {
-            this.runner.cacheable = true;
-            this.config.resolve.returns(when({ id: 42 }));
-
-            this.runner.run(this.config, {}, done(function () {
-                assert.sessionOptions({ cache: true });
-            }.bind(this)));
-        },
-
-        "skips resource cache when uncacheable": function (done) {
-            this.runner.cacheable = false;
-            this.config.resolve.returns(when({}));
-
-            this.runner.run(this.config, {}, done(function () {
-                assert.sessionOptions({ cache: false });
-            }.bind(this)));
-        },
-
-        "caches resources when becoming cacheable while running": function (done) {
             var deferred = when.defer();
             this.config.resolve.returns(deferred.promise);
-            this.runner.cacheable = false;
 
-            this.runner.run(this.config, {}, done(function () {
+            var run = this.runner.run(this.config, {}, done(function () {
                 assert.sessionOptions({ cache: true });
             }.bind(this)));
 
-            this.runner.cacheable = true;
+            run.cacheable = true;
             deferred.resolve({});
         },
 
-        "skips caching when becoming cacheable while running": function (done) {
+        "skips caching when uncacheable": function (done) {
             var deferred = when.defer();
             this.config.resolve.returns(deferred.promise);
-            this.runner.cacheable = true;
 
-            this.runner.run(this.config, {}, done(function () {
+            var run = this.runner.run(this.config, {}, done(function () {
                 assert.sessionOptions({ cache: false });
             }.bind(this)));
 
-            this.runner.cacheable = false;
+            run.cacheable = false;
             deferred.resolve({});
         },
 
@@ -206,11 +186,11 @@ buster.testCase("Browser runner", {
             var deferred = when.defer();
             this.config.resolve.returns(deferred.promise);
 
-            this.runner.run(this.config, {}, done(function () {
+            var run = this.runner.run(this.config, {}, done(function () {
                 refute.called(this.serverClient.createSession);
             }.bind(this)));
 
-            this.runner.abort();
+            run.abort();
             deferred.resolve({});
         },
 
@@ -221,13 +201,13 @@ buster.testCase("Browser runner", {
             deferred.promise.id = 42;
             this.serverClient.createSession.returns(deferred.promise);
 
-            this.runner.run(this.config, {}, function () {
+            var run = this.runner.run(this.config, {}, function () {
                 process.nextTick(done(function () {
                     assert.calledOnce(session.end);
                 }));
             });
 
-            this.runner.abort();
+            run.abort();
             deferred.resolve(session);
         },
 
@@ -235,11 +215,11 @@ buster.testCase("Browser runner", {
             var deferred = when.defer();
             this.config.resolve.returns(deferred);
 
-            this.runner.run(this.config, {}, done(function (err) {
+            var run = this.runner.run(this.config, {}, done(function (err) {
                 assert.equals(err.code, 42);
             }));
 
-            this.runner.abort({ code: 42 });
+            run.abort({ code: 42 });
             deferred.resolve({});
         },
 
@@ -247,11 +227,11 @@ buster.testCase("Browser runner", {
             var deferred = when.defer();
             this.config.resolve.returns(deferred);
 
-            this.runner.run(this.config, {}, done(function (err) {
+            var run = this.runner.run(this.config, {}, done(function (err) {
                 assert.equals(err.code, 70);
             }));
 
-            this.runner.abort({});
+            run.abort({});
             deferred.resolve({});
         }
     },

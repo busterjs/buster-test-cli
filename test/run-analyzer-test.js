@@ -28,7 +28,8 @@ buster.testCase("Analyzer helper", {
     "run analysis": {
         setUp: function () {
             this.analyzer = runAnalyzer.create(this.logger, {});
-            this.runner = { run: this.spy(), abort: this.spy() };
+            this.run = { abort: this.spy() };
+            this.runner = { run: this.stub().returns(this.run) };
             this.config = { runExtensionHook: this.spy() };
         },
 
@@ -36,21 +37,21 @@ buster.testCase("Analyzer helper", {
             this.analyzer.run(this.runner, this.config);
             this.analyzer.emit("warning", {});
 
-            assert.isFalse(this.runner.cacheable);
+            assert.isFalse(this.run.cacheable);
         },
 
         "prevents caching on error": function () {
             this.analyzer.run(this.runner, this.config);
             this.analyzer.emit("error", {});
 
-            assert.isFalse(this.runner.cacheable);
+            assert.isFalse(this.run.cacheable);
         },
 
         "prevents caching on fatal": function () {
             this.analyzer.run(this.runner, this.config);
             this.analyzer.emit("fatal", {});
 
-            assert.isFalse(this.runner.cacheable);
+            assert.isFalse(this.run.cacheable);
         },
 
         "triggers analyze extension hook": function () {
@@ -72,8 +73,8 @@ buster.testCase("Analyzer helper", {
             this.analyzer.run(this.runner, this.config);
             this.analyzer.emit("fail", { errors: 42 });
 
-            assert.calledOnce(this.runner.abort);
-            assert.match(this.runner.abort.args[0][0], {
+            assert.calledOnce(this.run.abort);
+            assert.match(this.run.abort.args[0][0], {
                 stats: { errors: 42 },
                 type: "AnalyzerError",
                 message: "Pre-condition failed"

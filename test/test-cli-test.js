@@ -4,7 +4,10 @@ var testCli = require("../lib/test-cli");
 var runAnalyzer = require("../lib/run-analyzer");
 
 function fakeRunner(thisp, environment) {
-    return { environment: environment, run: thisp.stub().yields() };
+    return {
+        environment: environment,
+        run: thisp.stub().returns({}).yields()
+    };
 }
 
 function testArgumentOption(args, options) {
@@ -229,21 +232,25 @@ buster.testCase("Test CLI", {
         ),
 
         "skips caching": function (done) {
-            var runner = { run: this.stub().yields() };
+            var run = {};
+            var runner = { run: this.stub().returns(run).yields() };
             this.stub(this.cli, "loadRunner").yields(null, runner);
 
             this.cli.run(["-c", this.config, "-R"], done(function () {
-                refute(runner.cacheable);
+                refute(run.cacheable);
             }.bind(this)));
         },
 
         "is cacheable by default": function (done) {
-            var runner = { run: this.stub().yields() };
+            var run = { id: 42 };
+            var runner = { run: this.stub().returns(run).yields() };
             this.stub(this.cli, "loadRunner").yields(null, runner);
 
             this.cli.run(["-c", this.config], done(function () {
-                assert(runner.cacheable);
-            }.bind(this)));
+                process.nextTick(function () {
+                    assert(run.cacheable);
+                });
+            }));
         },
 
         "sets warning level": testArgumentOption(
@@ -340,7 +347,7 @@ buster.testCase("Test CLI", {
 
         "processes one group at a time": function () {
             var callback = this.spy();
-            this.runners.fake = { run: this.spy() };
+            this.runners.fake = { run: this.stub().returns({}) };
             this.cli.runConfigGroups([
                 { environment: "fake", id: 1, runExtensionHook: this.spy()  },
                 { environment: "fake", id: 2, runExtensionHook: this.spy()  }
@@ -352,7 +359,7 @@ buster.testCase("Test CLI", {
 
         "processes next group when previous is done": function () {
             var callback = this.spy();
-            this.runners.fake = { run: this.stub().yields() };
+            this.runners.fake = { run: this.stub().yields().returns({}) };
             this.cli.runConfigGroups([
                 { environment: "fake", id: 1, runExtensionHook: this.spy() },
                 { environment: "fake", id: 2, runExtensionHook: this.spy() }
@@ -388,6 +395,7 @@ buster.testCase("Test CLI", {
                 run: function (group, options, callback) {
                     this.nextGroup += 1;
                     callback.apply(null, this.results[this.nextGroup]);
+                    return {};
                 }.bind(this)
             };
             this.fakeConfig = {
@@ -462,8 +470,8 @@ buster.testCase("Test CLI", {
                 browser: [{ id: 1 }, { id: 2 }]
             };
             this.runners = {
-                node: { run: this.spy() },
-                browser: { run: this.spy() }
+                node: { run: this.stub().returns({}) },
+                browser: { run: this.stub().returns({}) }
             };
             this.config = { environment: "node", runExtensionHook: this.spy() };
         },

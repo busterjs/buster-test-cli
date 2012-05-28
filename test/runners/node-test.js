@@ -207,9 +207,10 @@ buster.testCase("Node runner", {
         },
 
         "does not write manifest when uncacheable": function () {
-            this.stubBeforeRunHook().resolve([]);
-            this.runner.cacheable = false;
-            this.runner.run(this.config, {});
+            var deferred = this.stubBeforeRunHook();
+            var run = this.runner.run(this.config, {});
+            run.cacheable = false;
+            deferred.resolve([]);
 
             refute.called(fs.writeFileSync);
         },
@@ -225,9 +226,9 @@ buster.testCase("Node runner", {
 
         "does not write manifest when aborted": function () {
             var beforeResolver = this.stubBeforeRunHook();
-            this.runner.run(this.config, {});
+            var run = this.runner.run(this.config, {});
 
-            this.runner.abort({ message: "Oh snap" });
+            run.abort({ message: "Oh snap" });
             beforeResolver.resolve([{}]);
 
             refute.called(fs.writeFileSync);
@@ -235,9 +236,9 @@ buster.testCase("Node runner", {
 
         "does not run tests when aborted": function () {
             var beforeResolver = this.stubBeforeRunHook();
-            this.runner.run(this.config, {});
+            var run = this.runner.run(this.config, {});
 
-            this.runner.abort({ message: "Oh snap" });
+            run.abort({ message: "Oh snap" });
             beforeResolver.resolve([{}]);
 
             refute.called(test.autoRun);
