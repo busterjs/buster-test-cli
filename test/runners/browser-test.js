@@ -299,7 +299,9 @@ buster.testCase("Browser runner", {
             this.session.emit("uncaughtException", { data: { message: "Oh" } });
 
             assert.match(this.stderr, "\x1b[1m\x1b[33mUncaught exception:");
-        }
+        },
+
+        "does not print uncaught exceptions if handled by reporter": "TODO"
     },
 
     "runSession": {
@@ -307,15 +309,6 @@ buster.testCase("Browser runner", {
             this.session = fakeSession(this);
         },
 
-
-
-        // "does not listen for uncaught exceptions with dots reporter": function () {
-        //     this.runner.runSession(this.session, {}, function () {});
-
-        //     this.session.emit("uncaughtException", { data: { message: "Oh" } });
-
-        //     refute.match(this.stderr, "Uncaught exception:");
-        // },
 
         //         "creates remote runner": function () {
         //             this.spy(remoteRunner, "create");
