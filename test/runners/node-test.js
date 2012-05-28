@@ -1,6 +1,7 @@
 var buster = require("buster");
 var test = require("buster-test");
 var nodeRunner = require("../../lib/runners/node");
+var testRun = nodeRunner.testRun;
 var stdioLogger = require("buster-stdio-logger");
 var when = require("when");
 var fs = require("fs");
@@ -37,7 +38,7 @@ buster.testCase("Node runner", {
         this.runner = createNodeRunner();
         this.stubBeforeRunHook = function () {
             var deferred = when.defer();
-            this.stub(this.runner, "beforeRunHook").returns(deferred.promise);
+            this.stub(testRun, "beforeRunHook").returns(deferred.promise);
             return deferred.resolver;
         };
     },
@@ -86,8 +87,8 @@ buster.testCase("Node runner", {
         },
 
         "autoRuns when config and beforeRunHook is resolved": function () {
+            this.stubBeforeRunHook().resolve([]);
             this.stub(test, "autoRun");
-            this.stub(this.runner, "beforeRunHook").returns([]);
             var config = fakeConfig(this);
             var deferred = when.defer();
             config.resolve.returns(deferred);
