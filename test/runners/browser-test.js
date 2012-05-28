@@ -38,37 +38,6 @@ buster.testCase("Browser runner", {
         this.runner.logger = { info: this.spy() };
     },
 
-    //     setUp: function () {
-    //         this.session = when.defer();
-    //         this.client = {
-    //             createSession: this.stub().returns(this.session.promise),
-    //             abort: this.stub()
-    //         };
-    //         this.stub(busterClient, "create").returns(this.client);
-    //         this.options = { server: "http://127.0.0.1:1200" };
-    //         this.runner = Object.create(browserRunner);
-    //         this.runner.options = { slaves: [{ id: 1 }]};
-    //         this.config = when.defer();
-    //         this.group = buster.extend(buster.eventEmitter.create(), {
-    //             resolve: this.stub().returns(this.config.promise),
-    //             bundleFramework: this.stub(),
-    //             runExtensionHook: this.stub(),
-    //             extensions: [],
-    //             resourceSet: {
-    //                 addResource: this.stub(),
-    //                 loadPath: { append: this.stub() }
-    //             }
-    //         });
-
-    //         var self = this;
-    //         this.stdout = "";
-    //         this.stderr = "";
-
-    //         this.runner.logger = stdioLogger(
-    //             { write: function (msg) { self.stdout += msg; } },
-    //             { write: function (msg) { self.stderr += msg; } });
-    //     },
-
     "server client": {
         setUp: function () {
             var client = fakeServerClient(this);
