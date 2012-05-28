@@ -19,10 +19,10 @@ function fakeConfig(tc) {
 
 function fakeSession(tc) {
     return buster.extend(buster.eventEmitter.create(), {
-        started: tc.stub(),
-        loaded: tc.stub(),
-        ended: tc.stub(),
-        unloaded: tc.stub()
+        onStart: tc.stub(),
+        onLoad: tc.stub(),
+        onEnd: tc.stub(),
+        onUnload: tc.stub()
     });
 }
 
