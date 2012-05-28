@@ -1,11 +1,12 @@
 var buster = require("buster");
 var stdioLogger = require("buster-stdio-logger");
 var browserRunner = require("../../lib/runners/browser");
+var testRun = browserRunner.testRun;
 var captureServer = require("buster-capture-server");
 var when = require("when");
 var cliHelper = require("buster-cli/lib/test-helper");
+var remoteRunner = require("../../lib/runners/browser/remote-runner");
 // var busterClient = require("buster-client").client;
-// var remoteRunner = require("../../lib/runners/browser/remote-runner");
 // var progressReporter = require("../../lib/runners/browser/progress-reporter");
 // var bayeuxEmitter = require("buster-bayeux-emitter");
 // var reporters = require("buster-test").reporters;
@@ -38,7 +39,8 @@ buster.testCase("Browser runner", {
         this.runner = buster.create(browserRunner);
         this.stdout = cliHelper.writableStream("stdout");
         this.stderr = cliHelper.writableStream("stderr");
-        this.runner.logger = stdioLogger(this.stdout, this.stderr);
+        this.logger = stdioLogger(this.stdout, this.stderr);
+        this.runner.logger = this.logger;
     },
 
     "server client": {
@@ -163,32 +165,33 @@ buster.testCase("Browser runner", {
             }.bind(this)));
         },
 
-        "runs session with runSession": function (done) {
-            var session = { id: 42 };
+        "runs session with testRun object": function () {
+            var session = fakeSession(this);
             this.serverClient.createSession.returns(when(session));
-            this.stub(this.runner, "runSession").yields();
-            this.config.resolve.returns(when({}));
+            var deferred = when.defer();
+            this.config.resolve.returns(deferred);
 
-            this.runner.run(this.config, {}, done(function () {
-                assert.calledOnce(this.runner.runSession);
-                assert.calledWith(this.runner.runSession, session);
-            }.bind(this)));
+            var run = this.runner.run(this.config, {});
+            this.stub(run, "runTests").yields();
+            deferred.resolve({});
+
+            assert.calledOnce(run.runTests);
+            assert.calledWith(run.runTests, session);
         },
 
-        "runs session with all options": function (done) {
-            this.stub(this.runner, "runSession").yields();
+        "adds resolved config options to options": function () {
             var deferred = when.defer();
             this.config.resolve.returns(deferred.promise);
 
-            this.runner.run(this.config, { id: 42 }, done(function () {
-                assert.equals(this.runner.runSession.args[0][1], {
-                    id: 42,
-                    things: "stuff"
-                });
-            }.bind(this)));
-
+            var run = this.runner.run(this.config, { id: 42 });
+            this.stub(run, "runTests").yields();
             this.config.options = { things: "stuff" };
             deferred.resolve({});
+
+            assert.equals(run.options, {
+                id: 42,
+                things: "stuff"
+            });
         }
     },
 
@@ -256,10 +259,11 @@ buster.testCase("Browser runner", {
     "uncaught exceptions": {
         setUp: function () {
             this.session = fakeSession(this);
+            this.run = testRun.create(fakeConfig(this), {}, this.logger);
         },
 
         "listens for uncaught exceptions": function () {
-            this.runner.runSession(this.session, {}, function () {});
+            this.run.runTests(this.session);
             this.session.emit("uncaughtException", { data: { message: "Oh" } });
 
             assert.stderr("Uncaught exception:");
@@ -268,7 +272,7 @@ buster.testCase("Browser runner", {
 
         "does not listen for uncaught exceptions if already handled": function () {
             this.session.on("uncaughtException", function () {});
-            this.runner.runSession(this.session, {}, function () {});
+            this.run.runTests(this.session);
             this.session.emit("uncaughtException", { data: { message: "Oh" } });
 
             refute.stderr("Uncaught exception:");
@@ -276,7 +280,7 @@ buster.testCase("Browser runner", {
         },
 
         "prints uncaught exceptions without colors": function () {
-            this.runner.runSession(this.session, {}, function () {});
+            this.run.runTests(this.session);
             this.session.emit("uncaughtException", { data: { message: "Oh" } });
 
             var stderr = this.stderr.toString();
@@ -284,7 +288,8 @@ buster.testCase("Browser runner", {
         },
 
         "prints uncaught exceptions in yellow": function () {
-            this.runner.runSession(this.session, { color: true }, function () {});
+            var run = testRun.create(fakeConfig(this), { color: true }, this.logger);
+            run.runTests(this.session);
             this.session.emit("uncaughtException", { data: { message: "Oh" } });
 
             var stderr = this.stderr.toString();
@@ -292,10 +297,11 @@ buster.testCase("Browser runner", {
         },
 
         "prints uncaught exceptions in bright yellow": function () {
-            this.runner.runSession(this.session, {
+            var run = testRun.create(fakeConfig(this), {
                 color: true,
                 bright: true
-            }, function () {});
+            }, this.logger);
+            run.runTests(this.session);
             this.session.emit("uncaughtException", { data: { message: "Oh" } });
 
             assert.match(this.stderr, "\x1b[1m\x1b[33mUncaught exception:");
@@ -307,30 +313,32 @@ buster.testCase("Browser runner", {
     "runSession": {
         setUp: function () {
             this.session = fakeSession(this);
+            this.stub(remoteRunner, "create");
         },
 
+        "creates remote runner": function () {
+            var run = testRun.create(fakeConfig(this), {}, this.logger);
+            this.session.slaves = [{ id: 42 }];
 
-        //         "creates remote runner": function () {
-        //             this.spy(remoteRunner, "create");
-        //             this.runner.runSession(this.session);
+            run.runTests(this.session);
 
-        //             assert.calledOnce(remoteRunner.create);
-        //             assert.calledWith(remoteRunner.create,
-        //                               this.session.messagingClient, [{id: 1}], {
-        //                                   failOnNoAssertions: true
-        //                               });
-        //         },
+            assert.calledOnce(remoteRunner.create);
+            assert.calledWith(remoteRunner.create, this.session, [{ id: 42 }]);
+        },
 
-        //         "triggers testRun extension hook with runners": function () {
-        //             this.spy(remoteRunner, "create");
-        //             this.runner.runSession(this.session);
+        "failOnNoAssertions should default to true": "TODO",
 
-        //             assert.calledOnce(this.group.runExtensionHook);
-        //             assert.calledOnceWith(this.group.runExtensionHook,
-        //                                   "testRun",
-        //                                   remoteRunner.create.getCall(0).returnValue,
-        //                                   this.session.messagingClient);
-        //         },
+        "triggers testRun extension hook with runners": function () {
+            var config = fakeConfig(this);
+            var run = testRun.create(config, {}, this.logger);
+            remoteRunner.create.returns({ id: 42 });
+
+            run.runTests(this.session);
+
+            assert.calledOnceWith(
+                config.runExtensionHook, "testRun", { id: 42 }, this.session
+            );
+        },
 
         //         "aborts run if running extension hook throws": function () {
         //             this.group.runExtensionHook.throws("Oh noes");
