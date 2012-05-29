@@ -96,8 +96,6 @@ buster.testCase("Browser runner", {
             refute.called(this.serverClient.createSession);
         },
 
-        "fails with message when config fails to resolve": "TODO",
-
         "with configured resource set": function (done) {
             this.config.resolve.returns(when({ id: 42 }));
 
