@@ -296,37 +296,42 @@ buster.testCase("Browser runner", {
             this.stub(remoteRunner, "create");
         },
 
-        "creates remote runner": function () {
-            var run = testRun.create(fakeConfig(this), {}, this.logger);
-            this.session.slaves = [{ id: 42 }];
-
-            run.runTests(this.session);
-
-            assert.calledOnce(remoteRunner.create);
-            assert.calledWith(remoteRunner.create, this.session, [{ id: 42 }]);
-        },
-
         "failOnNoAssertions should default to true": "TODO",
 
-        "triggers testRun extension hook with runners": function () {
-            var config = fakeConfig(this);
-            var run = testRun.create(config, {}, this.logger);
-            remoteRunner.create.returns({ id: 42 });
+        "testRun extension hook": {
+            "triggers with runners": function () {
+                var config = fakeConfig(this);
+                var run = testRun.create(config, {}, this.logger);
+                remoteRunner.create.returns({ id: 42 });
 
-            run.runTests(this.session);
+                run.runTests(this.session);
 
-            assert.calledOnceWith(
-                config.runExtensionHook, "testRun", { id: 42 }, this.session
-            );
+                assert.calledOnceWith(
+                    config.runExtensionHook, "testRun", { id: 42 }, this.session
+                );
+            },
+
+            "aborts run when hook throws": function () {
+                var config = fakeConfig(this);
+                config.runExtensionHook.throws("Oh noes");
+                var run = testRun.create(config, {}, this.logger);
+
+                run.runTests(this.session, function (err) {
+                    assert.equals(err.code, 70);
+                });
+            }
         },
 
-        //         "aborts run if running extension hook throws": function () {
-        //             this.group.runExtensionHook.throws("Oh noes");
-        //             this.spy(remoteRunner, "create");
-        //             this.runner.runSession(this.session);
+        "remote runner": {
+            "creates remote runner": function () {
+                var run = testRun.create(fakeConfig(this), {}, this.logger);
+                this.session.slaves = [{ id: 42 }];
 
-        //             assert.calledOnceWith(process.exit, 70);
-        //         },
+                run.runTests(this.session);
+
+                assert.calledOnce(remoteRunner.create);
+                assert.calledWith(remoteRunner.create, this.session, [{ id: 42 }]);
+            },
 
         //         "creates remote runner that does not fail on no assertions": function () {
         //             this.spy(remoteRunner, "create");
@@ -364,7 +369,7 @@ buster.testCase("Browser runner", {
 
         //             assert(remoteRunner.create.args[0][2].captureConsole);
         //         },
-
+        },
         //         "with no connected slaves": {
         //             setUp: function () {
         //                 this.runner.callback = this.spy();
