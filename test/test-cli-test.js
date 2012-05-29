@@ -80,6 +80,30 @@ buster.testCase("Test CLI", {
         }
     },
 
+    "stack filter": {
+        setUp: function () {
+            this.filters = buster.stackFilter.filters;
+        },
+
+        tearDown: function () {
+            buster.stackFilter.filters = this.filters;
+        },
+
+        "does not filter stack traces": function (done) {
+            buster.stackFilter.filters = ["a", "b"];
+            this.cli.run(["--full-stacks"], done(function () {
+                assert.equals(buster.stackFilter.filters, []);
+            }));
+        },
+
+        "does not filter stack traces with short option": function (done) {
+            buster.stackFilter.filters = ["a", "b"];
+            this.cli.run(["-f"], done(function () {
+                assert.equals(buster.stackFilter.filters, []);
+            }));
+        }
+    },
+
     "node runs": {
         setUp: function () {
             cliHelper.writeFile("buster.js", "var config = module.exports;" +
@@ -130,6 +154,20 @@ buster.testCase("Test CLI", {
                 preferences: this.preferences
             });
             this.cli.cli.exit = this.spy();
+            this.filters = buster.stackFilter.filters;
+        },
+
+        tearDown: function () {
+            buster.stackFilter.filters = this.filters;
+        },
+
+        "skips stack trace filtering": function (done) {
+            buster.stackFilter.filters = ["a", "b"];
+            this.preferences.get.withArgs("test.fullStacks").returns(true);
+
+            this.cli.run(["-c", this.config], done(function () {
+                assert.equals(buster.stackFilter.filters, []);
+            }.bind(this)));
         },
 
         "uses color preference": function (done) {
