@@ -34,6 +34,18 @@ function fakeServerClient(tc) {
     };
 }
 
+function testRemoteRunnerOption(options, expected) {
+    return function () {
+        options = options || {};
+        var run = testRun.create(fakeConfig(this), options, this.logger);
+
+        run.runTests(this.session);
+
+        var actual = remoteRunner.create.args[0][2];
+        assert.match(actual, expected);
+    };
+}
+
 buster.testCase("Browser runner", {
     setUp: function () {
         this.runner = buster.create(browserRunner);
@@ -323,16 +335,6 @@ buster.testCase("Browser runner", {
         },
 
         "remote runner": {
-            setUp: function () {
-                buster.assertions.add("remoteRunnerOptions", {
-                    assert: function (options) {
-                        this.actual = remoteRunner.create.args[0][2];
-                        return buster.assertions.match(this.actual, options);
-                    },
-                    assertMessage: "Expected remoteRunner.create options to include ${0} but was ${actual}"
-                });
-            },
-
             "creates remote runner": function () {
                 var run = testRun.create(fakeConfig(this), {}, this.logger);
                 this.session.slaves = [{ id: 42 }];
@@ -343,46 +345,51 @@ buster.testCase("Browser runner", {
                 assert.calledWith(remoteRunner.create, this.session, [{ id: 42 }]);
             },
 
-            "configures to not fail on no assertions": function () {
-                var run = testRun.create(fakeConfig(this), {
-                    failOnNoAssertions: false
-                }, this.logger);
+            "defaults failOnNoAssertions to true": testRemoteRunnerOption({}, {
+                failOnNoAssertions: true
+            }),
+
+            "configures to not fail on no assertions": testRemoteRunnerOption({
+                failOnNoAssertions: false
+            }, {
+                failOnNoAssertions: false
+            }),
+
+            "defaults auto-run to true": testRemoteRunnerOption({}, {
+                autoRun: true
+            }),
+
+            "configures to not auto-run": testRemoteRunnerOption({
+                autoRun: false
+            }, {
+                autoRun: false
+            }),
+
+            "defaults filters to null": function () {
+                var run = testRun.create(fakeConfig(this), {}, this.logger);
 
                 run.runTests(this.session);
 
-                assert.remoteRunnerOptions({ failOnNoAssertions: false });
+                refute.defined(remoteRunner.create.args[0][2].filters);
             },
 
-            "configures to not auto-run": function () {
-                var run = testRun.create(fakeConfig(this), {
-                    autoRun: false
-                }, this.logger);
+            "includes filters": testRemoteRunnerOption({
+                filters: ["1", "2"]
+            }, {
+                filters: ["1", "2"]
+            }),
 
-                run.runTests(this.session);
+            "captures console by default": testRemoteRunnerOption({}, {
+                captureConsole: true
+            }),
 
-                assert.remoteRunnerOptions({ autoRun: false });
-            },
-
-            "includes filters": function () {
-                var run = testRun.create(fakeConfig(this), {
-                    filters: ["1", "2"]
-                }, this.logger);
-
-                run.runTests(this.session);
-
-                assert.remoteRunnerOptions({ filters: ["1", "2"] });
-            },
-
-            "configures to capture console": function () {
-                var run = testRun.create(fakeConfig(this), {
-                    captureConsole: true
-                }, this.logger);
-
-                run.runTests(this.session);
-
-                assert.remoteRunnerOptions({ captureConsole: true });
-            }
+            "configures to not capture console": testRemoteRunnerOption({
+                captureConsole: false
+            }, {
+                captureConsole: false
+            })
         },
+
         //         "with no connected slaves": {
         //             setUp: function () {
         //                 this.runner.callback = this.spy();
