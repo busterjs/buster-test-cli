@@ -174,22 +174,22 @@ buster.testCase("Test CLI", {
         },
 
 
-        "uses log all preference": function (done) {
-            this.preferences.get.withArgs("test.logAll").returns(true);
+        "uses quiet log preference": function (done) {
+            this.preferences.get.withArgs("test.quietLog").returns(true);
 
             this.cli.run(["-c", this.config], done(function () {
                 assert.match(this.runners.browser.run.args[0][1], {
-                    logPassedMessages: true
+                    logPassedMessages: false
                 });
             }.bind(this)));
         },
 
-        "uses log all argument": function (done) {
-            this.preferences.get.withArgs("test.logAll").returns(false);
+        "uses quiet log argument": function (done) {
+            this.preferences.get.withArgs("test.quietLog").returns(false);
 
-            this.cli.run(["-c", this.config, "--log-all"], done(function () {
+            this.cli.run(["-c", this.config, "--quiet-log"], done(function () {
                 assert.match(this.runners.browser.run.args[0][1], {
-                    logPassedMessages: true
+                    logPassedMessages: false
                 });
             }.bind(this)));
         }
@@ -282,11 +282,15 @@ buster.testCase("Test CLI", {
         ),
 
         "logs all messages": testArgumentOption(
-            ["--log-all"], { logPassedMessages: true }
+            [], { logPassedMessages: true }
         ),
 
-        "logs all messages with short option": testArgumentOption(
-            ["-L"], { logPassedMessages: true }
+        "does not log passing tests": testArgumentOption(
+            ["--quiet-log"], { logPassedMessages: false }
+        ),
+
+        "does not log passing tests with short option": testArgumentOption(
+            ["-q"], { logPassedMessages: false }
         ),
 
         "sets static resource path": testArgumentOption(
