@@ -6,11 +6,8 @@ var captureServer = require("buster-capture-server");
 var when = require("when");
 var cliHelper = require("buster-cli/lib/test-helper");
 var remoteRunner = require("../../lib/runners/browser/remote-runner");
-// var busterClient = require("buster-client").client;
-// var progressReporter = require("../../lib/runners/browser/progress-reporter");
-// var bayeuxEmitter = require("buster-bayeux-emitter");
-// var reporters = require("buster-test").reporters;
-// var http = require("http");
+var progressReporter = require("../../lib/runners/browser/progress-reporter");
+var reporters = require("buster-test").reporters;
 
 function fakeConfig(tc) {
     return buster.extend(buster.eventEmitter.create(), {
@@ -24,7 +21,9 @@ function fakeSession(tc) {
         onStart: tc.stub(),
         onLoad: tc.stub(),
         onEnd: tc.stub(),
-        onUnload: tc.stub()
+        onUnload: tc.stub(),
+        slaves: [{}],
+        end: tc.stub()
     });
 }
 
@@ -303,21 +302,22 @@ buster.testCase("Browser runner", {
     "runSession": {
         setUp: function () {
             this.session = fakeSession(this);
-            this.stub(remoteRunner, "create");
+            this.remoteRunner = buster.eventEmitter.create();
+            this.stub(remoteRunner, "create").returns(this.remoteRunner);
         },
-
-        "failOnNoAssertions should default to true": "TODO",
 
         "testRun extension hook": {
             "triggers with runners": function () {
                 var config = fakeConfig(this);
                 var run = testRun.create(config, {}, this.logger);
-                remoteRunner.create.returns({ id: 42 });
 
                 run.runTests(this.session);
 
                 assert.calledOnceWith(
-                    config.runExtensionHook, "testRun", { id: 42 }, this.session
+                    config.runExtensionHook,
+                    "testRun",
+                    this.remoteRunner,
+                    this.session
                 );
             },
 
@@ -388,189 +388,180 @@ buster.testCase("Browser runner", {
             })
         },
 
-        //         "with no connected slaves": {
-        //             setUp: function () {
-        //                 this.runner.callback = this.spy();
-        //                 this.spy(remoteRunner, "create");
-        //                 this.session.slaves = [];
-        //                 this.runner.runSession(this.session);
-        //             },
+        "with no connected slaves": {
+            setUp: function () {
+                this.session.slaves = [];
+                this.run = testRun.create(fakeConfig(this), {}, this.logger);
+            },
 
-        //             "does not create remote runner": function () {
-        //                 refute.called(remoteRunner.create);
-        //             },
+            "does not create remote runner": function () {
+                this.run.runTests(this.session);
+                refute.called(remoteRunner.create);
+            },
 
-        //             "prints understandable error": function () {
-        //                 assert.match(this.stderr, "No slaves connected, nothing to do");
-        //             },
+            "generates understandable error": function (done) {
+                this.run.runTests(this.session, done(function (err) {
+                    assert.match(err, {
+                        message: "No slaves connected, nothing to do",
+                        type: "NoSlavesError",
+                        code: 76
+                    });
+                }));
+            },
 
-        //             "closes session": function () {
-        //                 assert.calledOnce(this.session.close);
-        //             },
+            "ends session": function () {
+                this.run.runTests(this.session);
+                assert.calledOnce(this.session.end);
+            },
 
-        //             "does not call done until session closes": function () {
-        //                 this.runner.callback = this.spy();
-        //                 this.runner.runSession(this.session);
-
-        //                 refute.called(this.runner.callback);
-        //             },
-
-        //             "calls callback with error": function () {
-        //                 this.close.resolver.resolve();
-
-        //                 assert.calledOnce(this.runner.callback);
-        //                 assert.match(this.runner.callback.args[0][0], {
-        //                     type: "NoSlavesError",
-        //                     code: 76
-        //                 });
-        //             }
-        //         },
-
-        //         "creates progress reporter": function () {
-        //             this.spy(progressReporter, "create");
-
-        //             this.runner.runSession(this.session);
-
-        //             assert.calledOnce(progressReporter.create);
-        //             assert.match(progressReporter.create.args[0][0], {
-        //                 color: false, bright: false
-        //             });
-        //         },
-
-        //         "should not create progress reporter when providing reporter": function () {
-        //             this.spy(progressReporter, "create");
-        //             this.spy(reporters.specification, "create");
-        //             this.runner.options = { reporter: "specification" };
-        //             this.runner.runSession(this.session);
-
-        //             refute.called(progressReporter.create);
-        //             assert.calledOnce(reporters.specification.create);
-        //         },
-
-        //         "loads reporter using buster-test's loader": function () {
-        //             this.spy(reporters, "load");
-        //             this.runner.options = { reporter: "dots" };
-        //             this.runner.runSession(this.session);
-
-        //             assert.calledOnceWith(reporters.load, "dots");
-        //         },
-
-        //         "progress reporter should respect color settings": function () {
-        //             this.spy(progressReporter, "create");
-
-        //             this.runner.options = { color: true, bright: true };
-        //             this.runner.runSession(this.session);
-
-        //             assert.match(progressReporter.create.args[0][0], {
-        //                 color: true, bright: true
-        //             });
-        //         },
-
-        //         "uses logger as io backend for remote reporter": function () {
-        //             this.spy(progressReporter, "create");
-
-        //             this.runner.runSession(this.session);
-        //             var io = progressReporter.create.args[0][0].io;
-        //             io.print(".");
-        //             io.print(".");
-        //             io.puts(" OK!");
-
-        //             assert.match(this.stdout, ".. OK!");
-        //         },
-
-        //         "adds client on progress reporter when client connects": function () {
-        //             var runner = buster.eventEmitter.create();
-        //             this.stub(remoteRunner, "create").returns(runner);
-        //             this.stub(progressReporter, "addClient");
-
-        //             this.runner.runSession(this.session);
-        //             var client = { id: 42 };
-        //             runner.emit("client:connect", client);
-
-        //             assert.calledOnce(progressReporter.addClient);
-        //             assert.calledWith(progressReporter.addClient, 42, client);
-        //         },
-
-        //         "initializes reporter": function () {
-        //             this.spy(reporters.dots, "create");
-
-        //             this.runner.runSession(this.session);
-
-        //             assert.match(reporters.dots.create.args[0][0], {
-        //                 color: false,
-        //                 bright: false,
-        //                 displayProgress: false,
-        //                 logPassedMessages: false
-        //             });
-        //         },
-
-        //         "logs messages for passed tests": function () {
-        //             this.spy(reporters.dots, "create");
-
-    //             this.runner.options.logPassedMessages = true;
-    //             this.runner.runSession(this.session);
-
-    //             assert.match(reporters.dots.create.args[0][0], {
-//                 logPassedMessages: true
-//             });
+            "//does not call done until session closes":
+            "TODO: session.end is currently not async. augustl?"
         },
 
-//         "initializes reporter with custom properties": function () {
-//             this.spy(reporters.dots, "create");
+        "reporter": {
+            setUp: function () {
+                this.spy(progressReporter, "create");
+                this.spy(reporters.dots, "create");
+                this.createRun = function (options) {
+                    return testRun.create(
+                        fakeConfig(this),
+                        options || {},
+                        this.logger
+                    );
+                };
+            },
 
-//             this.runner.options = { color: true, bright: true, displayProgress: true };
-//             this.runner.runSession(this.session);
+            "defaults to progress reporter": function () {
+                var run = this.createRun();
+                run.runTests(this.session);
 
-//             assert.match(reporters.dots.create.args[0][0], {
-//                 color: true, bright: true
-//             });
-//         },
+                assert.calledOnce(progressReporter.create);
+                assert.match(progressReporter.create.args[0][0], {
+                    color: false,
+                    bright: false
+                });
+            },
 
-//         "builds cwd from session server and root": function () {
-//             this.runner.server = { hostname: "localhost", port: 1111 };
-//             this.session.resourcesPath = "/aaa-bbb/resources";
-//             this.spy(reporters.dots, "create");
+            "skips progress reporter when providing reporter": function () {
+                this.spy(reporters.specification, "create");
+                var run = this.createRun({ reporter: "specification" });
+                run.runTests(this.session);
 
-//             this.runner.runSession(this.session);
+                refute.called(progressReporter.create);
+                assert.calledOnce(reporters.specification.create);
+            },
 
-//             assert.match(reporters.dots.create.args[0][0], {
-//                 cwd: "http://localhost:1111/aaa-bbb/resources"
-//             });
-//         },
+            "loads reporter using buster-test's loader": function () {
+                this.spy(reporters, "load");
+                var run = this.createRun({ reporter: "dots" });
+                run.runTests(this.session);
 
-//         "builds cwd from non-default session server and root": function () {
-//             this.runner.server = { hostname: "somewhere", port: 2524 };
-//             this.session.resourcesPath = "/aaa-ccc/resources";
-//             this.spy(reporters.dots, "create");
+                assert.calledOnceWith(reporters.load, "dots");
+            },
 
-//             this.runner.runSession(this.session);
+            "progress reporter should respect color settings": function () {
+                var run = this.createRun({ color: true, bright: true });
+                run.runTests(this.session);
 
-//             assert.match(reporters.dots.create.args[0][0], {
-//                 cwd: "http://somewhere:2524/aaa-ccc/resources"
-//             });
-//         },
+                assert.match(progressReporter.create.args[0][0], {
+                    color: true,
+                    bright: true
+                });
+            },
 
-//         "sets number of contexts in package name": function () {
-//             this.spy(reporters.dots, "create");
+            "uses logger as output stream for remote reporter": function () {
+                var run = this.createRun();
+                run.runTests(this.session);
+                var ostream = progressReporter.create.args[0][0].outputStream;
+                ostream.write(".");
+                ostream.write(".");
+                ostream.write(" OK!");
 
-//             this.runner.runSession(this.session);
+                assert.stdout(".. OK!");
+            },
 
-//             assert.equals(reporters.dots.create.returnValues[0].contextsInPackageName, 2);
-//         },
+            "adds client on progress reporter when client connects": function () {
+                this.stub(progressReporter, "addClient");
 
-//         "sets stackFilter.filters": function () {
-//             this.runner.runSession(this.session);
+                var run = this.createRun();
+                run.runTests(this.session);
+                var client = { id: 42 };
+                this.remoteRunner.emit("client:connect", client);
 
-//             assert.equals(buster.stackFilter.filters,
-//                           ["/buster/bundle-", "buster/wiring",
-//                            "buster-capture-server/node_modules"]);
-//         },
+                assert.calledOnce(progressReporter.addClient);
+                assert.calledWith(progressReporter.addClient, 42, client);
+            },
+
+            "initializes reporter": function () {
+                var run = this.createRun();
+                run.runTests(this.session);
+
+                assert.match(reporters.dots.create.args[0][0], {
+                    color: false,
+                    bright: false,
+                    displayProgress: false,
+                    logPassedMessages: false
+                });
+            },
+
+            "logs messages for passed tests": function () {
+                var run = this.createRun({ logPassedMessages: true });
+                run.runTests(this.session);
+
+                assert.match(reporters.dots.create.args[0][0], {
+                    logPassedMessages: true
+                });
+            },
+
+            "initializes reporter with custom properties": function () {
+                var run = this.createRun({
+                    color: true,
+                    bright: true,
+                    displayProgress: true
+                });
+                run.runTests(this.session);
+
+                assert.match(reporters.dots.create.args[0][0], {
+                    color: true,
+                    bright: true
+                });
+            },
+
+            "builds cwd from session server and root": function () {
+                this.session.resourcesPath = "/aaa-bbb/resources";
+                var run = this.createRun({ server: "localhost:1111" });
+                run.runTests(this.session);
+
+                assert.match(reporters.dots.create.args[0][0], {
+                    cwd: "http://localhost:1111/aaa-bbb/resources"
+                });
+            },
+
+            "builds cwd from non-default session server and root": function () {
+                this.session.resourcesPath = "/aaa-bbb/resources";
+                var run = this.createRun({ server: "somewhere:2524" });
+                run.runTests(this.session);
+
+                assert.match(reporters.dots.create.args[0][0], {
+                    cwd: "http://somewhere:2524/aaa-bbb/resources"
+                });
+            },
+
+            "sets number of contexts in package name": function () {
+                var run = this.createRun();
+                run.runTests(this.session);
+
+                var reporter = reporters.dots.create.returnValues[0];
+                assert.equals(reporter.contextsInPackageName, 2);
+            }
+        }
+    },
 
 //         "closes session on suite:end": function () {
 //             var runner = buster.eventEmitter.create();
 //             this.stub(remoteRunner, "create").returns(runner);
 
-//             this.runner.runSession(this.session);
+//          run.runTestssession);
 //             runner.emit("suite:end");
 
 //             assert.calledOnce(this.session.close);
@@ -582,7 +573,7 @@ buster.testCase("Browser runner", {
 //                 this.runner.callback = this.spy();
 //                 this.stub(remoteRunner, "create").returns(this.remoteRunner);
 //                 this.close.resolver.resolve();
-//                 this.runner.runSession(this.session);
+//             run.runTestsion);
 //             },
 
 //             "prints to stdout": function () {
@@ -605,7 +596,7 @@ buster.testCase("Browser runner", {
 //             this.stub(remoteRunner, "create").returns(runner);
 //             this.close.resolver.reject({ message: "Oops" });
 
-//             this.runner.runSession(this.session);
+//        run.runTests
 //             var stderr = this.stderr;
 //             runner.emit("suite:end");
 
@@ -618,8 +609,7 @@ buster.testCase("Browser runner", {
 //             this.runner.callback = this.spy();
 //             this.close.resolver.reject({ message: "Oops" });
 
-//             this.runner.runSession(this.session);
-//             var stderr = this.stderr;
+//       run.runTests(thithis.run.runTests          var stderr = this.stderr;
 //             runner.emit("suite:end");
 
 //             assert.calledOnce(this.runner.callback);
