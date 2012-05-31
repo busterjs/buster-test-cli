@@ -577,15 +577,14 @@ buster.testCase("Browser runner", {
                 refute.equals(this.stdout, stdout);
             },
 
-            "calls run callback when done": function (done) {
-                var stdout = this.stdout.toString();
+            "calls run callback when done": function () {
+                var callback = this.spy();
 
-                this.run.runTests(this.session, done(function () {
-                    refute.equals(this.stdout, stdout);
-                }.bind(this)));
-
+                this.run.runTests(this.session, callback);
                 this.remoteRunner.emit("suite:end");
-            }
+
+                assert.calledOnce(callback);
+            },
         }
     },
 
