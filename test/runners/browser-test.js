@@ -303,7 +303,7 @@ buster.testCase("Browser runner", {
         "does not print uncaught exceptions if handled by reporter": "TODO"
     },
 
-    "runSession": {
+    "runTests": {
         setUp: function () {
             this.session = fakeSession(this);
             this.createRun = function (options) {
@@ -587,31 +587,12 @@ buster.testCase("Browser runner", {
             },
 
             "prints to stderr on unsuccesful session close":
-            "TODO: session.end is not currently async"
+            "TODO: session.end is not currently async",
+
+            "calls done with error on failed session close":
+            "TODO: session.end is not currently async. Should fail with code 75"
         }
     },
-
-
-//         },
-
-
-//         "calls done with error on failed session close": function () {
-//             var runner = buster.eventEmitter.create();
-//             this.stub(remoteRunner, "create").returns(runner);
-//             this.runner.callback = this.spy();
-//             this.close.resolver.reject({ message: "Oops" });
-
-//       run.runTests(thithis.run.runTests          var stderr = this.stderr;
-//             runner.emit("suite:end");
-
-//             assert.calledOnce(this.runner.callback);
-//             assert.match(this.runner.callback.args[0][0], {
-//                 message: "Failed closing session: Oops",
-//                 code: 75,
-//                 type: "SessionCloseError"
-//             });
-//         }
-//     },
 
 //     "error handling": {
 //         "prints session creation error to stderr": function () {
