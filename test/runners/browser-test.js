@@ -594,102 +594,83 @@ buster.testCase("Browser runner", {
         }
     },
 
-//     "error handling": {
-//         "prints session creation error to stderr": function () {
-//             this.config.resolver.resolve();
-//             this.runner.run(this.group, this.options);
-//             this.session.resolver.reject({
-//                 id: 47,
-//                 message: "Failed creating session"
-//             });
+    "error handling": {
+        setUp: function () {
+            this.run = testRun.create(fakeConfig(this), {
+                server: "localhost:1111"
+            }, this.logger);
+            this.sessionDeferred = when.defer();
+            this.client = {
+                createSession: this.stub().returns(this.sessionDeferred)
+            };
+        },
 
-//             assert.match(this.stderr, "Failed creating session");
-//         },
+        "session creation error": function () {
+            this.sessionDeferred.reject({ message: "Djeez" });
+            var callback = this.spy();
 
-//         "prints understandable error if server cannot be reached": function () {
-//             this.config.resolver.resolve();
-//             this.runner.run(this.group, this.options);
-//             this.session.resolver.reject(new Error("ECONNREFUSED, Connection refused"));
+            this.run.startSession(this.client, callback)({});
 
-//             assert.match(this.stderr, "Unable to connect to server");
-//             assert.match(this.stderr, "http://127.0.0.1:1200");
-//             assert.match(this.stderr, "Please make sure that buster-server is running");
-//         },
+            assert.calledOnce(callback);
+            assert.match(callback.args[0][0].message, "Failed creating session");
+        },
 
-//         "calls callback whith error when server cannot be reached": function () {
-//             var callback = this.spy();
-//             this.config.resolver.resolve();
-//             this.runner.run(this.group, this.options, callback);
-//             this.session.resolver.reject(new Error("ECONNREFUSED, Connection refused"));
+        "yields understandable error if server cannot be reached": function () {
+            this.sessionDeferred.reject(new Error("ECONNREFUSED, Connection refused"));
+            var callback = this.spy();
 
-//             assert.calledOnce(callback);
-//             assert.match(callback.args[0][0], { code: 75 });
-//         },
+            this.run.startSession(this.client, callback)({});
 
-//         "prints understandable error if pattern matches no files": function () {
-//             this.config.resolver.resolve();
-//             this.runner.run(this.group, this.options);
-//             this.stub(process, "cwd").returns("/home/christian/projects/buster/sample");
-//             this.session.resolver.reject(new Error("ENOENT, No such file or directory '/home/christian/projects/buster/sample/src/*.js'"));
+            var message = callback.args[0][0].message;
+            assert.match(message, "Unable to connect to server");
+            assert.match(message, "http://localhost:1111");
+            assert.match(message, "Please make sure that buster-server is running");
+            assert.equals(callback.args[0][0].code, 75);
+        },
 
-//             assert.match(this.stderr, "pattern 'src/*.js' does not match any files");
-//         },
+        "files": {
+            setUp: function () {
+                this.stub(captureServer, "createServerClient").returns(this.client);
+                this.config = fakeConfig(this);
+                this.configDeferred = when.defer();
+                this.config.resolve.returns(this.configDeferred);
+                this.stub(process, "cwd").returns("/home/christian/projects/buster/sample");
+            },
 
-//         "calls callback whith error when pattern matches no files": function () {
-//             var callback = this.spy();
-//             this.config.resolver.resolve();
-//             this.runner.run(this.group, this.options, callback);
-//             this.stub(process, "cwd").returns("/home/christian/projects/buster/sample");
-//             this.session.resolver.reject(new Error("ENOENT, No such file or directory '/home/christian/projects/buster/sample/src/*.js'"));
+            "yields understandable error if pattern matches no files": function () {
+                this.configDeferred.reject(new Error("ENOENT, No such file or directory '/home/christian/projects/buster/sample/src/*.js'"));
+                var callback = this.spy();
 
-//             assert.calledOnce(callback);
-//             assert.match(callback.args[0][0], { code: 65 });
-//         },
+                var run = testRun.create(this.config, {}, this.logger, callback);
+                run.start();
 
-//         "prints understandable error if a file could not be found": function () {
-//             this.config.resolver.resolve();
-//             this.runner.run(this.group, this.options);
-//             this.stub(process, "cwd").returns("/home/christian/projects/buster/sample");
-//             this.session.resolver.reject(new Error("ENOENT, No such file or directory '/home/christian/projects/buster/sample/src/trim.js'"));
+                assert.calledOnce(callback);
+                assert.match(callback.args[0][0].message, "pattern 'src/*.js' does not match any files");
+                assert.equals(callback.args[0][0].code, 65);
+            },
 
-//             assert.match(this.stderr, "Configured path 'src/trim.js' is not a file or directory");
-//         },
+            "yields understandable error if a file could not be found": function () {
+                this.configDeferred.reject(new Error("ENOENT, No such file or directory '/home/christian/projects/buster/sample/src/trim.js'"));
+                var callback = this.spy();
 
-//         "calls callback whith error when file not found": function () {
-//             var callback = this.spy();
-//             this.config.resolver.resolve();
-//             this.runner.run(this.group, this.options, callback);
-//             this.stub(process, "cwd").returns("/home/christian/projects/buster/sample");
-//             this.session.resolver.reject(new Error("ENOENT, No such file or directory '/home/christian/projects/buster/sample/src/trim.js'"));
+                var run = testRun.create(this.config, {}, this.logger, callback);
+                run.start();
 
-//             assert.calledOnce(callback);
-//             assert.match(callback.args[0][0], { code: 65 });
-//         },
+                assert.calledOnce(callback);
+                assert.match(callback.args[0][0].message, "Configured path 'src/trim.js' is not a file or directory");
+                assert.equals(callback.args[0][0].code, 65);
+            },
 
-//         "prints understandable error if config fails to resolve": function () {
-//             this.config.resolver.reject({ message: "Failed loading configuration: Oh noes" });
-//             this.runner.run(this.group, this.options);
+            "yields understandable error if config fails to resolve": function () {
+                this.configDeferred.reject({ message: "Failed loading configuration: Oh noes" });
+                var callback = this.spy();
 
-//             assert.match(this.stderr, "Failed loading configuration: Oh noes");
-//         },
+                var run = testRun.create(this.config, {}, this.logger, callback);
+                run.start();
 
-//         "calls callback whith error when config fails to resolve": function () {
-//             var callback = this.spy();
-//             this.config.resolver.reject({ message: "Failed loading configuration: Oh noes" });
-//             this.runner.run(this.group, this.options, callback);
-
-//             assert.calledOnce(callback);
-//             assert.match(callback.args[0][0], { code: 78 });
-//         },
-
-//         "calls callback whith error when analyzer precondition fails": function () {
-//             var callback = this.spy();
-//             this.config.resolver.resolve();
-//             this.runner.run(this.group, this.options, callback);
-//             this.session.resolver.reject({ name: "AbortedError" });
-
-//             assert.calledOnce(callback);
-//             assert.match(callback.args[0][0], { code: 70 });
-//         }
-//     }
+                assert.calledOnce(callback);
+                assert.match(callback.args[0][0].message, "Failed loading configuration: Oh noes");
+            }
+        }
+    }
 });
