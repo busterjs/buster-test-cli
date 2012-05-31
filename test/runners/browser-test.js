@@ -52,6 +52,8 @@ buster.testCase("Browser runner", {
         this.stderr = cliHelper.writableStream("stderr");
         this.logger = stdioLogger(this.stdout, this.stderr);
         this.runner.logger = this.logger;
+        this.remoteRunner = buster.eventEmitter.create();
+        this.stub(remoteRunner, "create").returns(this.remoteRunner);
     },
 
     "server client": {
@@ -95,63 +97,65 @@ buster.testCase("Browser runner", {
             refute.called(this.serverClient.createSession);
         },
 
-        "with configured resource set": function (done) {
+        "with configured resource set": function () {
             this.config.resolve.returns(when({ id: 42 }));
 
-            this.runner.run(this.config, {}, done(function () {
-                assert.calledOnce(this.serverClient.createSession);
-                assert.calledWith(this.serverClient.createSession, { id: 42 });
-            }.bind(this)));
+            this.runner.run(this.config, {});
+
+            assert.calledOnce(this.serverClient.createSession);
+            assert.calledWith(this.serverClient.createSession, { id: 42 });
         },
 
         "caches resources when cacheable": function (done) {
             var deferred = when.defer();
             this.config.resolve.returns(deferred.promise);
 
-            var run = this.runner.run(this.config, {}, done(function () {
-                assert.sessionOptions({ cache: true });
-            }.bind(this)));
-
+            var run = this.runner.run(this.config, {});
             run.cacheable = true;
             deferred.resolve({});
+
+            deferred.then(done(function () {
+                assert.sessionOptions({ cache: true });
+            }));
         },
 
         "skips caching when uncacheable": function (done) {
             var deferred = when.defer();
             this.config.resolve.returns(deferred.promise);
 
-            var run = this.runner.run(this.config, {}, done(function () {
-                assert.sessionOptions({ cache: false });
-            }.bind(this)));
-
+            var run = this.runner.run(this.config, {});
             run.cacheable = false;
             deferred.resolve({});
+
+            deferred.then(done(function () {
+                assert.sessionOptions({ cache: false });
+            }));
         },
 
-        "is unjoinable": function (done) {
+        "is unjoinable": function () {
             this.config.resolve.returns(when({ id: 42 }));
 
-            this.runner.run(this.config, {}, done(function () {
-                assert.sessionOptions({ joinable: false });
-            }.bind(this)));
+            this.runner.run(this.config, {});
+
+            assert.sessionOptions({ joinable: false });
         },
 
-        "uses dynamic resource paths by default": function (done) {
+        "uses dynamic resource paths by default": function () {
             this.config.resolve.returns(when({ id: 42 }));
 
-            this.runner.run(this.config, {}, done(function () {
-                assert.sessionOptions({ staticResourcesPath: false });
-            }.bind(this)));
+            this.runner.run(this.config, {});
+
+            assert.sessionOptions({ staticResourcesPath: false });
         },
 
-        "uses static resource paths": function (done) {
+        "uses static resource paths": function () {
             this.config.resolve.returns(when({ id: 42 }));
 
             this.runner.run(this.config, {
                 staticResourcePath: true
-            }, done(function () {
-                assert.sessionOptions({ staticResourcesPath: false });
-            }.bind(this)));
+            });
+
+            assert.sessionOptions({ staticResourcesPath: false });
         },
 
         "runs session with testRun object": function () {
@@ -302,8 +306,13 @@ buster.testCase("Browser runner", {
     "runSession": {
         setUp: function () {
             this.session = fakeSession(this);
-            this.remoteRunner = buster.eventEmitter.create();
-            this.stub(remoteRunner, "create").returns(this.remoteRunner);
+            this.createRun = function (options) {
+                return testRun.create(
+                    fakeConfig(this),
+                    options || {},
+                    this.logger
+                );
+            };
         },
 
         "testRun extension hook": {
@@ -422,13 +431,6 @@ buster.testCase("Browser runner", {
             setUp: function () {
                 this.spy(progressReporter, "create");
                 this.spy(reporters.dots, "create");
-                this.createRun = function (options) {
-                    return testRun.create(
-                        fakeConfig(this),
-                        options || {},
-                        this.logger
-                    );
-                };
             },
 
             "defaults to progress reporter": function () {
@@ -554,41 +556,40 @@ buster.testCase("Browser runner", {
                 var reporter = reporters.dots.create.returnValues[0];
                 assert.equals(reporter.contextsInPackageName, 2);
             }
+        },
+
+        "closing session": {
+            setUp: function () {
+                this.run = this.createRun();
+            },
+
+            "ends session on suite:end": function () {
+                this.run.runTests(this.session);
+                this.remoteRunner.emit("suite:end");
+
+                assert.calledOnce(this.session.end);
+            },
+
+            "prints to stdout": function () {
+                var stdout = this.stdout.toString();
+                this.run.endSession(this.session);
+
+                refute.equals(this.stdout, stdout);
+            },
+
+            "calls run callback when done": function (done) {
+                var stdout = this.stdout.toString();
+
+                this.run.runTests(this.session, done(function () {
+                    refute.equals(this.stdout, stdout);
+                }.bind(this)));
+
+                this.remoteRunner.emit("suite:end");
+            }
         }
     },
 
-//         "closes session on suite:end": function () {
-//             var runner = buster.eventEmitter.create();
-//             this.stub(remoteRunner, "create").returns(runner);
 
-//          run.runTestssession);
-//             runner.emit("suite:end");
-
-//             assert.calledOnce(this.session.close);
-//         },
-
-//         "succesful session close": {
-//             setUp: function () {
-//                 this.remoteRunner = buster.eventEmitter.create();
-//                 this.runner.callback = this.spy();
-//                 this.stub(remoteRunner, "create").returns(this.remoteRunner);
-//                 this.close.resolver.resolve();
-//             run.runTestsion);
-//             },
-
-//             "prints to stdout": function () {
-//                 var stdout = this.stdout;
-//                 this.remoteRunner.emit("suite:end");
-
-//                 refute.equals(this.stdout, stdout);
-//             },
-
-//             "calls callback": function () {
-//                 this.remoteRunner.emit("suite:end", { ok: true, tests: 42 });
-
-//                 var callback = this.runner.callback;
-//                 assert.calledOnceWith(callback, null, { ok: true, tests: 42 });
-//             }
 //         },
 
 //         "prints to stderr on unsuccesful session close": function () {
