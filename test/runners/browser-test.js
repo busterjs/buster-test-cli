@@ -585,23 +585,15 @@ buster.testCase("Browser runner", {
 
                 assert.calledOnce(callback);
             },
+
+            "prints to stderr on unsuccesful session close":
+            "TODO: session.end is not currently async"
         }
     },
 
 
 //         },
 
-//         "prints to stderr on unsuccesful session close": function () {
-//             var runner = buster.eventEmitter.create();
-//             this.stub(remoteRunner, "create").returns(runner);
-//             this.close.resolver.reject({ message: "Oops" });
-
-//        run.runTests
-//             var stderr = this.stderr;
-//             runner.emit("suite:end");
-
-//             refute.equals(this.stderr, stderr);
-//         },
 
 //         "calls done with error on failed session close": function () {
 //             var runner = buster.eventEmitter.create();
