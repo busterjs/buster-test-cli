@@ -13,7 +13,7 @@
         "email": "christian@cjohansen.no",
         "url": "http://cjohansen.no"
     }],
-    "main": "./lib/buster-test-cli",
+    "main": "./lib/test-cli",
     "repository": {
         "type": "git",
         "url": "git://gitorious.org/buster/buster-test-cli.git"
@@ -27,7 +27,6 @@
         "buster-cli": ">=0.4.2",
         "buster-configuration": ">=0.4.1",
         "buster-terminal": ">=0.4",
-        "buster-capture-server": ">=0.4.2",
         "when": "https://github.com/cujojs/when/tarball/1.0.2",
         "buster-evented-logger": ">=0.4.3",
         "buster-assertions": ">=0.10",
@@ -43,7 +42,7 @@
         "paperboy": "~0",
         "ejs": "~0.4",
         "sinon": ">=1.3.1",
-        "sinon-buster": ">=0.5.0"
+        "buster-sinon": ">=0.5.0"
     },
     "devDependencies": {
         "buster": "",
