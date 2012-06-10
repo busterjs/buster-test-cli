@@ -145,13 +145,13 @@ buster.testCase("Test CLI", {
 
     "with preferences": {
         setUp: function () {
-            this.preferences = { get: this.stub() };
+            this.prefsink = { get: this.stub() };
             this.config = cliHelper.writeFile(
                 "buster2.js", "var config = module.exports;" +
                     "config.server = { environment: 'browser' }");
             this.cli = testCli.create(this.stdout, this.stderr, {
                 runners: this.runners,
-                preferences: this.preferences
+                preferences: this.prefsink
             });
             this.cli.cli.exit = this.spy();
             this.filters = buster.stackFilter.filters;
@@ -163,7 +163,7 @@ buster.testCase("Test CLI", {
 
         "skips stack trace filtering": function (done) {
             buster.stackFilter.filters = ["a", "b"];
-            this.preferences.get.withArgs("test.fullStacks").returns(true);
+            this.prefsink.get.withArgs("test.fullStacks").returns(true);
 
             this.cli.run(["-c", this.config], done(function () {
                 assert.equals(buster.stackFilter.filters, []);
@@ -171,7 +171,7 @@ buster.testCase("Test CLI", {
         },
 
         "uses color preference": function (done) {
-            this.preferences.get.withArgs("test.color").returns("none");
+            this.prefsink.get.withArgs("test.color").returns("none");
 
             this.cli.run(["-c", this.config], done(function () {
                 assert.match(this.runners.browser.run.args[0][1], {
@@ -181,7 +181,7 @@ buster.testCase("Test CLI", {
         },
 
         "uses color option as default": function (done) {
-            this.preferences.get.withArgs("test.color").returns("none");
+            this.prefsink.get.withArgs("test.color").returns("none");
 
             this.cli.run(["-c", this.config, "-C", "dim"], done(function () {
                 assert.match(this.runners.browser.run.args[0][1], {
@@ -192,7 +192,7 @@ buster.testCase("Test CLI", {
         },
 
         "uses release console preference": function (done) {
-            this.preferences.get.withArgs("test.releaseConsole").returns(true);
+            this.prefsink.get.withArgs("test.releaseConsole").returns(true);
 
             this.cli.run(["-c", this.config], done(function () {
                 assert.match(this.runners.browser.run.args[0][1], {
@@ -202,7 +202,7 @@ buster.testCase("Test CLI", {
         },
 
         "uses release console argument": function (done) {
-            this.preferences.get.withArgs("test.releaseConsole").returns(false);
+            this.prefsink.get.withArgs("test.releaseConsole").returns(false);
 
             this.cli.run(["-c", this.config, "--release-console"], done(function () {
                 assert.match(this.runners.browser.run.args[0][1], {
@@ -213,7 +213,7 @@ buster.testCase("Test CLI", {
 
 
         "uses quiet log preference": function (done) {
-            this.preferences.get.withArgs("test.quietLog").returns(true);
+            this.prefsink.get.withArgs("test.quietLog").returns(true);
 
             this.cli.run(["-c", this.config], done(function () {
                 assert.match(this.runners.browser.run.args[0][1], {
@@ -223,7 +223,7 @@ buster.testCase("Test CLI", {
         },
 
         "uses quiet log argument": function (done) {
-            this.preferences.get.withArgs("test.quietLog").returns(false);
+            this.prefsink.get.withArgs("test.quietLog").returns(false);
 
             this.cli.run(["-c", this.config, "--quiet-log"], done(function () {
                 assert.match(this.runners.browser.run.args[0][1], {
