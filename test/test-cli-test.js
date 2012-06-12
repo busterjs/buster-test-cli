@@ -284,11 +284,11 @@ buster.testCase("Test CLI", {
             var runner = { run: this.stub().returns(run).yields() };
             this.stub(this.cli, "loadRunner").yields(null, runner);
 
-            this.cli.run(["-c", this.config], done(function () {
-                process.nextTick(function () {
+            this.cli.run(["-c", this.config], function () {
+                process.nextTick(done(function () {
                     assert(run.cacheable);
-                });
-            }));
+                }));
+            });
         },
 
         "sets warning level": testArgumentOption(
@@ -345,23 +345,32 @@ buster.testCase("Test CLI", {
     },
 
     "analyzer": {
-        "creates run analyzer": function () {
-            this.spy(runAnalyzer, "create");
-            this.cli.run(["-c", this.config]);
-
-            assert.calledOnceWith(runAnalyzer.create, this.cli.logger);
-            assert.match(runAnalyzer.create.args[0][1], {
-                bright: true,
-                color: true
-            });
+        setUp: function () {
+            this.config = cliHelper.writeFile(
+                "buster2.js", "var config = module.exports;" +
+                    "config.server = { environment: 'browser' }");
         },
 
-        "runs configuration group": function () {
+        "creates run analyzer": function (done) {
+            this.spy(runAnalyzer, "create");
+            this.cli.run(["-c", this.config], done(function () {
+                assert.calledOnceWith(runAnalyzer.create, this.cli.logger);
+                assert.match(runAnalyzer.create.args[0][1], {
+                    bright: true,
+                    color: true
+                });
+            }.bind(this)));
+        },
+
+        "runs configuration group": function (done) {
             var run = this.spy();
             this.stub(runAnalyzer, "create").returns({ run: run });
+
             this.cli.run(["-c", this.config]);
 
-            assert.calledOnce(run);
+            setTimeout(done(function () {
+                assert.calledOnce(run);
+            }), 10);
         }
     },
 
@@ -369,6 +378,9 @@ buster.testCase("Test CLI", {
         setUp: function () {
             this.busterOptBlank = typeof process.env.BUSTER_TEST_OPT != "string";
             this.busterOpt = process.env.BUSTER_TEST_OPT;
+            this.config = cliHelper.writeFile(
+                "buster2.js", "var config = module.exports;" +
+                    "config.server = { environment: 'browser' }");
         },
 
         tearDown: function () {
@@ -376,9 +388,10 @@ buster.testCase("Test CLI", {
             if (this.busterOptBlank) delete process.env.BUSTER_TEST_OPT;
         },
 
-        "adds command-line options set with $BUSTER_TEST_OPT": function (done) {
+        "//adds command-line options set with $BUSTER_TEST_OPT": function (done) {
             process.env.BUSTER_TEST_OPT = "--color dim -r specification";
             this.cli.run(["-c", this.config], done(function () {
+                assert.calledOnce(this.runners.node.run);
                 assert.match(this.runners.node.run.args[0][1], {
                     color: true,
                     bright: false,
