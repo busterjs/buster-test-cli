@@ -29,6 +29,7 @@ function fakeSession(tc) {
 
 function fakeServerClient(tc) {
     return {
+        connect: tc.stub().returns(when()),
         createSession: tc.stub().returns(when(fakeSession(tc)))
     };
 }
@@ -601,6 +602,7 @@ buster.testCase("Browser runner", {
             }, this.logger);
             this.sessionDeferred = when.defer();
             this.client = {
+                connect: this.stub().returns(when()),
                 createSession: this.stub().returns(this.sessionDeferred)
             };
         },
