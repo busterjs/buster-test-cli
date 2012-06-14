@@ -131,6 +131,13 @@ buster.testCase("Node runner", {
             this.runner.run(config, {});
 
             assert.calledOnce(config.runExtensionHook, "beforeRun");
+        },
+
+        "runs beforeRun before config.resolve": function () {
+            var config = fakeConfig(this);
+            this.runner.run(config, {});
+
+            assert.callOrder(config.runExtensionHook, config.resolve);
         }
     },
 
