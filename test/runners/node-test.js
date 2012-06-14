@@ -9,7 +9,7 @@ var cliHelper = require("buster-cli/lib/test-helper");
 
 function fakeConfig(tc) {
     return buster.extend(buster.eventEmitter.create(), {
-        resolve: tc.stub(),
+        resolve: tc.stub().returns(when()),
         runExtensionHook: tc.stub()
     });
 }
@@ -91,12 +91,29 @@ buster.testCase("Node runner", {
             this.stub(test, "autoRun");
             var config = fakeConfig(this);
             var deferred = when.defer();
-            config.resolve.returns(deferred);
+            config.resolve.returns(deferred.promise);
          
             this.runner.run(config, {});
             deferred.resolve({});
 
             assert.called(test.autoRun);
+        },
+
+        "yields config resolution error to done callback": function () {
+            // If the configuration fails to load, the beforeRunHook
+            // will never resolve, as it waits for all the load:???
+            // events (one or more of which will not be emitted when
+            // the configuration fails loading the resource set)
+            this.stubBeforeRunHook(); // Unresolved promise
+            var config = fakeConfig(this);
+            var deferred = when.defer();
+            config.resolve.returns(deferred);
+            var done = this.spy();
+
+            this.runner.run(config, {}, done);
+            deferred.reject({ message: "Failed loading *-tests.js" });
+
+            assert.calledOnce(done);
         }
     },
 
@@ -166,7 +183,8 @@ buster.testCase("Node runner", {
 
         "requires absolute paths": function (done) {
             this.stubBeforeRunHook().resolve([]);
-            this.config.resolve.returns(resourceSet(this, "/here", ["hey.js"]));
+            var rs = resourceSet(this, "/here", ["hey.js"]);
+            this.config.resolve.returns(when(rs));
 
             this.runner.run(this.config, {}, done(function (err) {
                 assert.match(err, {
