@@ -405,7 +405,7 @@ buster.testCase("Browser runner", {
             },
 
             "does not create remote runner": function () {
-                this.run.runTests(this.session);
+                this.run.runTests(this.session, function () {});
                 refute.called(remoteRunner.create);
             },
 
@@ -420,7 +420,7 @@ buster.testCase("Browser runner", {
             },
 
             "ends session": function () {
-                this.run.runTests(this.session);
+                this.run.runTests(this.session, function () {});
                 assert.calledOnce(this.session.end);
             },
 
@@ -565,7 +565,7 @@ buster.testCase("Browser runner", {
             },
 
             "ends session on suite:end": function () {
-                this.run.runTests(this.session);
+                this.run.runTests(this.session, function () {});
                 this.remoteRunner.emit("suite:end");
 
                 assert.calledOnce(this.session.end);
