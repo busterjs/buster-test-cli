@@ -1,14 +1,7 @@
-* buster-server [1/3]
-** DONE Ignore query params
-** TODO Don't ignore query params if the resource is configured with them
-** TODO Actively use cache-defeating headers
-* running tests [8/9]
-** DONE Use real configuration module in test.js
-** DONE Test config loading in test.js
-** DONE Node runner should use buster.test.autoRun
-** DONE Test Node runner
-** DONE Modify autoRun to accept more options
-** DONE Modify autoRun to somehow allow filteredRunner to filter contexts
-** DONE Test failures don't print log messages
-** TODO buster-test -r buster-test - Error handling if module isn't a valid reporter
-** DONE --server option
+* capture-server-issues [0/4]
+** TODO Refresh to recapture no longer works
+** TODO Stack trace (probably from F5): http://pastie.org/4094421
+** TODO Phantom script (buster/script/phantom.js) no longer works. Missing capture handshake? Is the handshake required?
+** TODO session.end is currently not async. Should it be? (Used to be)
+* Browser test stuff [0/1]
+** TODO SIGINT: should do session.end() to avoid server hangup
