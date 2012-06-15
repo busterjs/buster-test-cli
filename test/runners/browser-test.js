@@ -186,6 +186,22 @@ buster.testCase("Browser runner", {
                 id: 42,
                 things: "stuff"
             });
+        },
+
+        "calls callback with internally thrown error": function () {
+            var callback = this.spy();
+            var deferred = when.defer();
+            this.config.resolve.returns(deferred.promise);
+
+            var run = this.runner.run(this.config, { id: 42 }, callback);
+            this.stub(run, "runTests").throws();
+
+            refute.exception(function () {
+                deferred.resolve({});
+            });
+
+            assert.calledOnce(callback);
+            assert.defined(callback.args[0][0].message);
         }
     },
 
