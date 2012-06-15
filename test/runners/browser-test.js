@@ -353,7 +353,8 @@ buster.testCase("Browser runner", {
 
                 run.runTests(this.session, function (err) {
                     assert.equals(err.code, 70);
-                });
+                    assert.calledOnce(this.session.end);
+                }.bind(this));
             }
         },
 
