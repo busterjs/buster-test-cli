@@ -19,10 +19,9 @@ function fakeConfig(tc) {
 function fakeSession(tc) {
     return buster.extend(buster.eventEmitter.create(), {
         onStart: tc.stub(),
-        onLoad: tc.stub(),
+        onLoad: tc.stub().yields([{}]),
         onEnd: tc.stub(),
         onUnload: tc.stub(),
-        slaves: [{}],
         end: tc.stub()
     });
 }
@@ -361,7 +360,7 @@ buster.testCase("Browser runner", {
         "remote runner": {
             "creates remote runner": function () {
                 var run = testRun.create(fakeConfig(this), {}, this.logger);
-                this.session.slaves = [{ id: 42 }];
+                this.session.onLoad.yields([{ id: 42 }]);
 
                 run.runTests(this.session);
 
@@ -416,7 +415,7 @@ buster.testCase("Browser runner", {
 
         "with no connected slaves": {
             setUp: function () {
-                this.session.slaves = [];
+                this.session.onLoad.yields([]);
                 this.run = testRun.create(fakeConfig(this), {}, this.logger);
             },
 
@@ -442,6 +441,51 @@ buster.testCase("Browser runner", {
 
             "//does not call done until session closes":
             "TODO: session.end is currently not async. augustl?"
+        },
+
+        "server timing out": {
+            setUp: function () {
+                this.session.onLoad = this.stub(); // Does not yield
+                this.run = testRun.create(fakeConfig(this), {}, this.logger);
+                this.clock = this.useFakeTimers();
+            },
+
+            "calls callback if session does not load": function () {
+                var callback = this.spy();
+                this.run.runTests(this.session, callback);
+
+                this.clock.tick(5000);
+
+                assert.calledOnce(callback);
+                assert.match(callback.args[0][0].message, "timed out");
+            },
+
+            "ends session if session does not load": function () {
+                this.run.runTests(this.session, function () {});
+
+                this.clock.tick(5000);
+
+                assert.calledOnce(this.session.end);
+            },
+
+            "does not end session if session loads": function () {
+                this.session.onLoad.yields([{}]);
+                this.run.runTests(this.session, function () {});
+
+                this.clock.tick(5000);
+
+                refute.called(this.session.end);
+            },
+
+            "does not call callback before session completes": function () {
+                var callback = this.spy();
+                this.session.onLoad.yields([{}]);
+                this.run.runTests(this.session, callback);
+
+                this.clock.tick(5000);
+
+                refute.called(callback);
+            }
         },
 
         "reporter": {
