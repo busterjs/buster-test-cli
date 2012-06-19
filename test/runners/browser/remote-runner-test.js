@@ -6,12 +6,10 @@ buster.testCase("Remote runner", {
         this.clock = this.useFakeTimers();
         this.emitter = buster.eventEmitter.create();
 
-        this.emit = function (event, data, clientId, client) {
+        this.emit = function (event, data, clientId) {
             return this.emitter.emit(event, {
-                topic: event,
                 data: data,
-                clientId: clientId,
-                client: client
+                clientId: clientId
             });
         };
 
@@ -32,39 +30,36 @@ buster.testCase("Remote runner", {
             return listeners;
         };
 
-        this.clients = ["Mozilla/5.0 (X11; U; Linux i686; en-US; rv:1.9.2.12) Gecko/20101027 Ubuntu/10.10 (maverick) Firefox/4.0",
+        this.uas = ["Mozilla/5.0 (X11; U; Linux i686; en-US; rv:1.9.2.12) Gecko/20101027 Ubuntu/10.10 (maverick) Firefox/4.0",
                         "Mozilla/5.0 (X11; U; Linux i686; en-US) AppleWebKit/534.7 (KHTML, like Gecko) Chrome/11.0.517.44 Safari/534.7"];
     },
 
     "starting a run": {
         setUp: function () {
-            this.runner = remoteRunner.create(
-                this.emitter, [{ id: 1 }, { id: 2 }], { config: 42 });
-            this.runner.logger = { debug: this.stub() };
+            var logger = { debug: this.stub() };
+            var config = { config: 42 };
+            this.runner = remoteRunner.create(this.emitter, logger, config);
+            this.slaves = [{ id: 1 }, { id: 2 }];
         },
 
-        "emits tests:run when client emits ready": function () {
-            var client = buster.eventEmitter.create();
-            var listener = this.spy();
-            client.on("tests:run", listener);
+        "emits tests:run when setting slaves": function (done) {
+            this.emitter.on("tests:run", done(function (config) {
+                assert.isObject(config);
+            }));
 
-            this.emit("ready", this.clients[0], 1, client);
-
-            assert.calledOnce(listener);
+            this.runner.setSlaves(this.slaves);
         },
 
-        "emits tests:run with config": function () {
-            var client = buster.eventEmitter.create();
-            var listener = this.spy();
-            client.on("tests:run", listener);
+        "emits tests:run with config": function (done) {
+            this.emitter.on("tests:run", done(function (config) {
+                assert.equals(config, { config: 42 });
+            }));
 
-            this.emit("ready", this.clients[0], 1, client);
-
-            assert.calledWith(listener, { config: 42 });
+            this.runner.setSlaves(this.slaves);
         },
 
-        "sets client info when client is ready": function () {
-            this.emit("ready", this.clients[0], 1, buster.eventEmitter.create());
+        "sets client info when setting slaves": function () {
+            this.runner.setSlaves([{ id: 1, userAgent: this.uas[0] }]);
 
             assert.match(this.runner.getClient(1), {
                 browser: "Firefox",
@@ -73,34 +68,38 @@ buster.testCase("Remote runner", {
             });
         },
 
-        "enumerates client if a similar one exists": function () {
-            this.emit("ready", this.clients[0], 1, buster.eventEmitter.create());
-            this.emit("ready", this.clients[0], 2, buster.eventEmitter.create());
+        "enumerates similar user agents": function () {
+            this.runner.setSlaves([
+                { id: 1, userAgent: this.uas[0] },
+                { id: 2, userAgent: this.uas[0] }
+            ]);
 
             assert.equals(this.runner.getClient(1).toString(), "Firefox 4.0, Ubuntu 10.10 (Maverick Meerkat)");
             assert.equals(this.runner.getClient(2).toString(), "Firefox 4.0, Ubuntu 10.10 (Maverick Meerkat) (2)");
         },
 
-        "keeps enumerating clients from same browser": function () {
-            this.runner = remoteRunner.create(
-                this.emitter, [{id:1}, {id:2}, {id: 3}, {id: 4}]);
-            this.runner.logger = { debug: this.stub() };
-            this.emit("ready", this.clients[0], 1, buster.eventEmitter.create());
-            this.emit("ready", this.clients[0], 2, buster.eventEmitter.create());
-            this.emit("ready", this.clients[0], 3, buster.eventEmitter.create());
-            this.emit("ready", this.clients[0], 4, buster.eventEmitter.create());
+        "enumerates all user agents from same browser": function () {
+            this.runner.setSlaves([
+                { id: 1, userAgent: this.uas[0] },
+                { id: 2, userAgent: this.uas[0] },
+                { id: 3, userAgent: this.uas[0] },
+                { id: 4, userAgent: this.uas[0] }
+            ]);
 
             assert.equals(this.runner.getClient(4).toString(), "Firefox 4.0, Ubuntu 10.10 (Maverick Meerkat) (4)");
         },
 
-        "emits client:connect when client emits ready": function () {
+        "emits client:connect for every slave": function () {
             var listener = this.spy();
             this.runner.on("client:connect", listener);
 
-            this.emit("ready", this.clients[1], 2, buster.eventEmitter.create());
+            this.runner.setSlaves([
+                { id: 1, userAgent: this.uas[0] },
+                { id: 2, userAgent: this.uas[1] }
+            ]);
 
-            assert.calledOnce(listener);
-            assert.match(listener.args[0][0], {
+            assert.calledTwice(listener);
+            assert.match(listener.args[1][0], {
                 browser: "Chrome",
                 version: "11.0",
                 platform: "Linux"
@@ -110,10 +109,12 @@ buster.testCase("Remote runner", {
 
     "while tests are running": {
         setUp: function () {
-            this.runner = remoteRunner.create(this.emitter, [{id:1}, {id:2}]);
-            this.runner.logger = { debug: this.stub() };
-            this.emit("ready", this.clients[0], 1, buster.eventEmitter.create());
-            this.emit("ready", this.clients[1], 2, buster.eventEmitter.create());
+            var logger = { debug: this.stub() };
+            this.runner = remoteRunner.create(this.emitter, logger);
+            this.runner.setSlaves([
+                { id: 1, userAgent: this.uas[0] },
+                { id: 2, userAgent: this.uas[1] }
+            ]);
         },
 
         "emits progress:suite:start event": function () {
@@ -132,8 +133,12 @@ buster.testCase("Remote runner", {
             this.emit("suite:start", null, 2);
 
             assert.calledTwice(listener);
-            assert.match(listener.args[0][0], {client: {id: 1, browser: "Firefox"}});
-            assert.match(listener.args[1][0], {client: {id: 2, browser: "Chrome"}});
+            assert.match(listener.args[0][0], {
+                client: { id: 1, browser: "Firefox" }
+            });
+            assert.match(listener.args[1][0], {
+                client: { id: 2, browser: "Chrome" }
+            });
         },
 
         "emits progress:suite:end event": function () {
@@ -152,8 +157,12 @@ buster.testCase("Remote runner", {
             this.emit("suite:end", null, 2);
 
             assert.calledTwice(listener);
-            assert.match(listener.args[0][0], {client: {id: 1, browser: "Firefox"}});
-            assert.match(listener.args[1][0], {client: {id: 2, browser: "Chrome"}});
+            assert.match(listener.args[0][0], {
+                client: { id: 1, browser: "Firefox" }
+            });
+            assert.match(listener.args[1][0], {
+                client: { id: 2, browser: "Chrome" }
+            });
         },
 
         "emits progress:test:success event": function () {
@@ -260,10 +269,12 @@ buster.testCase("Remote runner", {
 
     "when context is completed": {
         setUp: function () {
-            this.runner = remoteRunner.create(this.emitter, [{id:1}, {id:2}]);
-            this.runner.logger = { debug: this.stub() };
-            this.emit("ready", this.clients[0], 1, buster.eventEmitter.create());
-            this.emit("ready", this.clients[1], 2, buster.eventEmitter.create());
+            var logger = { debug: this.stub() };
+            this.runner = remoteRunner.create(this.emitter, logger);
+            this.runner.setSlaves([
+                { id: 1, userAgent: this.uas[0] },
+                { id: 2, userAgent: this.uas[1] }
+            ]);
         },
 
         "emits test runner events": function () {
@@ -441,21 +452,18 @@ buster.testCase("Remote runner", {
 
     "test suites": {
         setUp: function () {
-            this.createRunner = function (clients) {
-                var self = this;
-                this.runner = remoteRunner.create(
-                    this.emitter, clients);
-                this.runner.logger = { debug: this.stub() };
-
-                for (var i = 0, l = clients.length; i < l; ++i) {
-                    self.emit("ready", clients[i], clients[i].id,
-                              buster.eventEmitter.create());
-                }
+            this.createRunner = function (slaves) {
+                var logger = { debug: this.stub() };
+                this.runner = remoteRunner.create(this.emitter, logger);
+                var uas = this.uas;
+                this.runner.setSlaves(slaves.map(function (slave, i) {
+                    return { id: slave.id, userAgent: uas[i % uas.length] };
+                }));
             };
         },
 
         "emits suite:start only once": function () {
-            this.createRunner([{id: 1}, {id: 2}]);
+            this.createRunner([{ id: 1 }, { id: 2 }]);
             var listener = this.subscribeTo("suite:start");
 
             this.emit("suite:start", {}, 1);
@@ -465,7 +473,7 @@ buster.testCase("Remote runner", {
         },
 
         "should not emit suite:end when clients are still in progress": function () {
-            this.createRunner([{id: "23-df"}, {id: "24-ef"}]);
+            this.createRunner([{ id: "23-df" }, { id: "24-ef" }]);
             var listener = this.subscribeTo("suite:end");
 
             this.emit("suite:start", {}, "23-df");
@@ -476,7 +484,7 @@ buster.testCase("Remote runner", {
         },
 
         "emits suite:end when all clients are finished": function () {
-            this.createRunner([{id: "23-df"}, {id: "24-ef"}]);
+            this.createRunner([{ id: "23-df" }, { id: "24-ef" }]);
             var listener = this.subscribeTo("suite:end");
 
             this.emit("suite:start", {}, "23-df");
@@ -488,7 +496,8 @@ buster.testCase("Remote runner", {
         },
 
         "should not emit suite:end until ready - interleaved suites": function () {
-            this.createRunner([{id: 1}, {id: 2}, {id: 3}, {id: 4}, {id: 5}]);
+            this.createRunner([{ id: 1 }, { id: 2 }, { id: 3 },
+                               { id: 4 }, { id: 5 }]);
             var listener = this.subscribeTo("suite:end");
 
             this.emit("suite:start", {}, 1);
@@ -508,7 +517,7 @@ buster.testCase("Remote runner", {
         },
 
         "should not emit suite:end if some clients have not yet started": function () {
-            this.createRunner([{id: 1}, {id: 2}]);
+            this.createRunner([{ id: 1 }, { id: 2 }]);
             var listener = this.subscribeTo("suite:end");
 
             this.emit("suite:start", {}, 1);
@@ -521,39 +530,40 @@ buster.testCase("Remote runner", {
         },
 
         "should not skip client that starts after others finished": function () {
-            this.runner = remoteRunner.create(this.emitter, [{id: 1}, {id: 2}]);
-            this.runner.logger = { debug: this.stub() };
+            var logger = { debug: this.stub() };
+            this.runner = remoteRunner.create(this.emitter, logger);
+            this.runner.setSlaves([{ id: 1 }, { id: 2 }]);
             var listener = this.subscribeTo("suite:end");
 
-            this.emit("ready", {id: 1}, 1, buster.eventEmitter.create());
+            this.emit("ready", { id: 1 }, 1, buster.eventEmitter.create());
             this.emit("suite:start", {}, 1);
             this.emit("suite:end", {}, 1);
             refute.called(listener);
 
-            this.emit("ready", {id: 2}, 2, buster.eventEmitter.create());
+            this.emit("ready", { id: 2 }, 2, buster.eventEmitter.create());
             this.emit("suite:start", {}, 2);
             this.emit("suite:end", {}, 2);
             assert.calledOnce(listener);
         },
 
         "ignores unknown clients": function () {
-            this.runner = remoteRunner.create(this.emitter, [{id: 1}, {id: 2}]);
+            this.runner = remoteRunner.create(this.emitter, [{ id: 1 }, { id: 2 }]);
             this.runner.logger = { debug: this.stub() };
             var listener = this.subscribeTo("suite:end");
 
-            this.emit("ready", {id: 1}, 1, buster.eventEmitter.create());
+            this.emit("ready", { id: 1 }, 1, buster.eventEmitter.create());
             this.emit("suite:start", {}, 1);
             this.emit("suite:end", {}, 1);
             refute.called(listener);
 
-            this.emit("ready", {id: 3}, 3, buster.eventEmitter.create());
+            this.emit("ready", { id: 3 }, 3, buster.eventEmitter.create());
             this.emit("suite:start", {}, 3);
             this.emit("suite:end", {}, 3);
             refute.called(listener);
         },
 
         "summarizes stats for suite:end": function () {
-            this.createRunner([{id: 1}, {id: 2}]);
+            this.createRunner([{ id: 1 }, { id: 2 }]);
             var listener = this.subscribeTo("suite:end");
 
             this.emit("suite:start", {}, 1);
@@ -597,11 +607,13 @@ buster.testCase("Remote runner", {
 
     "client timeouts": {
         setUp: function () {
-            this.runner = remoteRunner.create(this.emitter, [{id:1}, {id:2}]);
-            this.runner.logger = { debug: this.stub() };
+            var logger = { debug: this.stub() };
+            this.runner = remoteRunner.create(this.emitter, logger);
             this.connect = function () {
-                this.emit("ready", this.clients[0], 1, buster.eventEmitter.create());
-                this.emit("ready", this.clients[1], 2, buster.eventEmitter.create());
+                this.runner.setSlaves([
+                    { id: 1, userAgent: this.uas[0] },
+                    { id: 2, userAgent: this.uas[1] }
+                ]);
             };
         },
 
@@ -743,7 +755,7 @@ buster.testCase("Remote runner", {
     "custom events": {
         setUp: function () {
             this.runner = remoteRunner.create(this.emitter, [{ id: 1 }]);
-            this.emit("ready", this.clients[0], 1, buster.eventEmitter.create());
+            this.emit("ready", this.uas[0], 1, buster.eventEmitter.create());
         },
 
         "emits custom event": function () {
@@ -752,7 +764,6 @@ buster.testCase("Remote runner", {
 
             assert.calledOnce(listener);
             assert.match(listener.args[0][0], {
-                client: { id: 1, browser: "Firefox" },
                 data: { id: 42, name: "Hey!" }
             });
         }
