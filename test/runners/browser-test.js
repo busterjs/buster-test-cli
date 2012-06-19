@@ -47,12 +47,14 @@ function testRemoteRunnerOption(options, expected) {
 
 buster.testCase("Browser runner", {
     setUp: function () {
+        this.stub(process, "on");
         this.runner = buster.create(browserRunner);
         this.stdout = cliHelper.writableStream("stdout");
         this.stderr = cliHelper.writableStream("stderr");
         this.logger = stdioLogger(this.stdout, this.stderr);
         this.runner.logger = this.logger;
         this.remoteRunner = buster.eventEmitter.create();
+        this.remoteRunner.setSlaves = this.spy();
         this.stub(remoteRunner, "create").returns(this.remoteRunner);
     },
 
@@ -359,14 +361,17 @@ buster.testCase("Browser runner", {
         },
 
         "remote runner": {
-            "creates remote runner": function () {
+            "creates remote runner with slaves": function () {
+                this.stub(remoteRunner, "setSlaves");
                 var run = testRun.create(fakeConfig(this), {}, this.logger);
                 this.session.onLoad.yields([{ id: 42 }]);
 
                 run.runTests(this.session);
 
                 assert.calledOnce(remoteRunner.create);
-                assert.calledWith(remoteRunner.create, this.session, [{ id: 42 }]);
+                assert.calledWith(remoteRunner.create, this.session);
+                assert.calledOnce(this.remoteRunner.setSlaves);
+                assert.calledWith(this.remoteRunner.setSlaves, [{ id: 42 }]);
             },
 
             "defaults failOnNoAssertions to true": testRemoteRunnerOption({}, {
@@ -420,9 +425,9 @@ buster.testCase("Browser runner", {
                 this.run = testRun.create(fakeConfig(this), {}, this.logger);
             },
 
-            "does not create remote runner": function () {
+            "does not set remote runner slaves": function () {
                 this.run.runTests(this.session, function () {});
-                refute.called(remoteRunner.create);
+                refute.called(this.remoteRunner.setSlaves);
             },
 
             "generates understandable error": function (done) {
@@ -504,6 +509,14 @@ buster.testCase("Browser runner", {
                     color: false,
                     bright: false
                 });
+            },
+
+            "uses progress reporter with the dots reporter": function () {
+                var run = this.createRun({ reporter: "dots" });
+                run.runTests(this.session);
+
+                assert.called(progressReporter.create);
+                assert.calledOnce(reporters.dots.create);
             },
 
             "skips progress reporter when providing reporter": function () {
@@ -617,12 +630,26 @@ buster.testCase("Browser runner", {
 
                 var reporter = reporters.dots.create.returnValues[0];
                 assert.equals(reporter.contextsInPackageName, 2);
+            },
+
+            "makes reporter listen for events from runner": function () {
+                this.stub(reporters.dots, "listen");
+                var run = this.createRun();
+                run.runTests(this.session);
+
+                assert.calledOnce(reporters.dots.listen);
+                assert.calledWith(reporters.dots.listen, this.remoteRunner);
             }
         },
 
         "closing session": {
             setUp: function () {
                 this.run = this.createRun();
+
+                // Avoid having actual reporters printing to STDOUT
+                this.stub(reporters, "load").returns({
+                    create: this.stub().returns({ listen: this.stub() })
+                });
             },
 
             "ends session on suite:end": function () {
