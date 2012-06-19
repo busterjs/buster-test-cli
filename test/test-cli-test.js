@@ -101,6 +101,13 @@ buster.testCase("Test CLI", {
             this.cli.run(["-f"], done(function () {
                 assert.equals(buster.stackFilter.filters, []);
             }));
+        },
+
+        "filters stack traces by default": function (done) {
+            buster.stackFilter.filters = [];
+            this.cli.run([], done(function () {
+                refute.equals(buster.stackFilter.filters, []);
+            }));
         }
     },
 
