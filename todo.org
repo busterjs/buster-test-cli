@@ -3,10 +3,10 @@
 ** TODO Stack trace (probably from F5): http://pastie.org/4094421
 ** TODO Phantom script (buster/script/phantom.js) no longer works. Missing capture handshake? Is the handshake required?
 ** TODO session.end is currently not async. Should it be? (Used to be)
-* test-cli stuff [0/4]
+* test-cli stuff [1/4]
 ** TODO Configuration extensions should affect the resource checksum used in cache manifests
 ** TODO Browser runner does not issue the beforeRun hook
-** TODO Extension processor errors are swallowed
+** DONE Extension processor errors are swallowed
 ** TODO analyze and configure hooks not run on same extension instance
 * Browser test stuff [0/1]
 ** TODO SIGINT: should do session.end() to avoid server hangup
