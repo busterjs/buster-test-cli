@@ -668,6 +668,25 @@ buster.testCase("Browser runner", {
             };
         },
 
+        "session preparation error": function (done) {
+            this.stub(captureServer, "createServerClient").returns({
+                connect: this.stub().returns(when({}))
+            });
+            var config = fakeConfig(this);
+            config.resolve.returns(when({}));
+            var options = { server: "localhost:1111" };
+
+            var cb = done(function (err) {
+                assert.match(err.message, "serializing");
+            });
+
+            this.run = testRun.create(config, options, this.logger, cb);
+            this.run.startSession = function (client, callback) {
+                return function () { callback({ message: "Failed serializing resources" }); };
+            };
+            this.run.start();
+        },
+
         "session creation error": function () {
             this.sessionDeferred.reject({ message: "Djeez" });
             var callback = this.spy();
