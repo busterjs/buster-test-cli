@@ -100,42 +100,48 @@ buster.testCase("Browser runner", {
         },
 
         "with configured resource set": function () {
-            this.config.resolve.returns(when({ id: 42 }));
+            this.config.resolve.returns(when([42]));
 
             this.runner.run(this.config, {});
 
             assert.calledOnce(this.serverClient.createSession);
-            assert.calledWith(this.serverClient.createSession, { id: 42 });
+            assert.calledWith(this.serverClient.createSession, [42]);
         },
 
-        "caches resources when cacheable": function (done) {
-            var deferred = when.defer();
-            this.config.resolve.returns(deferred.promise);
+        "with uncached resource set": function () {
+            var resourceSet = [
+                { path: "/a.js", cacheable: true },
+                { path: "/b.js", cacheable: false },
+                { path: "/c.js", cacheable: true }
+            ];
+            this.config.resolve.returns(when(resourceSet));
 
-            var run = this.runner.run(this.config, {});
-            run.cacheable = true;
-            deferred.resolve({});
+            this.runner.run(this.config, {
+                cacheable: false
+            });
 
-            deferred.then(done(function () {
-                assert.sessionOptions({ cache: true });
-            }));
+            assert.isFalse(resourceSet[0].cacheable);
+            assert.isFalse(resourceSet[1].cacheable);
+            assert.isFalse(resourceSet[2].cacheable);
         },
 
-        "skips caching when uncacheable": function (done) {
-            var deferred = when.defer();
-            this.config.resolve.returns(deferred.promise);
+        "with cached resource set": function () {
+            var resourceSet = [
+                { path: "/a.js", cacheable: true },
+                { path: "/c.js", cacheable: true }
+            ];
+            this.config.resolve.returns(when(resourceSet));
 
-            var run = this.runner.run(this.config, {});
-            run.cacheable = false;
-            deferred.resolve({});
+            this.runner.run(this.config, {
+                cacheable: true
+            });
 
-            deferred.then(done(function () {
-                assert.sessionOptions({ cache: false });
-            }));
+            assert.isTrue(resourceSet[0].cacheable);
+            assert.isTrue(resourceSet[1].cacheable);
         },
 
         "is unjoinable": function () {
-            this.config.resolve.returns(when({ id: 42 }));
+            this.config.resolve.returns(when([{}]));
 
             this.runner.run(this.config, {});
 
@@ -143,7 +149,7 @@ buster.testCase("Browser runner", {
         },
 
         "uses dynamic resource paths by default": function () {
-            this.config.resolve.returns(when({ id: 42 }));
+            this.config.resolve.returns(when([{}]));
 
             this.runner.run(this.config, {});
 
@@ -151,7 +157,7 @@ buster.testCase("Browser runner", {
         },
 
         "uses static resource paths": function () {
-            this.config.resolve.returns(when({ id: 42 }));
+            this.config.resolve.returns(when([{}]));
 
             this.runner.run(this.config, {
                 staticResourcePath: true
@@ -168,7 +174,7 @@ buster.testCase("Browser runner", {
 
             var run = this.runner.run(this.config, {});
             this.stub(run, "runTests").yields();
-            deferred.resolve({});
+            deferred.resolve([]);
 
             assert.calledOnce(run.runTests);
             assert.calledWith(run.runTests, session);
@@ -181,7 +187,7 @@ buster.testCase("Browser runner", {
             var run = this.runner.run(this.config, { id: 42 });
             this.stub(run, "runTests").yields();
             this.config.options = { things: "stuff" };
-            deferred.resolve({});
+            deferred.resolve([]);
 
             assert.equals(run.options, {
                 id: 42,
@@ -198,7 +204,7 @@ buster.testCase("Browser runner", {
             this.stub(run, "runTests").throws();
 
             refute.exception(function () {
-                deferred.resolve({});
+                deferred.resolve([]);
             });
 
             assert.calledOnce(callback);
@@ -226,10 +232,9 @@ buster.testCase("Browser runner", {
         },
 
         "ends session if running": function (done) {
-            this.config.resolve.returns(when({}));
+            this.config.resolve.returns(when([]));
             var session = { end: this.spy() };
             var deferred = when.defer();
-            deferred.promise.id = 42;
             this.serverClient.createSession.returns(deferred.promise);
 
             var run = this.runner.run(this.config, {}, function () {
@@ -718,7 +723,7 @@ buster.testCase("Browser runner", {
             this.sessionDeferred.reject({ message: "Djeez" });
             var callback = this.spy();
 
-            this.run.startSession(this.client, callback)({});
+            this.run.startSession(this.client, callback)([]);
 
             assert.calledOnce(callback);
             assert.match(callback.args[0][0].message, "Failed creating session");
@@ -728,7 +733,7 @@ buster.testCase("Browser runner", {
             this.sessionDeferred.reject(new Error("ECONNREFUSED, Connection refused"));
             var callback = this.spy();
 
-            this.run.startSession(this.client, callback)({});
+            this.run.startSession(this.client, callback)([]);
 
             var message = callback.args[0][0].message;
             assert.match(message, "Unable to connect to server");

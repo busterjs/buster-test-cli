@@ -33,27 +33,6 @@ buster.testCase("Analyzer helper", {
             this.config = { runExtensionHook: this.spy() };
         },
 
-        "prevents caching on warning": function () {
-            this.analyzer.run(this.runner, this.config);
-            this.analyzer.emit("warning", {});
-
-            assert.isFalse(this.run.cacheable);
-        },
-
-        "prevents caching on error": function () {
-            this.analyzer.run(this.runner, this.config);
-            this.analyzer.emit("error", {});
-
-            assert.isFalse(this.run.cacheable);
-        },
-
-        "prevents caching on fatal": function () {
-            this.analyzer.run(this.runner, this.config);
-            this.analyzer.emit("fatal", {});
-
-            assert.isFalse(this.run.cacheable);
-        },
-
         "triggers analyze extension hook": function () {
             this.analyzer.run(this.runner, this.config);
 

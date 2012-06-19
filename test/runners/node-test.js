@@ -18,8 +18,7 @@ function createNodeRunner() {
     var stdout = cliHelper.writableStream("stdout");
     var stderr = cliHelper.writableStream("stderr");
     return nodeRunner.create({
-        logger: stdioLogger(stdout, stderr),
-        cacheable: true
+        logger: stdioLogger(stdout, stderr)
     });
 }
 
@@ -229,15 +228,6 @@ buster.testCase("Node runner", {
             this.runner.run(this.config, {});
 
             assert.calledOnce(fs.writeFileSync);
-        },
-
-        "does not write manifest when uncacheable": function () {
-            var deferred = this.stubBeforeRunHook();
-            var run = this.runner.run(this.config, {});
-            run.cacheable = false;
-            deferred.resolve([]);
-
-            refute.called(fs.writeFileSync);
         },
 
         "does not write manifest when beforeRunHook fails": function () {
