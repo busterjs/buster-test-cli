@@ -1,13 +1,13 @@
 var buster = require("buster");
 var runAnalyzer = require("../lib/run-analyzer");
 var cliHelper = require("buster-cli/lib/test-helper");
-var stdioLogger = require("buster-stdio-logger");
+var streamLogger = require("stream-logger");
 
 buster.testCase("Analyzer helper", {
     setUp: function () {
         this.stdout = cliHelper.writableStream("stdout");
         this.stderr = cliHelper.writableStream("stderr");
-        this.logger = stdioLogger(this.stdout, this.stderr);
+        this.logger = streamLogger(this.stdout, this.stderr);
     },
 
     "sets fail level on analyzer": function () {

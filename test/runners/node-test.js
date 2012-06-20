@@ -2,7 +2,7 @@ var buster = require("buster");
 var test = require("buster-test");
 var nodeRunner = require("../../lib/runners/node");
 var testRun = nodeRunner.testRun;
-var stdioLogger = require("buster-stdio-logger");
+var streamLogger = require("stream-logger");
 var when = require("when");
 var fs = require("fs");
 var cliHelper = require("buster-cli/lib/test-helper");
@@ -18,7 +18,7 @@ function createNodeRunner() {
     var stdout = cliHelper.writableStream("stdout");
     var stderr = cliHelper.writableStream("stderr");
     return nodeRunner.create({
-        logger: stdioLogger(stdout, stderr)
+        logger: streamLogger(stdout, stderr)
     });
 }
 

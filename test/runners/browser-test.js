@@ -1,5 +1,5 @@
 var buster = require("buster");
-var stdioLogger = require("buster-stdio-logger");
+var streamLogger = require("stream-logger");
 var browserRunner = require("../../lib/runners/browser");
 var testRun = browserRunner.testRun;
 var captureServer = require("buster-capture-server");
@@ -51,7 +51,7 @@ buster.testCase("Browser runner", {
         this.runner = buster.create(browserRunner);
         this.stdout = cliHelper.writableStream("stdout");
         this.stderr = cliHelper.writableStream("stderr");
-        this.logger = stdioLogger(this.stdout, this.stderr);
+        this.logger = streamLogger(this.stdout, this.stderr);
         this.runner.logger = this.logger;
         this.remoteRunner = buster.eventEmitter.create();
         this.remoteRunner.setSlaves = this.spy();
