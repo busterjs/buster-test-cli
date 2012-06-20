@@ -26,7 +26,7 @@
         "buster-capture-server": "~0.5",
         "buster-cli": ">=0.5.0",
         "buster-core": ">=0.6.2",
-        "buster-terminal": ">=0.4.4",
+        "buster-terminal": ">=0.4.1",
         "buster-test": ">=0.6.0",
         "buster-user-agent-parser": ">=0.3.1",
         "ejs": "~0.4",
