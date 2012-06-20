@@ -345,7 +345,8 @@ buster.testCase("Browser runner", {
 
                 run.runTests(this.session);
 
-                assert.calledOnceWith(
+                assert.called(config.runExtensionHook);
+                assert.calledWith(
                     config.runExtensionHook,
                     "testRun",
                     this.remoteRunner,
@@ -644,6 +645,34 @@ buster.testCase("Browser runner", {
 
                 assert.calledOnce(reporters.dots.listen);
                 assert.calledWith(reporters.dots.listen, this.remoteRunner);
+            }
+        },
+
+        "beforeRun extension hook": {
+            setUp: function () {
+                this.run = testRun.create(fakeConfig(this), {}, this.logger);
+                this.config = this.run.config;
+            },
+
+            "triggers beforeRun": function () {
+                this.run.runTests(this.session, function () {});
+                assert.called(this.config.runExtensionHook);
+                assert.calledWith(this.config.runExtensionHook, "beforeRun");
+            },
+
+            "aborts if beforeRun hook throws": function () {
+                this.config.runExtensionHook.throws();
+                this.run.runTests(this.session, function () {});
+
+                refute.called(this.session.onLoad);
+            },
+
+            "calls callback if beforeRun hook throws": function () {
+                var callback = this.spy();
+                this.config.runExtensionHook.throws();
+                this.run.runTests(this.session, callback);
+
+                assert.called(callback);
             }
         },
 
