@@ -233,7 +233,7 @@ buster.testCase("Browser runner", {
 
         "ends session if running": function (done) {
             this.config.resolve.returns(when([]));
-            var session = { end: this.spy() };
+            var session = fakeSession(this);
             var deferred = when.defer();
             this.serverClient.createSession.returns(deferred.promise);
 
