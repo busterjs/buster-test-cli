@@ -467,13 +467,14 @@ buster.testCase("Test CLI", {
         },
 
         "with code 0 when single test configuration passes": function () {
-            this.results = [[null, { ok: true }]];
+            this.results = [[null, { ok: true, tests: 1 }]];
             this.cli.runConfigGroups([this.fakeConfig], {}, this.done);
             assert.calledOnceWith(this.exit, 0);
         },
 
         "with code 0 when two test configurations pass": function () {
-            this.results = [[null, { ok: true }], [null, { ok: true }]];
+            this.results = [[null, { ok: true, tests: 1 }],
+                            [null, { ok: true, tests: 1 }]];
             this.cli.runConfigGroups([this.fakeConfig, {
                 environment: "fake",
                 runExtensionHook: this.spy()
@@ -481,14 +482,21 @@ buster.testCase("Test CLI", {
             assert.calledOnceWith(this.exit, 0);
         },
 
+        "with code 1 when no tests were run": function () {
+            this.results = [[null, { ok: true, tests: 0 }]];
+            this.cli.runConfigGroups([this.fakeConfig], {}, this.done);
+            assert.calledOnceWith(this.exit, 1);
+        },
+
         "with code 1 when single test configuration fails": function () {
-            this.results = [[null, { ok: false }]];
+            this.results = [[null, { ok: false, tests: 1 }]];
             this.cli.runConfigGroups([this.fakeConfig], {}, this.done);
             assert.calledOnceWith(this.exit, 1);
         },
 
         "with code 1 when one of several test configurations fails": function () {
-            this.results = [[null, { ok: true }], [null, { ok: false }]];
+            this.results = [[null, { ok: true, tests: 1 }],
+                            [null, { ok: false, tests: 1 }]];
             this.cli.runConfigGroups([this.fakeConfig, {
                 environment: "fake",
                 runExtensionHook: this.spy()
