@@ -22,6 +22,7 @@ function fakeSession(tc) {
         onLoad: tc.stub().yields([{}]),
         onEnd: tc.stub(),
         onUnload: tc.stub(),
+        onAbort: tc.stub(),
         end: tc.stub()
     });
 }
@@ -233,7 +234,7 @@ buster.testCase("Browser runner", {
 
         "ends session if running": function (done) {
             this.config.resolve.returns(when([]));
-            var session = { end: this.spy() };
+            var session = fakeSession(this);
             var deferred = when.defer();
             this.serverClient.createSession.returns(deferred.promise);
 
@@ -815,5 +816,25 @@ buster.testCase("Browser runner", {
                 assert.match(callback.args[0][0].message, "Failed loading configuration: Oh noes");
             }
         }
-    }
+    },
+
+    // TODO: Test that the actual message from the abort event is passed
+    // correctly.
+    "ends session when session aborts itself": function (done) {
+        var serverClient = fakeServerClient(this);
+        this.stub(captureServer, "createServerClient").returns(serverClient);
+
+        var config = fakeConfig(this);
+        config.resolve.returns(when([]));
+
+        var session = fakeSession(this);
+        var deferred = when.defer();
+        deferred.resolve(session);
+        serverClient.createSession.returns(deferred.promise);
+
+        var run = this.runner.run(config, {}, done);
+
+        assert.calledOnce(session.onAbort, "Did not hook onAbort");
+        session.onAbort.getCall(0).args[0]({message: "An error from the session"});
+    },
 });
