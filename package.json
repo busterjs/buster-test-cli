@@ -30,7 +30,7 @@
         "buster-test": ">=0.6.0",
         "buster-user-agent-parser": ">=0.3.1",
         "ejs": "~0.4",
-        "when": "~1.2"
+        "when": "https://github.com/cujojs/when/tarball/1.3.0"
     },
     "devDependencies": {
         "buster": "",
