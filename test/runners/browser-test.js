@@ -705,9 +705,10 @@ buster.testCase("Browser runner", {
                 var callback = this.spy();
 
                 this.run.runTests(this.session, callback);
-                this.remoteRunner.emit("suite:end");
+                this.remoteRunner.emit("suite:end", { ok: true });
 
                 assert.calledOnce(callback);
+                assert.calledWith(callback, null, { ok: true });
             },
 
             "prints to stderr on unsuccesful session close":
