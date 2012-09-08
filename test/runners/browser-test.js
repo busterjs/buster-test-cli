@@ -456,51 +456,6 @@ buster.testCase("Browser runner", {
             "TODO: session.end is currently not async. augustl?"
         },
 
-        "server timing out": {
-            setUp: function () {
-                this.session.onLoad = this.stub(); // Does not yield
-                this.run = testRun.create(fakeConfig(this), {}, this.logger);
-                this.clock = this.useFakeTimers();
-            },
-
-            "calls callback if session does not load": function () {
-                var callback = this.spy();
-                this.run.runTests(this.session, callback);
-
-                this.clock.tick(5000);
-
-                assert.calledOnce(callback);
-                assert.match(callback.args[0][0].message, "timed out");
-            },
-
-            "ends session if session does not load": function () {
-                this.run.runTests(this.session, function () {});
-
-                this.clock.tick(5000);
-
-                assert.calledOnce(this.session.end);
-            },
-
-            "does not end session if session loads": function () {
-                this.session.onLoad.yields([{}]);
-                this.run.runTests(this.session, function () {});
-
-                this.clock.tick(5000);
-
-                refute.called(this.session.end);
-            },
-
-            "does not call callback before session completes": function () {
-                var callback = this.spy();
-                this.session.onLoad.yields([{}]);
-                this.run.runTests(this.session, callback);
-
-                this.clock.tick(5000);
-
-                refute.called(callback);
-            }
-        },
-
         "reporter": {
             setUp: function () {
                 this.spy(progressReporter, "create");
