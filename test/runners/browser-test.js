@@ -141,14 +141,6 @@ buster.testCase("Browser runner", {
             assert.isTrue(resourceSet[1].cacheable);
         },
 
-        "is unjoinable": function () {
-            this.config.resolve.returns(when([{}]));
-
-            this.runner.run(this.config, {});
-
-            assert.sessionOptions({ joinable: false });
-        },
-
         "uses dynamic resource paths by default": function () {
             this.config.resolve.returns(when([{}]));
 
