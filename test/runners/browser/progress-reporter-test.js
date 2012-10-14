@@ -1,4 +1,5 @@
-var buster = require("buster");
+var buster = require("buster-node");
+var assert = buster.assert;
 var remoteRunner = require("../../../lib/runners/browser/remote-runner");
 var progressReporter = require("../../../lib/runners/browser/progress-reporter");
 var S = require("buster-terminal");

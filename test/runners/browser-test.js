@@ -1,4 +1,6 @@
-var buster = require("buster");
+var buster = require("buster-node");
+var assert = buster.assert;
+var refute = buster.refute;
 var streamLogger = require("stream-logger");
 var browserRunner = require("../../lib/runners/browser");
 var testRun = browserRunner.testRun;

@@ -1,4 +1,6 @@
-var buster = require("buster");
+var buster = require("buster-node");
+var assert = buster.assert;
+var refute = buster.refute;
 var test = require("buster-test");
 var nodeRunner = require("../../lib/runners/node");
 var testRun = nodeRunner.testRun;
@@ -6,9 +8,10 @@ var streamLogger = require("stream-logger");
 var when = require("when");
 var fs = require("fs");
 var cliHelper = require("buster-cli/lib/test-helper");
+var bane = require("bane");
 
 function fakeConfig(tc) {
-    return buster.extend(buster.eventEmitter.create(), {
+    return bane.createEventEmitter({
         resolve: tc.stub().returns(when()),
         runExtensionHook: tc.stub()
     });
@@ -42,7 +45,7 @@ buster.testCase("Node runner", {
         };
     },
 
-    "run configuration": {
+    "//run configuration": {
         "captures console if configured to": function () {
             this.stub(buster, "captureConsole");
             this.runner.run(fakeConfig(this), { captureConsole: true });

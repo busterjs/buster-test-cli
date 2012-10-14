@@ -1,10 +1,13 @@
-var buster = require("buster");
+var bane = require("bane");
+var buster = require("buster-node");
+var assert = buster.assert;
+var refute = buster.refute;
 var remoteRunner = require("../../../lib/runners/browser/remote-runner");
 
 buster.testCase("Remote runner", {
     setUp: function () {
         this.clock = this.useFakeTimers();
-        this.emitter = buster.eventEmitter.create();
+        this.emitter = bane.createEventEmitter();
 
         this.emit = function (event, data, clientId) {
             return this.emitter.emit(event, {
@@ -64,7 +67,7 @@ buster.testCase("Remote runner", {
             assert.match(this.runner.getClient(1), {
                 browser: "Firefox",
                 version: "4.0",
-                platform: "Linux"
+                os: { family: "Ubuntu" }
             });
         },
 
@@ -74,8 +77,8 @@ buster.testCase("Remote runner", {
                 { id: 2, userAgent: this.uas[0] }
             ]);
 
-            assert.equals(this.runner.getClient(1).toString(), "Firefox 4.0, Ubuntu 10.10 (Maverick Meerkat)");
-            assert.equals(this.runner.getClient(2).toString(), "Firefox 4.0, Ubuntu 10.10 (Maverick Meerkat) (2)");
+            assert.equals(this.runner.getClient(1).toString(), "Firefox 4.0, Ubuntu 10.10");
+            assert.equals(this.runner.getClient(2).toString(), "Firefox 4.0, Ubuntu 10.10 (2)");
         },
 
         "enumerates all user agents from same browser": function () {
@@ -86,7 +89,7 @@ buster.testCase("Remote runner", {
                 { id: 4, userAgent: this.uas[0] }
             ]);
 
-            assert.equals(this.runner.getClient(4).toString(), "Firefox 4.0, Ubuntu 10.10 (Maverick Meerkat) (4)");
+            assert.equals(this.runner.getClient(4).toString(), "Firefox 4.0, Ubuntu 10.10 (4)");
         },
 
         "emits client:connect for every slave": function () {
@@ -102,7 +105,7 @@ buster.testCase("Remote runner", {
             assert.match(listener.args[1][0], {
                 browser: "Chrome",
                 version: "11.0",
-                platform: "Linux"
+                os: { family: "Linux i686" }
             });
         }
     },
@@ -293,11 +296,11 @@ buster.testCase("Remote runner", {
             this.emit("context:end", { name: "Test case" }, 1);
 
             assert.calledTwice(listeners[0]);
-            assert.equals(listeners[0].args[0][0], { name: "Firefox 4.0, Ubuntu 10.10 (Maverick Meerkat)" });
+            assert.equals(listeners[0].args[0][0], { name: "Firefox 4.0, Ubuntu 10.10" });
             assert.equals(listeners[0].args[1][0], { name: "Test case" });
             assert.calledTwice(listeners[1]);
             assert.equals(listeners[1].args[0][0], { name: "Test case" });
-            assert.equals(listeners[1].args[1][0], { name: "Firefox 4.0, Ubuntu 10.10 (Maverick Meerkat)" });
+            assert.equals(listeners[1].args[1][0], { name: "Firefox 4.0, Ubuntu 10.10" });
             assert.calledOnce(listeners[2]);
             assert.calledWith(listeners[2], { name: "test #1" });
             assert.calledOnce(listeners[3]);
@@ -310,7 +313,7 @@ buster.testCase("Remote runner", {
 
         "emits log through console property": function () {
             var logger = { log: this.spy() };
-            this.runner.console.bind(logger, "log");
+            this.runner.console.bind(logger, ["log"]);
 
             this.emit("context:start", { name: "Test case" }, 1);
             this.emit("log", { level: "log", message: "Hey" }, 1);
@@ -438,14 +441,14 @@ buster.testCase("Remote runner", {
             this.emit("context:end", { name: "Test case" }, 1);
 
             assert.equals(out, [
-                "START Firefox 4.0, Ubuntu 10.10 (Maverick Meerkat)",
+                "START Firefox 4.0, Ubuntu 10.10",
                 "START Test case", "YAY test #1",
                 "START Inner", "YAY test #2",
                 "START Inner inner", "YAY test #3", "STOP Inner inner",
                 "STOP Inner",
                 "START Inner #2", "YAY test #4", "STOP Inner #2",
                 "STOP Test case",
-                "STOP Firefox 4.0, Ubuntu 10.10 (Maverick Meerkat)"
+                "STOP Firefox 4.0, Ubuntu 10.10"
             ]);
         }
     },
@@ -535,12 +538,12 @@ buster.testCase("Remote runner", {
             this.runner.setSlaves([{ id: 1 }, { id: 2 }]);
             var listener = this.subscribeTo("suite:end");
 
-            this.emit("ready", { id: 1 }, 1, buster.eventEmitter.create());
+            this.emit("ready", { id: 1 }, 1, bane.createEventEmitter());
             this.emit("suite:start", {}, 1);
             this.emit("suite:end", {}, 1);
             refute.called(listener);
 
-            this.emit("ready", { id: 2 }, 2, buster.eventEmitter.create());
+            this.emit("ready", { id: 2 }, 2, bane.createEventEmitter());
             this.emit("suite:start", {}, 2);
             this.emit("suite:end", {}, 2);
             assert.calledOnce(listener);
@@ -551,12 +554,12 @@ buster.testCase("Remote runner", {
             this.runner.logger = { debug: this.stub() };
             var listener = this.subscribeTo("suite:end");
 
-            this.emit("ready", { id: 1 }, 1, buster.eventEmitter.create());
+            this.emit("ready", { id: 1 }, 1, bane.createEventEmitter());
             this.emit("suite:start", {}, 1);
             this.emit("suite:end", {}, 1);
             refute.called(listener);
 
-            this.emit("ready", { id: 3 }, 3, buster.eventEmitter.create());
+            this.emit("ready", { id: 3 }, 3, bane.createEventEmitter());
             this.emit("suite:start", {}, 3);
             this.emit("suite:end", {}, 3);
             refute.called(listener);
@@ -755,7 +758,7 @@ buster.testCase("Remote runner", {
     "custom events": {
         setUp: function () {
             this.runner = remoteRunner.create(this.emitter, [{ id: 1 }]);
-            this.emit("ready", this.uas[0], 1, buster.eventEmitter.create());
+            this.emit("ready", this.uas[0], 1, bane.createEventEmitter());
         },
 
         "emits custom event": function () {

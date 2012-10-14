@@ -1,7 +1,10 @@
-var buster = require("buster");
+var buster = require("buster-node");
+var assert = buster.assert;
+var refute = buster.refute;
 var cliHelper = require("buster-cli/lib/test-helper");
 var testCli = require("../lib/test-cli");
 var runAnalyzer = require("../lib/run-analyzer");
+var stackFilter = require("stack-filter");
 
 function fakeRunner(thisp, environment) {
     return {
@@ -82,31 +85,31 @@ buster.testCase("Test CLI", {
 
     "stack filter": {
         setUp: function () {
-            this.filters = buster.stackFilter.filters;
+            this.filters = stackFilter.filters;
         },
 
         tearDown: function () {
-            buster.stackFilter.filters = this.filters;
+            stackFilter.filters = this.filters;
         },
 
         "does not filter stack traces": function (done) {
-            buster.stackFilter.filters = ["a", "b"];
+            stackFilter.filters = ["a", "b"];
             this.cli.run(["--full-stacks"], done(function () {
-                assert.equals(buster.stackFilter.filters, []);
+                assert.equals(stackFilter.filters, []);
             }));
         },
 
         "does not filter stack traces with short option": function (done) {
-            buster.stackFilter.filters = ["a", "b"];
+            stackFilter.filters = ["a", "b"];
             this.cli.run(["-f"], done(function () {
-                assert.equals(buster.stackFilter.filters, []);
+                assert.equals(stackFilter.filters, []);
             }));
         },
 
         "filters stack traces by default": function (done) {
-            buster.stackFilter.filters = [];
+            stackFilter.filters = [];
             this.cli.run([], done(function () {
-                refute.equals(buster.stackFilter.filters, []);
+                refute.equals(stackFilter.filters, []);
             }));
         }
     },
@@ -161,19 +164,19 @@ buster.testCase("Test CLI", {
                 preferences: this.prefsink
             });
             this.cli.cli.exit = this.spy();
-            this.filters = buster.stackFilter.filters;
+            this.filters = stackFilter.filters;
         },
 
         tearDown: function () {
-            buster.stackFilter.filters = this.filters;
+            stackFilter.filters = this.filters;
         },
 
         "skips stack trace filtering": function (done) {
-            buster.stackFilter.filters = ["a", "b"];
+            stackFilter.filters = ["a", "b"];
             this.prefsink.get.withArgs("test.fullStacks").returns(true);
 
             this.cli.run(["-c", this.config], done(function () {
-                assert.equals(buster.stackFilter.filters, []);
+                assert.equals(stackFilter.filters, []);
             }.bind(this)));
         },
 

@@ -3,15 +3,29 @@
     "version": "0.6.3",
     "description": "Cli tools for Buster.JS test runners",
     "homepage": "http://busterjs.org/docs/buster-test-cli",
-    "author": { "name": "August Lilleaas and Christian Johansen" },
-    "contributors": [{
-        "name": "August Lilleaas",
-        "email": "august.lilleaas@gmail.com",
-        "url": "http://augustl.com"
-    }, {
+    "author": {
         "name": "Christian Johansen",
         "email": "christian@cjohansen.no",
         "url": "http://cjohansen.no"
+    },
+    "contributors": [{
+        "name": "August Lilleaas",
+        "email": "august@augustl.com",
+        "url": "http://augustl.com"
+    }, {
+        "name": "Matthias Kling",
+        "email": "m.kling@sprax.eu"
+    }, {
+        "name": "Sasha Depold",
+        "email": "sascha@depold.com",
+        "url": "http://depold.com"
+    }, {
+        "name": "Stein Magnus Jodal",
+        "email": "stein.magnus@jodal.no",
+        "url": "http://jodal.no"
+    }, {
+        "name": "Tobias Ebnöther",
+        "email": "ebi@gorn.ch"
     }],
     "main": "./lib/test-cli",
     "repository": {
@@ -25,15 +39,17 @@
         "buster-analyzer": "=0.3.1",
         "buster-capture-server": "~0.5",
         "buster-cli": ">=0.5.0",
-        "buster-core": ">=0.6.2",
         "buster-terminal": ">=0.4.1",
         "buster-test": ">=0.6.1",
-        "buster-user-agent-parser": ">=0.3.1",
+        "bane": "~0.1",
+        "stack-filter": "~0.1",
         "ejs": "~0.4",
-        "when": "https://github.com/cujojs/when/tarball/1.3.0"
+        "when": "https://github.com/cujojs/when/tarball/1.3.0",
+        "lodash": "~0.8",
+        "platform": "~1.0"
     },
     "devDependencies": {
-        "buster": "",
+        "buster-node": "",
         "stream-logger": ">=0.3.0"
     }
 }
