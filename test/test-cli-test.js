@@ -56,7 +56,7 @@ buster.testCase("Test CLI", {
         }
     },
 
-    "configuration": {
+    "configuration option": {
         "recognizes --config option": function (done) {
             process.chdir(__dirname);
             this.cli.run(["--config", "file.js"], done(function (err, client) {
@@ -69,12 +69,14 @@ buster.testCase("Test CLI", {
 
     "explicit environment": {
         setUp: function () {
-            cliHelper.writeFile("buster-buggy.js", "var config = module.exports;" +
+            cliHelper.writeFile("buster-buggy.js",
+                                "var config = module.exports;" +
                                 "config.server = { environment: 'phonegap' }");
         },
 
         "fails when environment does not exist": function (done) {
-            this.cli.run(["-c", "buster-buggy.js", "-e", "phonegap"], done(function () {
+            var args = ["-c", "buster-buggy.js", "-e", "phonegap"];
+            this.cli.run(args, done(function () {
                 assert.stderr("No runner for environment 'phonegap'.");
                 assert.stderr("Try one of");
                 assert.stderr("node");
@@ -123,26 +125,30 @@ buster.testCase("Test CLI", {
         "loads node runner": function (done) {
             this.cli.run([], done(function () {
                 assert.calledOnce(this.runners.node.run);
-                refute.equals(this.runners.node.run.thisValues[0], this.runners.node);
+                refute.equals(this.runners.node.run.thisValues[0],
+                              this.runners.node);
             }.bind(this)));
         },
 
         "provides runner with logger": function (done) {
             this.cli.run([], done(function () {
-                assert.equals(this.cli.logger, this.runners.node.run.thisValues[0].logger);
+                assert.equals(this.cli.logger,
+                              this.runners.node.run.thisValues[0].logger);
             }.bind(this)));
         },
 
         "runs runner with config and options": function (done) {
             this.cli.run([], done(function () {
-                assert.match(this.runners.node.run.args[0][1], { reporter: "dots" });
-                assert.equals(this.runners.node.run.args[0][0].environment, "node");
+                var args = this.runners.node.run.args;
+                assert.match(args[0][1], { reporter: "dots" });
+                assert.equals(args[0][0].environment, "node");
             }.bind(this)));
         },
 
         "transfers filters to node runner": function (done) {
             this.cli.run(["should-"], done(function () {
-                assert.equals(this.runners.node.run.args[0][1].filters, ["should-"]);
+                assert.equals(this.runners.node.run.args[0][1].filters,
+                              ["should-"]);
             }.bind(this)));
         },
 
@@ -157,8 +163,10 @@ buster.testCase("Test CLI", {
         setUp: function () {
             this.prefsink = { get: this.stub() };
             this.config = cliHelper.writeFile(
-                "buster2.js", "var config = module.exports;" +
-                    "config.server = { environment: 'browser' }");
+                "buster2.js",
+                "var config = module.exports;" +
+                    "config.server = { environment: 'browser' }"
+            );
             this.cli = testCli.create(this.stdout, this.stderr, {
                 runners: this.runners,
                 preferences: this.prefsink
@@ -192,8 +200,9 @@ buster.testCase("Test CLI", {
 
         "uses color option as default": function (done) {
             this.prefsink.get.withArgs("test.color").returns("none");
+            var args = ["-c", this.config, "-C", "dim"];
 
-            this.cli.run(["-c", this.config, "-C", "dim"], done(function () {
+            this.cli.run(args, done(function () {
                 assert.match(this.runners.browser.run.args[0][1], {
                     color: true,
                     bright: false
@@ -213,8 +222,9 @@ buster.testCase("Test CLI", {
 
         "uses release console argument": function (done) {
             this.prefsink.get.withArgs("test.releaseConsole").returns(false);
+            var args = ["-c", this.config, "--release-console"];
 
-            this.cli.run(["-c", this.config, "--release-console"], done(function () {
+            this.cli.run(args, done(function () {
                 assert.match(this.runners.browser.run.args[0][1], {
                     captureConsole: false
                 });
@@ -234,8 +244,9 @@ buster.testCase("Test CLI", {
 
         "uses quiet log argument": function (done) {
             this.prefsink.get.withArgs("test.quietLog").returns(false);
+            var args = ["-c", this.config, "--quiet-log"];
 
-            this.cli.run(["-c", this.config, "--quiet-log"], done(function () {
+            this.cli.run(args, done(function () {
                 assert.match(this.runners.browser.run.args[0][1], {
                     logPassedMessages: false
                 });
@@ -246,14 +257,17 @@ buster.testCase("Test CLI", {
     "browser runs": {
         setUp: function () {
             this.config = cliHelper.writeFile(
-                "buster2.js", "var config = module.exports;" +
-                    "config.server = { environment: 'browser' }");
+                "buster2.js",
+                "var config = module.exports;" +
+                    "config.server = { environment: 'browser' }"
+            );
         },
 
         "loads browser runner": function (done) {
             this.cli.run(["-c", this.config], done(function () {
                 assert.calledOnce(this.runners.browser.run);
-                refute.equals(this.runners.browser.run.thisValues[0], this.runners.browser);
+                refute.equals(this.runners.browser.run.thisValues[0],
+                              this.runners.browser);
             }.bind(this)));
         },
 
@@ -262,21 +276,18 @@ buster.testCase("Test CLI", {
         }),
 
         "loads browser with specific server setting": testArgumentOption(
-            ["-s", "127.0.0.1:1234"], {
-                server: "http://127.0.0.1:1234"
-            }
+            ["-s", "127.0.0.1:1234"],
+            { server: "http://127.0.0.1:1234" }
         ),
 
         "allows hostnameless server config": testArgumentOption(
-            ["--server", "127.0.0.1:5678"], {
-                server: "http://127.0.0.1:5678"
-            }
+            ["--server", "127.0.0.1:5678"],
+            { server: "http://127.0.0.1:5678" }
         ),
 
         "allows full server url, including protocol": testArgumentOption(
-            ["-s", "http://lol:1234"], {
-                server: "http://lol:1234"
-            }
+            ["-s", "http://lol:1234"],
+            { server: "http://lol:1234" }
         ),
 
         "skips caching": function (done) {
@@ -302,63 +313,78 @@ buster.testCase("Test CLI", {
         },
 
         "sets warning level": testArgumentOption(
-            ["-W", "all"], { warnings: "all" }
+            ["-W", "all"],
+            { warnings: "all" }
         ),
 
         "sets warning level with long option": testArgumentOption(
-            ["--warnings", "warning"], { warnings: "warning" }
+            ["--warnings", "warning"],
+            { warnings: "warning" }
         ),
 
         "sets warning fail level": testArgumentOption(
-            ["-F", "fatal"], { failOn: "fatal" }
+            ["-F", "fatal"],
+            { failOn: "fatal" }
         ),
 
         "sets warning fail level with long option": testArgumentOption(
-            ["--fail-on", "error"], { failOn: "error" }
+            ["--fail-on", "error"],
+            { failOn: "error" }
         ),
 
         "captures console by default": testArgumentOption(
-            [], { captureConsole: true }
+            [],
+            { captureConsole: true }
         ),
 
         "releases console": testArgumentOption(
-            ["--release-console"], { captureConsole: false }
+            ["--release-console"],
+            { captureConsole: false }
         ),
 
         "sets release console with short option": testArgumentOption(
-            ["-o"], { captureConsole: false }
+            ["-o"],
+            { captureConsole: false }
         ),
 
         "logs all messages": testArgumentOption(
-            [], { logPassedMessages: true }
+            [],
+            { logPassedMessages: true }
         ),
 
         "does not log passing tests": testArgumentOption(
-            ["--quiet-log"], { logPassedMessages: false }
+            ["--quiet-log"],
+            { logPassedMessages: false }
         ),
 
         "does not log passing tests with short option": testArgumentOption(
-            ["-q"], { logPassedMessages: false }
+            ["-q"],
+            { logPassedMessages: false }
         ),
 
         "sets static resource path": testArgumentOption(
-            ["--static-paths"], { staticResourcesPath: true }
+            ["--static-paths"],
+            { staticResourcesPath: true }
         ),
 
         "sets static resource path with short option": testArgumentOption(
-            ["-p"], { staticResourcesPath: true }
+            ["-p"],
+            { staticResourcesPath: true }
         ),
 
         "transfers filters": testArgumentOption(
-            ["//should-"], { filters: ["//should-"] }
+            ["//should-"],
+            { filters: ["//should-"] }
         )
     },
 
     "analyzer": {
         setUp: function () {
             this.config = cliHelper.writeFile(
-                "buster2.js", "var config = module.exports;" +
-                    "config.server = { environment: 'browser' }");
+                "buster2.js",
+                "var config = module.exports;" +
+                    "config.server = { environment: 'browser' }"
+            );
         },
 
         "creates run analyzer": function (done) {
@@ -386,19 +412,22 @@ buster.testCase("Test CLI", {
 
     "configuration": {
         setUp: function () {
-            this.busterOptBlank = typeof process.env.BUSTER_TEST_OPT != "string";
+            var type = typeof process.env.BUSTER_TEST_OPT;
+            this.busterOptBlank = type !== "string";
             this.busterOpt = process.env.BUSTER_TEST_OPT;
             this.config = cliHelper.writeFile(
-                "buster2.js", "var config = module.exports;" +
-                    "config.server = { environment: 'browser' }");
+                "buster2.js",
+                "var config = module.exports;" +
+                    "config.server = { environment: 'browser' }"
+            );
         },
 
         tearDown: function () {
             process.env.BUSTER_TEST_OPT = this.busterOpt;
-            if (this.busterOptBlank) delete process.env.BUSTER_TEST_OPT;
+            if (this.busterOptBlank) { delete process.env.BUSTER_TEST_OPT; }
         },
 
-        "//adds command-line options set with $BUSTER_TEST_OPT": function (done) {
+        "//adds CLI options set with $BUSTER_TEST_OPT": function (done) {
             process.env.BUSTER_TEST_OPT = "--color dim -r specification";
             this.cli.run(["-c", this.config], done(function () {
                 assert.calledOnce(this.runners.node.run);
@@ -414,8 +443,8 @@ buster.testCase("Test CLI", {
             var callback = this.spy();
             this.runners.fake = { run: this.stub().returns({}) };
             this.cli.runConfigGroups([
-                { environment: "fake", id: 1, runExtensionHook: this.spy()  },
-                { environment: "fake", id: 2, runExtensionHook: this.spy()  }
+                { environment: "fake", id: 1, runExtensionHook: this.spy() },
+                { environment: "fake", id: 2, runExtensionHook: this.spy() }
             ], {}, callback);
 
             assert.calledOnce(this.runners.fake.run);
@@ -438,8 +467,10 @@ buster.testCase("Test CLI", {
     "with --color option": {
         setUp: function () {
             this.config = cliHelper.writeFile(
-                "buster2.js", "var config = module.exports;" +
-                    "config.server = { environment: 'node' }");
+                "buster2.js",
+                "var config = module.exports;" +
+                    "config.server = { environment: 'node' }"
+            );
         },
 
         "skips ansi escape sequences when set to none": function (done) {
@@ -497,7 +528,7 @@ buster.testCase("Test CLI", {
             assert.calledOnceWith(this.exit, 1);
         },
 
-        "with code 1 when one of several test configurations fails": function () {
+        "with code 1 when one of several test configus fails": function () {
             this.results = [[null, { ok: true, tests: 1 }],
                             [null, { ok: false, tests: 1 }]];
             this.cli.runConfigGroups([this.fakeConfig, {
@@ -513,7 +544,7 @@ buster.testCase("Test CLI", {
             assert.calledOnceWith(this.exit, 13);
         },
 
-        "defaults error code to 70 (EX_SOFTWARE) for code-less exception": function () {
+        "defaults code to EX_SOFTWARE for code-less exception": function () {
             this.results = [[{}]];
             this.cli.runConfigGroups([this.fakeConfig], {}, this.done);
             assert.calledOnceWith(this.exit, 70);
@@ -523,14 +554,16 @@ buster.testCase("Test CLI", {
             var ok = [null, { ok: true }];
             this.results = [ok, ok, [{ code: 99 }], ok];
             var group = this.fakeConfig;
-            this.cli.runConfigGroups([group, group, group, group], {}, this.done);
+            var groups = [group, group, group, group];
+            this.cli.runConfigGroups(groups, {}, this.done);
             assert.calledOnceWith(this.exit, 99);
         },
 
         "logs error before exit": function () {
             this.results = [[{ code: 99, message: "Oh snap" }]];
             var group = this.fakeConfig;
-            this.cli.runConfigGroups([group, group, group, group], {}, this.done);
+            var groups = [group, group, group, group];
+            this.cli.runConfigGroups(groups, {}, this.done);
 
             assert.stderr("Oh snap");
         }
@@ -577,7 +610,8 @@ buster.testCase("Test CLI", {
             this.config.extensions = [{ id: 4 }];
             cli.runConfig(this.config, {}, function () {});
 
-            assert.equals(this.config.extensions, [{ id: 42 }, { id: 13 }, { id: 4 }]);
+            assert.equals(this.config.extensions,
+                          [{ id: 42 }, { id: 13 }, { id: 4 }]);
         }
     }
 });
