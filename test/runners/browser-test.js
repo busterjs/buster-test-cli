@@ -4,7 +4,7 @@ var refute = buster.refute;
 var streamLogger = require("stream-logger");
 var browserRunner = require("../../lib/runners/browser");
 var testRun = browserRunner.testRun;
-var captureServer = require("ramp-capture-server");
+var ramp = require("ramp");
 var when = require("when");
 var cliHelper = require("buster-cli/lib/test-helper");
 var remoteRunner = require("../../lib/runners/browser/remote-runner");
@@ -64,26 +64,26 @@ buster.testCase("Browser runner", {
     "server client": {
         setUp: function () {
             var client = fakeServerClient(this);
-            this.stub(captureServer, "createServerClient").returns(client);
+            this.stub(ramp, "createServerClient").returns(client);
         },
 
         "creates server client": function () {
             this.runner.run(fakeConfig(this), {});
 
-            assert.calledOnce(captureServer.createServerClient);
+            assert.calledOnce(ramp.createServerClient);
         },
 
         "creates client for configured location": function () {
             this.runner.run(fakeConfig(this), { server: "http://127.0.0.1:1200" });
 
-            assert.calledWith(captureServer.createServerClient, "1200", "127.0.0.1");
+            assert.calledWith(ramp.createServerClient, "1200", "127.0.0.1");
         }
     },
 
     "session creation": {
         setUp: function () {
             var client = this.serverClient = fakeServerClient(this);
-            this.stub(captureServer, "createServerClient").returns(this.serverClient);
+            this.stub(ramp, "createServerClient").returns(this.serverClient);
             this.config = fakeConfig(this);
 
             buster.assertions.add("sessionOptions", {
@@ -218,7 +218,7 @@ buster.testCase("Browser runner", {
     "abort": {
         setUp: function () {
             this.serverClient = fakeServerClient(this);
-            this.stub(captureServer, "createServerClient").returns(this.serverClient);
+            this.stub(ramp, "createServerClient").returns(this.serverClient);
             this.config = fakeConfig(this);
         },
 
@@ -689,7 +689,7 @@ buster.testCase("Browser runner", {
         },
 
         "session preparation error": function (done) {
-            this.stub(captureServer, "createServerClient").returns({
+            this.stub(ramp, "createServerClient").returns({
                 connect: this.stub().returns(when({}))
             });
             var config = fakeConfig(this);
@@ -732,7 +732,7 @@ buster.testCase("Browser runner", {
 
         "files": {
             setUp: function () {
-                this.stub(captureServer, "createServerClient").returns(this.client);
+                this.stub(ramp, "createServerClient").returns(this.client);
                 this.config = fakeConfig(this);
                 this.configDeferred = when.defer();
                 this.config.resolve.returns(this.configDeferred);
@@ -780,7 +780,7 @@ buster.testCase("Browser runner", {
     // correctly.
     "ends session when session aborts itself": function (done) {
         var serverClient = fakeServerClient(this);
-        this.stub(captureServer, "createServerClient").returns(serverClient);
+        this.stub(ramp, "createServerClient").returns(serverClient);
 
         var config = fakeConfig(this);
         config.resolve.returns(when([]));
