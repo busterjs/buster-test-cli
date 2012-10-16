@@ -8,7 +8,7 @@ buster.testRunner.onCreate(function (runner) {
     });
 });
 
-//require("./test/progress-reporter-integration-test");
+require("./test/progress-reporter-integration-test");
 require("./test/run-analyzer-test");
 require("./test/test-cli-test");
 require("./test/runners/node-test");

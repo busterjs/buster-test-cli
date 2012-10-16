@@ -1,11 +1,12 @@
 var util = require("util");
 
 function run() {
-    var buster = require("buster");
+    var buster = require("buster-node");
+    var bane = require("bane");
     var remoteRunner = require("../lib/runners/browser/remote-runner");
     var progressReporter = require("../lib/runners/browser/progress-reporter");
 
-    var emitter = buster.eventEmitter.create();
+    var emitter = bane.createEventEmitter();
 
     function emit(event, data, client) {
         return emitter.emit(event, {
