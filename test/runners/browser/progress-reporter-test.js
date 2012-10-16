@@ -1,5 +1,7 @@
 var buster = require("buster-node");
 var assert = buster.assert;
+var refute = buster.refute;
+var bane = require("bane");
 var remoteRunner = require("../../../lib/runners/browser/remote-runner");
 var progressReporter = require("../../../lib/runners/browser/progress-reporter");
 var S = require("buster-terminal");
@@ -8,7 +10,7 @@ var cliHelper = require("buster-cli/lib/test-helper");
 buster.testCase("Progress reporter", {
     setUp: function () {
         this.clock = this.useFakeTimers();
-        this.messageClient = buster.eventEmitter.create();
+        this.messageClient = bane.createEventEmitter();
 
         this.emit = function (event, data, client) {
             return this.messageClient.emit(event, {
@@ -44,7 +46,7 @@ buster.testCase("Progress reporter", {
         }).listen(this.runner);
     },
 
-    "should not print anything without clients": function () {
+    "does not print anything without clients": function () {
         this.emit("test:success", {});
         assert.equals(S.stripSeq(this.stdout.toString()), "");
     },
