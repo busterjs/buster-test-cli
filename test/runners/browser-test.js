@@ -1,6 +1,8 @@
 var buster = require("buster-node");
+var referee = buster.referee;
 var assert = buster.assert;
 var refute = buster.refute;
+var bane = require("bane");
 var streamLogger = require("stream-logger");
 var browserRunner = require("../../lib/runners/browser");
 var testRun = browserRunner.testRun;
@@ -12,14 +14,14 @@ var progressReporter = require("../../lib/runners/browser/progress-reporter");
 var reporters = require("buster-test").reporters;
 
 function fakeConfig(tc) {
-    return buster.extend(buster.eventEmitter.create(), {
+    return bane.createEventEmitter({
         resolve: tc.stub().returns(when.defer().promise),
         runExtensionHook: tc.stub()
     });
 }
 
 function fakeSession(tc) {
-    return buster.extend(buster.eventEmitter.create(), {
+    return bane.createEventEmitter({
         onStart: tc.stub(),
         onLoad: tc.stub().yields([{}]),
         onEnd: tc.stub(),
@@ -51,12 +53,12 @@ function testRemoteRunnerOption(options, expected) {
 buster.testCase("Browser runner", {
     setUp: function () {
         this.stub(process, "on");
-        this.runner = buster.create(browserRunner);
+        this.runner = Object.create(browserRunner);
         this.stdout = cliHelper.writableStream("stdout");
         this.stderr = cliHelper.writableStream("stderr");
         this.logger = streamLogger(this.stdout, this.stderr);
         this.runner.logger = this.logger;
-        this.remoteRunner = buster.eventEmitter.create();
+        this.remoteRunner = bane.createEventEmitter();
         this.remoteRunner.setSlaves = this.spy();
         this.stub(remoteRunner, "create").returns(this.remoteRunner);
     },
@@ -86,10 +88,10 @@ buster.testCase("Browser runner", {
             this.stub(ramp, "createServerClient").returns(this.serverClient);
             this.config = fakeConfig(this);
 
-            buster.assertions.add("sessionOptions", {
+            referee.add("sessionOptions", {
                 assert: function (opts) {
                     this.actual = client.createSession.args[0][1];
-                    return buster.assertions.match(this.actual, opts);
+                    return referee.match(this.actual, opts);
                 },
                 assertMessage: "Expected createSession to be called with " +
                     "options ${0}, but was called with ${actual}"
@@ -794,5 +796,5 @@ buster.testCase("Browser runner", {
 
         assert.calledOnce(session.onAbort, "Did not hook onAbort");
         session.onAbort.getCall(0).args[0]({message: "An error from the session"});
-    },
+    }
 });
