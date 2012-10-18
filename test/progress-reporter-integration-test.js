@@ -16,10 +16,7 @@ function run() {
         });
     }
 
-    var clients = ["Firefox 4.0.1", "Chrome 11", "Safari/534.24"];
-    var runner = remoteRunner.create(emitter, [
-        { id: 1 }, { id: 2 }, { id: 3 }
-    ]);
+    var runner = remoteRunner.create(emitter, { debug: function () {} });
 
     var reporter = progressReporter.create({
         outputStream: { write: require("util").print },
@@ -27,10 +24,17 @@ function run() {
         bright: true
     }).listen(runner);
 
-    function addClient(id, client) {
-        emit("ready", client, id);
-        emit("suite:start", {}, id);
-        reporter.addClient(id, clients[id - 1]);
+    var started = [], slaves = [
+        { id: 1, userAgent: "Firefox 4.0.1" },
+        { id: 2, userAgent: "Chrome 11" },
+        { id: 3, userAgent: "Safari/534.24 OS X" }
+    ];
+    runner.setSlaves(slaves);
+
+    function startSlave(client) {
+        emit("suite:start", {}, client.id);
+        reporter.addClient(client.id, client.userAgent);
+        started.push(client);
     }
 
     util.puts("If this output looks good, we're fine. Control-C to abort");
@@ -38,8 +42,8 @@ function run() {
               "of dots and letters");
 
     setTimeout(function () {
-        addClient(1, clients[0]);
-        addClient(2, clients[1]);
+        startSlave(slaves[0]);
+        startSlave(slaves[1]);
 
         var events = [
             "test:success",
@@ -50,19 +54,16 @@ function run() {
 
         function doIt() {
             emit(events[Math.floor(Math.random() * events.length)], {},
-                 1 + Math.floor(Math.random() * clients.length));
+                 1 + Math.floor(Math.random() * started.length));
         }
 
         setInterval(doIt, 50);
     }, 500);
 
     setTimeout(function () {
-        clients.push("Mozilla/5.0 (Windows; U; MSIE 9.0; " +
-                     "Windows NT 9.0; en-US))");
-        addClient(3, clients[2]);
+        startSlave(slaves[2]);
     }, 2000);
 }
-
 
 if (require.main !== module) {
     util.puts("Integration test must be run manually - it is a visual test");
