@@ -52,40 +52,40 @@ buster.testCase("Progress reporter", {
     },
 
     "prints client when adding": function () {
-        this.reporter.addClient(1, this.clients[0]);
-        this.reporter.addClient(2, this.clients[1]);
+        this.reporter.addSlave(1, this.clients[0]);
+        this.reporter.addSlave(2, this.clients[1]);
 
         assert.stdout("Chrome 9.0.597.107 Linux:");
         assert.stdout("Firefox 4.0 Linux:");
     },
 
     "print dot for test success": function () {
-        this.reporter.addClient(1, this.clients[0]);
-        this.reporter.addClient(2, this.clients[1]);
+        this.reporter.addSlave(1, this.clients[0]);
+        this.reporter.addSlave(2, this.clients[1]);
         this.emit("test:success", {}, 1);
 
         assert.stdout(".");
     },
 
     "prints E for test error": function () {
-        this.reporter.addClient(1, this.clients[0]);
-        this.reporter.addClient(2, this.clients[1]);
+        this.reporter.addSlave(1, this.clients[0]);
+        this.reporter.addSlave(2, this.clients[1]);
         this.emit("test:error", {}, 1);
 
         assert.stdout("E");
     },
 
     "prints F for test failure": function () {
-        this.reporter.addClient(1, this.clients[0]);
-        this.reporter.addClient(2, this.clients[1]);
+        this.reporter.addSlave(1, this.clients[0]);
+        this.reporter.addSlave(2, this.clients[1]);
         this.emit("test:failure", {}, 1);
 
         assert.stdout("F");
     },
 
     "prints T for test timeout": function () {
-        this.reporter.addClient(1, this.clients[0]);
-        this.reporter.addClient(2, this.clients[1]);
+        this.reporter.addSlave(1, this.clients[0]);
+        this.reporter.addSlave(2, this.clients[1]);
         this.emit("test:timeout", {}, 1);
 
         assert.stdout("T");
@@ -95,12 +95,12 @@ buster.testCase("Progress reporter", {
         this.emit("uncaughtException", { message: "Oops" }, 1);
         refute.stdout("Oops");
 
-        this.reporter.addClient(1, this.clients[0]);
+        this.reporter.addSlave(1, this.clients[0]);
         assert.stdout("Oops");
     },
 
     "immediately prints uncaught exception for known client": function () {
-        this.reporter.addClient(1, this.clients[0]);
+        this.reporter.addSlave(1, this.clients[0]);
         this.emit("uncaughtException", { message: "Oops" }, 1);
 
         assert.stdout("Oops");

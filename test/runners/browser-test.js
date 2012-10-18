@@ -524,15 +524,15 @@ buster.testCase("Browser runner", {
             },
 
             "adds client on progress reporter when client connects": function () {
-                this.stub(progressReporter, "addClient");
+                this.stub(progressReporter, "addSlave");
 
                 var run = this.createRun();
                 run.runTests(this.session);
                 var client = { id: 42 };
                 this.remoteRunner.emit("client:connect", client);
 
-                assert.calledOnce(progressReporter.addClient);
-                assert.calledWith(progressReporter.addClient, 42, client);
+                assert.calledOnce(progressReporter.addSlave);
+                assert.calledWith(progressReporter.addSlave, 42, client);
             },
 
             "initializes reporter": function () {

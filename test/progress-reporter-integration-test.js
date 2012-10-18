@@ -33,7 +33,7 @@ function run() {
 
     function startSlave(client) {
         emit("suite:start", {}, client.id);
-        reporter.addClient(client.id, client.userAgent);
+        reporter.addSlave(client.id, client.userAgent);
         started.push(client);
     }
 
