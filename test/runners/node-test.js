@@ -9,6 +9,7 @@ var when = require("when");
 var fs = require("fs");
 var cliHelper = require("buster-cli/lib/test-helper");
 var bane = require("bane");
+var path = require("path");
 
 function fakeConfig(tc) {
     return bane.createEventEmitter({
@@ -197,7 +198,7 @@ buster.testCase("Node runner", {
 
             this.runner.run(this.config, {}, done(function (err) {
                 assert.match(err, {
-                    message: "Failed requiring /here/hey.js",
+                    message: "Failed requiring " + path.join("/here/hey.js"),
                     code: 65
                 });
             }));
