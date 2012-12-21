@@ -22,7 +22,7 @@
         "test": "./node_modules/buster/bin/buster-test -c buster-config.js"
     },
     "dependencies": {
-        "buster-analyzer": ">=0.3",
+        "buster-analyzer": "=0.3.1",
         "buster-capture-server": "~0.5",
         "buster-cli": ">=0.5.0",
         "buster-core": ">=0.6.2",
