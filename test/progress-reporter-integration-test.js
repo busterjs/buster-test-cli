@@ -1,7 +1,7 @@
 var util = require("util");
 
 function run() {
-    var buster = require("buster-node");
+    var buster = require("buster");
     var bane = require("bane");
     var remoteRunner = require("../lib/runners/browser/remote-runner");
     var progressReporter = require("../lib/runners/browser/progress-reporter");

@@ -1,5 +1,5 @@
 var bane = require("bane");
-var buster = require("buster-node");
+var buster = require("buster");
 var assert = buster.assert;
 var refute = buster.refute;
 var remoteRunner = require("../../../lib/runners/browser/remote-runner");

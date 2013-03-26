@@ -1,4 +1,4 @@
-var buster = require("buster-node");
+var buster = require("buster");
 var referee = buster.referee;
 var assert = buster.assert;
 var refute = buster.refute;

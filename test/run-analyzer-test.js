@@ -1,4 +1,4 @@
-var buster = require("buster-node");
+var buster = require("buster");
 var assert = buster.assert;
 var runAnalyzer = require("../lib/run-analyzer");
 var cliHelper = require("buster-cli/lib/test-helper");

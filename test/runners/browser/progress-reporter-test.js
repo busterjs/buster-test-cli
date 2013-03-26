@@ -1,10 +1,9 @@
-var buster = require("buster-node");
+var buster = require("buster");
 var assert = buster.assert;
 var refute = buster.refute;
 var bane = require("bane");
 var remoteRunner = require("../../../lib/runners/browser/remote-runner");
 var progressReporter = require("../../../lib/runners/browser/progress-reporter");
-var S = require("buster-terminal");
 var cliHelper = require("buster-cli/lib/test-helper");
 
 buster.testCase("Progress reporter", {
@@ -48,7 +47,7 @@ buster.testCase("Progress reporter", {
 
     "does not print anything without clients": function () {
         this.emit("test:success", {});
-        assert.equals(S.stripSeq(this.stdout.toString()), "");
+        assert.equals(this.stdout.toString(), "");
     },
 
     "prints client when adding": function () {
