@@ -61,8 +61,8 @@ buster.testCase("Test CLI", {
             process.chdir(__dirname);
             this.cli.run(["--config", "file.js"], done(function (err, client) {
                 var message = "-c/--config: file.js did not match any files";
-                assert.stderr(message);
                 assert.match(err.message, message);
+                assert.stderr(message);
             }.bind(this)));
         }
     },
@@ -140,7 +140,7 @@ buster.testCase("Test CLI", {
         "runs runner with config and options": function (done) {
             this.cli.run([], done(function () {
                 var args = this.runners.node.run.args;
-                assert.match(args[0][1], { reporter: "dots" });
+                assert.match(args[0][1], { reporter: "brief" });
                 assert.equals(args[0][0].environment, "node");
             }.bind(this)));
         },

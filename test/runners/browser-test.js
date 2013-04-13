@@ -10,7 +10,6 @@ var ramp = require("ramp");
 var when = require("when");
 var cliHelper = require("buster-cli/lib/test-helper");
 var remoteRunner = require("../../lib/runners/browser/remote-runner");
-var progressReporter = require("../../lib/runners/browser/progress-reporter");
 var reporters = require("buster-test").reporters;
 
 function fakeConfig(tc) {
@@ -143,14 +142,6 @@ buster.testCase("Browser runner", {
 
             assert.isTrue(resourceSet[0].cacheable);
             assert.isTrue(resourceSet[1].cacheable);
-        },
-
-        "is unjoinable": function () {
-            this.config.resolve.returns(when([{}]));
-
-            this.runner.run(this.config, {});
-
-            assert.sessionOptions({ joinable: false });
         },
 
         "uses dynamic resource paths by default": function () {
@@ -462,60 +453,32 @@ buster.testCase("Browser runner", {
 
         "reporter": {
             setUp: function () {
-                this.spy(progressReporter, "create");
-                this.spy(reporters.dots, "create");
+                this.spy(reporters.brief, "create");
             },
 
-            "defaults to progress reporter": function () {
+            "defaults to brief reporter": function () {
                 var run = this.createRun();
                 run.runTests(this.session);
 
-                assert.calledOnce(progressReporter.create);
-                assert.match(progressReporter.create.args[0][0], {
+                assert.calledOnce(reporters.brief.create);
+                assert.match(reporters.brief.create.args[0][0], {
                     color: false,
                     bright: false
                 });
             },
 
-            "uses progress reporter with the dots reporter": function () {
-                var run = this.createRun({ reporter: "dots" });
-                run.runTests(this.session);
-
-                assert.called(progressReporter.create);
-                assert.calledOnce(reporters.dots.create);
-            },
-
-            "skips progress reporter when providing reporter": function () {
-                this.spy(reporters.specification, "create");
-                var run = this.createRun({ reporter: "specification" });
-                run.runTests(this.session);
-
-                refute.called(progressReporter.create);
-                assert.calledOnce(reporters.specification.create);
-            },
-
             "loads reporter using buster-test's loader": function () {
                 this.spy(reporters, "load");
-                var run = this.createRun({ reporter: "dots" });
+                var run = this.createRun({ reporter: "brief" });
                 run.runTests(this.session);
 
-                assert.calledOnceWith(reporters.load, "dots");
+                assert.calledOnceWith(reporters.load, "brief");
             },
 
-            "progress reporter should respect color settings": function () {
-                var run = this.createRun({ color: true, bright: true });
-                run.runTests(this.session);
-
-                assert.match(progressReporter.create.args[0][0], {
-                    color: true,
-                    bright: true
-                });
-            },
-
-            "uses logger as output stream for remote reporter": function () {
+            "uses logger as output stream": function () {
                 var run = this.createRun();
                 run.runTests(this.session);
-                var ostream = progressReporter.create.args[0][0].outputStream;
+                var ostream = reporters.brief.create.args[0][0].outputStream;
                 ostream.write(".");
                 ostream.write(".");
                 ostream.write(" OK!");
@@ -523,23 +486,11 @@ buster.testCase("Browser runner", {
                 assert.stdout(".. OK!");
             },
 
-            "adds client on progress reporter when client connects": function () {
-                this.stub(progressReporter, "addSlave");
-
-                var run = this.createRun();
-                run.runTests(this.session);
-                var client = { id: 42 };
-                this.remoteRunner.emit("client:connect", client);
-
-                assert.calledOnce(progressReporter.addSlave);
-                assert.calledWith(progressReporter.addSlave, 42, client);
-            },
-
             "initializes reporter": function () {
                 var run = this.createRun();
                 run.runTests(this.session);
 
-                assert.match(reporters.dots.create.args[0][0], {
+                assert.match(reporters.brief.create.args[0][0], {
                     color: false,
                     bright: false,
                     displayProgress: false,
@@ -551,7 +502,7 @@ buster.testCase("Browser runner", {
                 var run = this.createRun({ logPassedMessages: true });
                 run.runTests(this.session);
 
-                assert.match(reporters.dots.create.args[0][0], {
+                assert.match(reporters.brief.create.args[0][0], {
                     logPassedMessages: true
                 });
             },
@@ -564,7 +515,7 @@ buster.testCase("Browser runner", {
                 });
                 run.runTests(this.session);
 
-                assert.match(reporters.dots.create.args[0][0], {
+                assert.match(reporters.brief.create.args[0][0], {
                     color: true,
                     bright: true
                 });
@@ -575,7 +526,7 @@ buster.testCase("Browser runner", {
                 var run = this.createRun({ server: "localhost:1111" });
                 run.runTests(this.session);
 
-                assert.match(reporters.dots.create.args[0][0], {
+                assert.match(reporters.brief.create.args[0][0], {
                     cwd: "http://localhost:1111/aaa-bbb/resources"
                 });
             },
@@ -585,7 +536,7 @@ buster.testCase("Browser runner", {
                 var run = this.createRun({ server: "somewhere:2524" });
                 run.runTests(this.session);
 
-                assert.match(reporters.dots.create.args[0][0], {
+                assert.match(reporters.brief.create.args[0][0], {
                     cwd: "http://somewhere:2524/aaa-bbb/resources"
                 });
             },
@@ -594,17 +545,17 @@ buster.testCase("Browser runner", {
                 var run = this.createRun();
                 run.runTests(this.session);
 
-                var reporter = reporters.dots.create.returnValues[0];
+                var reporter = reporters.brief.create.returnValues[0];
                 assert.equals(reporter.contextsInPackageName, 2);
             },
 
             "makes reporter listen for events from runner": function () {
-                this.stub(reporters.dots, "listen");
+                this.stub(reporters.brief, "listen");
                 var run = this.createRun();
                 run.runTests(this.session);
 
-                assert.calledOnce(reporters.dots.listen);
-                assert.calledWith(reporters.dots.listen, this.remoteRunner);
+                assert.calledOnce(reporters.brief.listen);
+                assert.calledWith(reporters.brief.listen, this.remoteRunner);
             }
         },
 
