@@ -1,13 +1,4 @@
 var buster = require("buster-node");
-
-buster.testRunner.onCreate(function (runner) {
-    runner.on("suite:end", function (results) {
-        process.nextTick(function () {
-            process.exit(results.ok ? 0 : 1);
-        });
-    });
-});
-
 require("./test/run-analyzer-test");
 require("./test/test-cli-test");
 require("./test/runners/node-test");
