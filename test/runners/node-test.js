@@ -95,7 +95,7 @@ buster.testCase("Node runner", {
             var config = fakeConfig(this);
             var deferred = when.defer();
             config.resolve.returns(deferred.promise);
-         
+
             this.runner.run(config, {});
             deferred.resolve({});
 
@@ -107,20 +107,23 @@ buster.testCase("Node runner", {
             // will never resolve, as it waits for all the load:???
             // events (one or more of which will not be emitted when
             // the configuration fails loading the resource set)
-            this.stubBeforeRunHook(); // Unresolved promise
             var config = fakeConfig(this);
             var deferred = when.defer();
-            config.resolve.returns(deferred);
+            config.resolve.returns(deferred.promise);
             var done = this.spy();
 
             this.runner.run(config, {}, done);
-            deferred.reject({ message: "Failed loading *-tests.js" });
+            var msg = "Unknown configuration option 'foo'";
+            deferred.reject({ message: msg });
 
             assert.calledOnce(done);
+            assert.equals(done.getCall(0).args[0].code, 70);
+            assert.equals(done.getCall(0).args[0].message, msg);
         }
     },
 
     "before run hook": {
+
         "rejects if extension hooks throws": function () {
             var config = fakeConfig(this);
             config.runExtensionHook.throws();
@@ -218,7 +221,8 @@ buster.testCase("Node runner", {
         },
 
         "processes resource sets with existing manifest": function () {
-            this.stub(fs, "readFile").yields(null, '{"/somewhere.js": ["123"]}');
+            this.stub(fs, "readFile").yields(null,
+                '{"/somewhere.js": ["123"]}');
 
             this.runner.run(this.config, {});
             var rs = { process: this.stub().returns({ then: function () {} }) };
