@@ -102,7 +102,7 @@ buster.testCase("Node runner", {
             assert.called(test.autoRun);
         },
 
-        "=>yields config resolution error to done callback": function () {
+        "yields config resolution error to done callback": function () {
             // If the configuration fails to load, the beforeRunHook
             // will never resolve, as it waits for all the load:???
             // events (one or more of which will not be emitted when
