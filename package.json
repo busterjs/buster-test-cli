@@ -45,8 +45,8 @@
         "bane": "~0.2",
         "stack-filter": "~0.1",
         "ejs": "~0.4",
-        "when": "http://github.com/cujojs/when/tarball/1.3.0",
-        "lodash": "~0.8",
+        "when": "http://github.com/cujojs/when/tarball/1.8.1",
+        "lodash": "~1.0",
         "platform": "~1.0"
     },
     "devDependencies": {

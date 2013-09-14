@@ -8,11 +8,12 @@ buster.testCase("Remote runner", {
     setUp: function () {
         this.clock = this.useFakeTimers();
         this.emitter = bane.createEventEmitter();
+        this.emitter.onSlaveDeath = function () {};
 
-        this.emit = function (event, data, clientId) {
+        this.emit = function (event, data, slaveId) {
             return this.emitter.emit(event, {
                 data: data,
-                clientId: clientId
+                slaveId: slaveId
             });
         };
 
@@ -43,22 +44,6 @@ buster.testCase("Remote runner", {
             var config = { config: 42 };
             this.runner = remoteRunner.create(this.emitter, logger, config);
             this.slaves = [{ id: 1 }, { id: 2 }];
-        },
-
-        "emits tests:run when setting slaves": function (done) {
-            this.emitter.on("tests:run", done(function (config) {
-                assert.isObject(config);
-            }));
-
-            this.runner.setSlaves(this.slaves);
-        },
-
-        "emits tests:run with config": function (done) {
-            this.emitter.on("tests:run", done(function (config) {
-                assert.equals(config, { config: 42 });
-            }));
-
-            this.runner.setSlaves(this.slaves);
         },
 
         "sets client info when setting slaves": function () {
@@ -270,7 +255,7 @@ buster.testCase("Remote runner", {
         }
     },
 
-    "when context is completed": {
+    "//when context is completed": {
         setUp: function () {
             var logger = { debug: this.stub() };
             this.runner = remoteRunner.create(this.emitter, logger);
@@ -662,7 +647,7 @@ buster.testCase("Remote runner", {
             refute.called(listener);
         },
 
-        "completes run with only one client if other timed out": function () {
+        "// completes run with only one client if other timed out": function () {
             this.connect();
             var listener = this.spy();
             this.runner.on("suite:end", listener);

@@ -12,6 +12,13 @@ var cliHelper = require("buster-cli/lib/test-helper");
 var remoteRunner = require("../../lib/runners/browser/remote-runner");
 var reporters = require("buster-test").reporters;
 
+function mkrs() {
+    return {
+        length: 0,
+        addResource: function () {}
+    };
+}
+
 function fakeConfig(tc) {
     return bane.createEventEmitter({
         resolve: tc.stub().returns(when.defer().promise),
@@ -21,12 +28,16 @@ function fakeConfig(tc) {
 
 function fakeSession(tc) {
     return bane.createEventEmitter({
-        onStart: tc.stub(),
-        onLoad: tc.stub().yields([{}]),
-        onEnd: tc.stub(),
-        onUnload: tc.stub(),
-        onAbort: tc.stub(),
-        end: tc.stub()
+        getSession: tc.stub().returns({
+            resourcesPath: ""
+        }),
+        initialize: tc.stub(),
+        // onStart: tc.stub(),
+        // onLoad: tc.stub().yields([{}]),
+        // onEnd: tc.stub(),
+        // onUnload: tc.stub(),
+        onSessionAbort: tc.stub(),
+        endSession: tc.stub()
     });
 }
 
@@ -65,26 +76,26 @@ buster.testCase("Browser runner", {
     "server client": {
         setUp: function () {
             var client = fakeServerClient(this);
-            this.stub(ramp, "createServerClient").returns(client);
+            this.stub(ramp, "createRampClient").returns(client);
         },
 
         "creates server client": function () {
             this.runner.run(fakeConfig(this), {});
 
-            assert.calledOnce(ramp.createServerClient);
+            assert.calledOnce(ramp.createRampClient);
         },
 
         "creates client for configured location": function () {
             this.runner.run(fakeConfig(this), { server: "http://127.0.0.1:1200" });
 
-            assert.calledWith(ramp.createServerClient, "1200", "127.0.0.1");
+            assert.calledWith(ramp.createRampClient, "1200", "127.0.0.1");
         }
     },
 
-    "session creation": {
+    "//session creation": {
         setUp: function () {
             var client = this.serverClient = fakeServerClient(this);
-            this.stub(ramp, "createServerClient").returns(this.serverClient);
+            this.stub(ramp, "createRampClient").returns(this.serverClient);
             this.config = fakeConfig(this);
 
             referee.add("sessionOptions", {
@@ -103,7 +114,7 @@ buster.testCase("Browser runner", {
             refute.called(this.serverClient.createSession);
         },
 
-        "with configured resource set": function () {
+        "//with configured resource set": function (done) {
             this.config.resolve.returns(when([42]));
 
             this.runner.run(this.config, {});
@@ -112,7 +123,7 @@ buster.testCase("Browser runner", {
             assert.calledWith(this.serverClient.createSession, [42]);
         },
 
-        "with uncached resource set": function () {
+        "//with uncached resource set": function () {
             var resourceSet = [
                 { path: "/a.js", cacheable: true },
                 { path: "/b.js", cacheable: false },
@@ -211,7 +222,7 @@ buster.testCase("Browser runner", {
     "abort": {
         setUp: function () {
             this.serverClient = fakeServerClient(this);
-            this.stub(ramp, "createServerClient").returns(this.serverClient);
+            this.stub(ramp, "createRampClient").returns(this.serverClient);
             this.config = fakeConfig(this);
         },
 
@@ -227,7 +238,7 @@ buster.testCase("Browser runner", {
             deferred.resolve({});
         },
 
-        "ends session if running": function (done) {
+        "//ends session if running": function (done) {
             this.config.resolve.returns(when([]));
             var session = fakeSession(this);
             var deferred = when.defer();
@@ -235,7 +246,7 @@ buster.testCase("Browser runner", {
 
             var run = this.runner.run(this.config, {}, function () {
                 process.nextTick(done(function () {
-                    assert.calledOnce(session.end);
+                    assert.calledOnce(session.endSession);
                 }));
             });
 
@@ -274,7 +285,7 @@ buster.testCase("Browser runner", {
             this.run = testRun.create(fakeConfig(this), {}, this.logger);
         },
 
-        "listens for uncaught exceptions": function () {
+        "//listens for uncaught exceptions": function () {
             this.run.runTests(this.session);
             this.session.emit("uncaughtException", { data: { message: "Oh" } });
 
@@ -282,7 +293,7 @@ buster.testCase("Browser runner", {
             assert.stderr("Oh");
         },
 
-        "does not listen for uncaught exceptions if already handled": function () {
+        "//does not listen for uncaught exceptions if already handled": function () {
             this.session.on("uncaughtException", function () {});
             this.run.runTests(this.session);
             this.session.emit("uncaughtException", { data: { message: "Oh" } });
@@ -291,7 +302,7 @@ buster.testCase("Browser runner", {
             refute.stderr("Oh");
         },
 
-        "prints uncaught exceptions without colors": function () {
+        "//prints uncaught exceptions without colors": function () {
             this.run.runTests(this.session);
             this.session.emit("uncaughtException", { data: { message: "Oh" } });
 
@@ -299,7 +310,7 @@ buster.testCase("Browser runner", {
             refute.match(this.stderr, "\x1b");
         },
 
-        "prints uncaught exceptions in yellow": function () {
+        "//prints uncaught exceptions in yellow": function () {
             var run = testRun.create(fakeConfig(this), { color: true }, this.logger);
             run.runTests(this.session);
             this.session.emit("uncaughtException", { data: { message: "Oh" } });
@@ -308,7 +319,7 @@ buster.testCase("Browser runner", {
             assert.equals(stderr.indexOf("\x1b[33mUncaught exception:"), 0);
         },
 
-        "prints uncaught exceptions in bright yellow": function () {
+        "//prints uncaught exceptions in bright yellow": function () {
             var run = testRun.create(fakeConfig(this), {
                 color: true,
                 bright: true
@@ -334,7 +345,7 @@ buster.testCase("Browser runner", {
             };
         },
 
-        "testRun extension hook": {
+        "//testRun extension hook": {
             "triggers with runners": function () {
                 var config = fakeConfig(this);
                 var run = testRun.create(config, {}, this.logger);
@@ -362,7 +373,7 @@ buster.testCase("Browser runner", {
             }
         },
 
-        "remote runner": {
+        "//remote runner": {
             "creates remote runner with slaves": function () {
                 this.stub(remoteRunner, "setSlaves");
                 var run = testRun.create(fakeConfig(this), {}, this.logger);
@@ -421,7 +432,7 @@ buster.testCase("Browser runner", {
             })
         },
 
-        "with no connected slaves": {
+        "//with no connected slaves": {
             setUp: function () {
                 this.session.onLoad.yields([]);
                 this.run = testRun.create(fakeConfig(this), {}, this.logger);
@@ -442,7 +453,7 @@ buster.testCase("Browser runner", {
                 }));
             },
 
-            "ends session": function () {
+            "//ends session": function () {
                 this.run.runTests(this.session, function () {});
                 assert.calledOnce(this.session.end);
             },
@@ -456,7 +467,7 @@ buster.testCase("Browser runner", {
                 this.spy(reporters.brief, "create");
             },
 
-            "defaults to brief reporter": function () {
+            "//defaults to brief reporter": function () {
                 var run = this.createRun();
                 run.runTests(this.session);
 
@@ -467,7 +478,7 @@ buster.testCase("Browser runner", {
                 });
             },
 
-            "loads reporter using buster-test's loader": function () {
+            "//loads reporter using buster-test's loader": function () {
                 this.spy(reporters, "load");
                 var run = this.createRun({ reporter: "brief" });
                 run.runTests(this.session);
@@ -475,7 +486,7 @@ buster.testCase("Browser runner", {
                 assert.calledOnceWith(reporters.load, "brief");
             },
 
-            "uses logger as output stream": function () {
+            "//uses logger as output stream": function () {
                 var run = this.createRun();
                 run.runTests(this.session);
                 var ostream = reporters.brief.create.args[0][0].outputStream;
@@ -486,7 +497,7 @@ buster.testCase("Browser runner", {
                 assert.stdout(".. OK!");
             },
 
-            "initializes reporter": function () {
+            "//initializes reporter": function () {
                 var run = this.createRun();
                 run.runTests(this.session);
 
@@ -498,7 +509,7 @@ buster.testCase("Browser runner", {
                 });
             },
 
-            "logs messages for passed tests": function () {
+            "//logs messages for passed tests": function () {
                 var run = this.createRun({ logPassedMessages: true });
                 run.runTests(this.session);
 
@@ -507,7 +518,7 @@ buster.testCase("Browser runner", {
                 });
             },
 
-            "initializes reporter with custom properties": function () {
+            "//initializes reporter with custom properties": function () {
                 var run = this.createRun({
                     color: true,
                     bright: true,
@@ -521,7 +532,7 @@ buster.testCase("Browser runner", {
                 });
             },
 
-            "builds cwd from session server and root": function () {
+            "//builds cwd from session server and root": function () {
                 this.session.resourcesPath = "/aaa-bbb/resources";
                 var run = this.createRun({ server: "localhost:1111" });
                 run.runTests(this.session);
@@ -531,7 +542,7 @@ buster.testCase("Browser runner", {
                 });
             },
 
-            "builds cwd from non-default session server and root": function () {
+            "//builds cwd from non-default session server and root": function () {
                 this.session.resourcesPath = "/aaa-bbb/resources";
                 var run = this.createRun({ server: "somewhere:2524" });
                 run.runTests(this.session);
@@ -541,7 +552,7 @@ buster.testCase("Browser runner", {
                 });
             },
 
-            "sets number of contexts in package name": function () {
+            "//sets number of contexts in package name": function () {
                 var run = this.createRun();
                 run.runTests(this.session);
 
@@ -549,7 +560,7 @@ buster.testCase("Browser runner", {
                 assert.equals(reporter.contextsInPackageName, 2);
             },
 
-            "makes reporter listen for events from runner": function () {
+            "//makes reporter listen for events from runner": function () {
                 this.stub(reporters.brief, "listen");
                 var run = this.createRun();
                 run.runTests(this.session);
@@ -565,13 +576,13 @@ buster.testCase("Browser runner", {
                 this.config = this.run.config;
             },
 
-            "triggers beforeRun": function () {
+            "//triggers beforeRun": function () {
                 this.run.runTests(this.session, function () {});
                 assert.called(this.config.runExtensionHook);
                 assert.calledWith(this.config.runExtensionHook, "beforeRun");
             },
 
-            "aborts if beforeRun hook throws": function () {
+            "//aborts if beforeRun hook throws": function () {
                 this.config.runExtensionHook.throws();
                 this.run.runTests(this.session, function () {});
 
@@ -597,7 +608,7 @@ buster.testCase("Browser runner", {
                 });
             },
 
-            "ends session on suite:end": function () {
+            "//ends session on suite:end": function () {
                 this.run.runTests(this.session, function () {});
                 this.remoteRunner.emit("suite:end");
 
@@ -611,7 +622,7 @@ buster.testCase("Browser runner", {
                 refute.equals(this.stdout, stdout);
             },
 
-            "calls run callback when done": function () {
+            "//calls run callback when done": function () {
                 var callback = this.spy();
 
                 this.run.runTests(this.session, callback);
@@ -642,7 +653,7 @@ buster.testCase("Browser runner", {
         },
 
         "session preparation error": function (done) {
-            this.stub(ramp, "createServerClient").returns({
+            this.stub(ramp, "createRampClient").returns({
                 connect: this.stub().returns(when({}))
             });
             var config = fakeConfig(this);
@@ -660,21 +671,21 @@ buster.testCase("Browser runner", {
             this.run.start();
         },
 
-        "session creation error": function () {
+        "//session creation error": function () {
             this.sessionDeferred.reject({ message: "Djeez" });
             var callback = this.spy();
 
-            this.run.startSession(this.client, callback)([]);
+            this.run.startSession(this.client, callback)(mkrs());
 
             assert.calledOnce(callback);
             assert.match(callback.args[0][0].message, "Failed creating session");
         },
 
-        "yields understandable error if server cannot be reached": function () {
+        "//yields understandable error if server cannot be reached": function () {
             this.sessionDeferred.reject(new Error("ECONNREFUSED, Connection refused"));
             var callback = this.spy();
 
-            this.run.startSession(this.client, callback)([]);
+            this.run.startSession(this.client, callback)(mkrs());
 
             var message = callback.args[0][0].message;
             assert.match(message, "Unable to connect to server");
@@ -683,9 +694,9 @@ buster.testCase("Browser runner", {
             assert.equals(callback.args[0][0].code, 75);
         },
 
-        "files": {
+        "//files": {
             setUp: function () {
-                this.stub(ramp, "createServerClient").returns(this.client);
+                this.stub(ramp, "createRampClient").returns(this.client);
                 this.config = fakeConfig(this);
                 this.configDeferred = when.defer();
                 this.config.resolve.returns(this.configDeferred);
@@ -731,9 +742,9 @@ buster.testCase("Browser runner", {
 
     // TODO: Test that the actual message from the abort event is passed
     // correctly.
-    "ends session when session aborts itself": function (done) {
+    "//ends session when session aborts itself": function (done) {
         var serverClient = fakeServerClient(this);
-        this.stub(ramp, "createServerClient").returns(serverClient);
+        this.stub(ramp, "createRampClient").returns(serverClient);
 
         var config = fakeConfig(this);
         config.resolve.returns(when([]));
