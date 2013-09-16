@@ -375,6 +375,16 @@ buster.testCase("Test CLI", {
         "transfers filters": testArgumentOption(
             ["//should-"],
             { filters: ["//should-"] }
+        ),
+
+        "sets random option": testArgumentOption(
+            ["-d"],
+            { random: false }
+        ),
+
+        "sets random seed option": testArgumentOption(
+            ["-S", "zzz666"],
+            { randomSeed: "zzz666" }
         )
     },
 
