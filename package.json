@@ -13,6 +13,10 @@
         "email": "august@augustl.com",
         "url": "http://augustl.com"
     }, {
+        "name": "Daniel Wittner",
+        "email": "d.wittner@gmx.de",
+        "url": "https://github.com/dwittner"
+    }, {
         "name": "Matthias Kling",
         "email": "m.kling@sprax.eu"
     }, {
@@ -24,7 +28,7 @@
         "email": "stein.magnus@jodal.no",
         "url": "http://jodal.no"
     }, {
-        "name": "Tobias Ebnöther",
+        "name": "Tobias Ebnöther",
         "email": "ebi@gorn.ch"
     }],
     "main": "./lib/test-cli",
