@@ -11,13 +11,6 @@ var cliHelper = require("buster-cli/test/test-helper");
 var bane = require("bane");
 var path = require("path");
 
-function fakeConfig(tc) {
-    return bane.createEventEmitter({
-        resolve: tc.stub().returns(when()),
-        runExtensionHook: tc.stub()
-    });
-}
-
 function createNodeRunner() {
     var stdout = cliHelper.writableStream("stdout");
     var stderr = cliHelper.writableStream("stderr");
@@ -34,6 +27,14 @@ function resourceSet(tc, rootPath, loadPaths) {
             then: tc.stub().yields()
         })
     };
+}
+
+function fakeConfig(tc) {
+    var rs = resourceSet(tc, "/here", ["hey.js"]);
+    return bane.createEventEmitter({
+        resolve: tc.stub().returns(when(rs)),
+        runExtensionHook: tc.stub()
+    });
 }
 
 buster.testCase("Node runner", {
@@ -84,7 +85,6 @@ buster.testCase("Node runner", {
         "does not autoRun if before run hook is not processed": function () {
             this.stub(test, "autoRun");
             var config = fakeConfig(this);
-            config.resolve.returns({});
             this.runner.run(config, {});
             refute.called(test.autoRun);
         },
@@ -97,7 +97,8 @@ buster.testCase("Node runner", {
             config.resolve.returns(deferred.promise);
 
             this.runner.run(config, {});
-            deferred.resolve({});
+            var rs = resourceSet(this, "/here", ["hey.js"]);
+            deferred.resolve(rs);
 
             assert.called(test.autoRun);
         },
@@ -196,8 +197,6 @@ buster.testCase("Node runner", {
 
         "requires absolute paths": function (done) {
             this.stubBeforeRunHook().resolve([]);
-            var rs = resourceSet(this, "/here", ["hey.js"]);
-            this.config.resolve.returns(when(rs));
 
             this.runner.run(this.config, {}, done(function (err) {
                 assert.match(err, {
@@ -265,6 +264,41 @@ buster.testCase("Node runner", {
             beforeResolver.resolve([{}]);
 
             refute.called(test.autoRun);
+        },
+
+        "call done when aborted": function () {
+            var beforeResolver = this.stubBeforeRunHook();
+            var done = this.spy();
+            var run = this.runner.run(this.config, {}, done);
+
+            run.abort({ message: "Oh snap" });
+            beforeResolver.resolve([{}]);
+
+            assert.calledOnce(done);
+            assert.calledWithExactly(done, { code: 70, message: "Oh snap" });
+        },
+
+        "does not run tests in case of no matching test files": function () {
+            var beforeResolver = this.stubBeforeRunHook();
+            this.config.resolve.returns(when(resourceSet(this, "/here", [])));
+            var run = this.runner.run(this.config, {});
+
+            beforeResolver.resolve([{}]);
+
+            refute.called(test.autoRun);
+        },
+
+        "call done in case of no matching test files": function () {
+            var beforeResolver = this.stubBeforeRunHook();
+            this.config.resolve.returns(when(resourceSet(this, "/here", [])));
+            var done = this.spy();
+            var run = this.runner.run(this.config, {}, done);
+
+            beforeResolver.resolve([{}]);
+
+            assert.calledOnce(done);
+            assert.calledWithExactly(done);
         }
+
     }
 });
