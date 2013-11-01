@@ -8,7 +8,7 @@ var browserRunner = require("../../lib/runners/browser");
 var testRun = browserRunner.testRun;
 var ramp = require("ramp");
 var when = require("when");
-var cliHelper = require("buster-cli/lib/test-helper");
+var cliHelper = require("buster-cli/test/test-helper");
 var remoteRunner = require("../../lib/runners/browser/remote-runner");
 var reporters = require("buster-test").reporters;
 

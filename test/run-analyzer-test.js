@@ -1,7 +1,7 @@
 var buster = require("buster-node");
 var assert = buster.assert;
 var runAnalyzer = require("../lib/run-analyzer");
-var cliHelper = require("buster-cli/lib/test-helper");
+var cliHelper = require("buster-cli/test/test-helper");
 var streamLogger = require("stream-logger");
 
 buster.testCase("Analyzer helper", {

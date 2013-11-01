@@ -7,7 +7,7 @@ var testRun = nodeRunner.testRun;
 var streamLogger = require("stream-logger");
 var when = require("when");
 var fs = require("fs");
-var cliHelper = require("buster-cli/lib/test-helper");
+var cliHelper = require("buster-cli/test/test-helper");
 var bane = require("bane");
 var path = require("path");
 
