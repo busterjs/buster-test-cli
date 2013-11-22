@@ -114,6 +114,21 @@ buster.testCase("Browser runner", {
             refute.called(this.serverClient.createSession);
         },
 
+        "not if no matching test files": function () {
+            var resourceSet = [
+                { path: '/buster/bundle-0.7.js', cacheable: true},
+                { path: '/buster/compat-0.7.js', cacheable: true},
+                { path: '/buster/capture-server-wiring.js', cacheable: true}
+            ];
+            this.config.resolve.returns(when(resourceSet));
+
+            this.runner.run(this.config, {
+                cacheable: true
+            });
+
+            refute.called(this.serverClient.createSession);
+        },
+
         "//with configured resource set": function (done) {
             this.config.resolve.returns(when([42]));
 
