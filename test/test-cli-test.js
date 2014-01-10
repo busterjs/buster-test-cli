@@ -526,10 +526,10 @@ buster.testCase("Test CLI", {
             assert.calledOnceWith(this.exit, 0);
         },
 
-        "with code 1 when no tests were run": function () {
+        "with code 0 when no tests were run": function () {
             this.results = [[null, { ok: true, tests: 0 }]];
             this.cli.runConfigGroups([this.fakeConfig], {}, this.done);
-            assert.calledOnceWith(this.exit, 1);
+            assert.calledOnceWith(this.exit, 0);
         },
 
         "with code 1 when single test configuration fails": function () {
