@@ -428,16 +428,18 @@ buster.testCase("Test CLI", {
             this.config = cliHelper.writeFile(
                 "buster2.js",
                 "var config = module.exports;" +
-                    "config.server = { environment: 'browser' }"
+                    "config['browser tests'] = { environment: 'browser' };" +
+                    "config['node tests'] = { environment: 'node' };"
             );
         },
 
         tearDown: function () {
             process.env.BUSTER_TEST_OPT = this.busterOpt;
             if (this.busterOptBlank) { delete process.env.BUSTER_TEST_OPT; }
+            delete process.env.BUSTER_REPORTER;
         },
 
-        "//adds CLI options set with $BUSTER_TEST_OPT": function (done) {
+        "adds CLI options set with $BUSTER_TEST_OPT": function (done) {
             process.env.BUSTER_TEST_OPT = "--color dim -r specification";
             this.cli.run(["-c", this.config], done(function () {
                 assert.calledOnce(this.runners.node.run);
@@ -445,6 +447,16 @@ buster.testCase("Test CLI", {
                     color: true,
                     bright: false,
                     reporter: "specification"
+                });
+            }.bind(this)));
+        },
+
+        "adds CLI options set with $BUSTER_REPORTER": function (done) {
+            process.env.BUSTER_REPORTER = "tap";
+            this.cli.run(["-c", this.config], done(function () {
+                assert.calledOnce(this.runners.node.run);
+                assert.match(this.runners.node.run.args[0][1], {
+                    reporter: "tap"
                 });
             }.bind(this)));
         },
