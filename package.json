@@ -54,7 +54,8 @@
         "platform": "~1.0"
     },
     "devDependencies": {
-        "buster-node": "",
+        "buster-node": "*",
+        "referee": "*",
         "stream-logger": ">=0.3.0"
     }
 }
