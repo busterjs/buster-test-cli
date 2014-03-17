@@ -37,7 +37,8 @@
         "url": "git://gitorious.org/buster/buster-test-cli.git"
     },
     "scripts": {
-        "test": "node run-tests.js"
+        "test": "node run-tests.js",
+        "test-debug": "node --debug-brk run-tests.js"
     },
     "dependencies": {
         "buster-analyzer": "=0.5.0",
