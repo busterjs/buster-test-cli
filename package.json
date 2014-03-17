@@ -34,7 +34,7 @@
     "main": "./lib/test-cli",
     "repository": {
         "type": "git",
-        "url": "git://gitorious.org/buster/buster-test-cli.git"
+        "url": "https://github.com/busterjs/buster-test-cli.git"
     },
     "scripts": {
         "test": "node run-tests.js",
