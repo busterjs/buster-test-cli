@@ -7,6 +7,10 @@ Library that supports the `buster-test` command line interface.
 
 ##Changelog
 
+**0.8.4** (17.09.2014)
+
+* Fix for issue [#416 - buster-server crash with IE 11 on W7 only if there is two browsers captured](https://github.com/busterjs/buster/issues/416)
+
 **0.8.3** (05.05.2014)
 
 * Fix for issue [#376 - buster-test -t for hybrid tests](https://github.com/busterjs/buster/issues/376)
