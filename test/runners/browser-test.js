@@ -445,6 +445,16 @@ buster.testCase("Browser runner", {
                 captureConsole: false
             }, {
                 captureConsole: false
+            }),
+
+            "allows focus rockets by default": testRemoteRunnerOption({}, {
+                allowFocusMode: true
+            }),
+
+            "configures to ground space flight": testRemoteRunnerOption({
+                allowFocusMode: false
+            }, {
+                allowFocusMode: false
             })
         },
 
