@@ -393,7 +393,7 @@ buster.testCase("Test CLI", {
         ),
 
         "does not allow focus rockets": testArgumentOption(
-            ["--no-focus-mode"],
+            ["--fail-on-focus"],
             { allowFocusMode: false }
         )
     },
