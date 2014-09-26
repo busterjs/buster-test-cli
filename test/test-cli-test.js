@@ -385,6 +385,16 @@ buster.testCase("Test CLI", {
         "sets random seed option": testArgumentOption(
             ["-S", "zzz666"],
             { randomSeed: "zzz666" }
+        ),
+
+        "allows focus rockets": testArgumentOption(
+            [],
+            { allowFocusMode: true }
+        ),
+
+        "does not allow focus rockets": testArgumentOption(
+            ["--fail-on-focus"],
+            { allowFocusMode: false }
         )
     },
 

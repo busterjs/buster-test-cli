@@ -50,12 +50,8 @@ function fakeServerClient(tc) {
 
 function testRemoteRunnerOption(options, expected) {
     return function () {
-        options = options || {};
         var run = testRun.create(fakeConfig(this), options, this.logger);
-
-        run.runTests(this.session);
-
-        var actual = remoteRunner.create.args[0][2];
+        var actual = run.getClientRunConfig();
         assert.match(actual, expected);
     };
 }
@@ -400,8 +396,10 @@ buster.testCase("Browser runner", {
                 assert.calledWith(remoteRunner.create, this.session);
                 assert.calledOnce(this.remoteRunner.setSlaves);
                 assert.calledWith(this.remoteRunner.setSlaves, [{ id: 42 }]);
-            },
+            }
+        },
 
+        "remote configuration": {
             "defaults failOnNoAssertions to true": testRemoteRunnerOption({}, {
                 failOnNoAssertions: true
             }),
@@ -422,12 +420,15 @@ buster.testCase("Browser runner", {
                 autoRun: false
             }),
 
-            "defaults filters to null": function () {
+            "defaults filters to undefined": function () {
+                // "pretty" implementation needs https://github.com/busterjs/samsam/pull/9
+                // "defaults filters to undefined": testRemoteRunnerOption({}, {
+                //    filters: undefined
+                // }),
+
                 var run = testRun.create(fakeConfig(this), {}, this.logger);
-
-                run.runTests(this.session);
-
-                refute.defined(remoteRunner.create.args[0][2].filters);
+                var actual = run.getClientRunConfig();
+                refute.defined(actual.filters);
             },
 
             "includes filters": testRemoteRunnerOption({
@@ -444,6 +445,16 @@ buster.testCase("Browser runner", {
                 captureConsole: false
             }, {
                 captureConsole: false
+            }),
+
+            "allows focus rockets by default": testRemoteRunnerOption({}, {
+                allowFocusMode: true
+            }),
+
+            "configures to ground space flight": testRemoteRunnerOption({
+                allowFocusMode: false
+            }, {
+                allowFocusMode: false
             })
         },
 
