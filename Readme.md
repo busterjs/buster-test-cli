@@ -7,6 +7,10 @@ Library that supports the `buster-test` command line interface.
 
 ##Changelog
 
+**0.8.5** (21.10.2014)
+
+* New option `--fail-on-focus`to disable focus rocket [#327 - Command line switch to fail on focus rocket](https://github.com/busterjs/buster/issues/327)
+
 **0.8.4** (17.09.2014)
 
 * Fix for issue [#416 - buster-server crash with IE 11 on W7 only if there is two browsers captured](https://github.com/busterjs/buster/issues/416)
