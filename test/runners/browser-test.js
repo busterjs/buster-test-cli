@@ -410,15 +410,53 @@ buster.testCase("Browser runner", {
                 failOnNoAssertions: false
             }),
 
-            "defaults auto-run to true": testRemoteRunnerOption({}, {
-                autoRun: true
-            }),
+            "defaults auto-run to true": testRemoteRunnerOption({}, { autoRun: true }),
 
             "configures to not auto-run": testRemoteRunnerOption({
                 autoRun: false
             }, {
                 autoRun: false
             }),
+
+            "auto-run": {
+                "defaults to true": testRemoteRunnerOption({}, { autoRun: true }),
+                "overrides to not auto-run via options": testRemoteRunnerOption({ autoRun: false }, { autoRun: false }),
+                "overrides to not auto-run via config": function () {
+                    // this tests that we can have autoRun: false in buster.js config file
+                    var run = testRun.create(fakeConfig(this), {}, this.logger);
+                    run.config = {
+                        autoRun: false
+                    };
+
+                    var actual = run.getClientRunConfig();
+                    refute(actual.autoRun);
+                },
+                "overrides to not auto-run via config.options": function () {
+                    // this tests that buster-amd can set conf.options.autoRun = false during its configure() phase
+                    // this also checks that run.config.options is merged into run.options
+                    var run = testRun.create(fakeConfig(this), { autoRun: true }, this.logger);
+                    run.config = {
+                        options: {
+                            autoRun: false
+                        }
+                    };
+
+                    var actual = run.getClientRunConfig();
+                    refute(actual.autoRun); // config.options.autoRun - not options.autoRun
+                },
+                "config.autoRun more important than config.options.autoRun": function () {
+                    var run = testRun.create(fakeConfig(this), {}, this.logger);
+                    run.config = {
+                        autoRun: false,
+                        options: {
+                            autoRun: true
+                        }
+                    };
+
+                    var actual = run.getClientRunConfig();
+                    refute(actual.autoRun); // config.autoRun - not config.options.autoRun
+                }
+            },
 
             "defaults filters to undefined": function () {
                 // "pretty" implementation needs https://github.com/busterjs/samsam/pull/9
