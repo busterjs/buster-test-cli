@@ -7,6 +7,10 @@ Library that supports the `buster-test` command line interface.
 
 ##Changelog
 
+**0.8.6** (22.10.2014)
+
+* [allowing autoRun to be overridden properly](https://github.com/busterjs/buster-test-cli/pull/15)
+
 **0.8.5** (21.10.2014)
 
 * New option `--fail-on-focus`to disable focus rocket [#327 - Command line switch to fail on focus rocket](https://github.com/busterjs/buster/issues/327)
