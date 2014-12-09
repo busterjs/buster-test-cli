@@ -56,7 +56,7 @@
     },
     "devDependencies": {
         "buster-node": "*",
-        "referee": "*",
+        "referee": "~1.0",
         "stream-logger": ">=0.3.0"
     }
 }
