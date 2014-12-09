@@ -7,6 +7,10 @@ Library that supports the `buster-test` command line interface.
 
 ##Changelog
 
+**0.8.7** (09.12.2014)
+
+* Fix for issue [#429 - No reporter prints `uncaughtException` details in case of browser tests](https://github.com/busterjs/buster/issues/429)
+
 **0.8.6** (22.10.2014)
 
 * [allowing autoRun to be overridden properly](https://github.com/busterjs/buster-test-cli/pull/15)
