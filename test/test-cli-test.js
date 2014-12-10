@@ -119,7 +119,8 @@ buster.testCase("Test CLI", {
     "node runs": {
         setUp: function () {
             cliHelper.writeFile("buster.js", "var config = module.exports;" +
-                                "config.server = { environment: 'node' }");
+                                "config.server = { environment: 'node', " +
+                                "tests: ['test.js'] }");
         },
 
         "loads node runner": function (done) {
@@ -165,7 +166,8 @@ buster.testCase("Test CLI", {
             this.config = cliHelper.writeFile(
                 "buster2.js",
                 "var config = module.exports;" +
-                    "config.server = { environment: 'browser' }"
+                    "config.server = { environment: 'browser', " +
+                    "tests: ['test.js'] }"
             );
             this.cli = testCli.create(this.stdout, this.stderr, {
                 runners: this.runners,
@@ -259,7 +261,8 @@ buster.testCase("Test CLI", {
             this.config = cliHelper.writeFile(
                 "buster2.js",
                 "var config = module.exports;" +
-                    "config.server = { environment: 'browser' }"
+                    "config.server = { environment: 'browser', " +
+                    "tests: ['test.js'] }"
             );
         },
 
@@ -438,8 +441,10 @@ buster.testCase("Test CLI", {
             this.config = cliHelper.writeFile(
                 "buster2.js",
                 "var config = module.exports;" +
-                    "config['browser tests'] = { environment: 'browser' };" +
-                    "config['node tests'] = { environment: 'node' };"
+                    "config['browser tests'] = { environment: 'browser', " +
+                    "tests: ['test.js'] };" +
+                    "config['node tests'] = { environment: 'node', " +
+                    "tests: ['test.js'] };"
             );
         },
 
@@ -475,8 +480,14 @@ buster.testCase("Test CLI", {
             var callback = this.spy();
             this.runners.fake = { run: this.stub().returns({}) };
             this.cli.runConfigGroups([
-                { environment: "fake", id: 1, runExtensionHook: this.spy() },
-                { environment: "fake", id: 2, runExtensionHook: this.spy() }
+                { environment: "fake",
+                    id: 1,
+                    runExtensionHook: this.spy(),
+                    tests: ['test.js'] },
+                { environment: "fake",
+                    id: 2,
+                    runExtensionHook: this.spy(),
+                    tests: ['test.js'] }
             ], {}, callback);
 
             assert.calledOnce(this.runners.fake.run);
@@ -487,8 +498,14 @@ buster.testCase("Test CLI", {
             var callback = this.spy();
             this.runners.fake = { run: this.stub().yields().returns({}) };
             this.cli.runConfigGroups([
-                { environment: "fake", id: 1, runExtensionHook: this.spy() },
-                { environment: "fake", id: 2, runExtensionHook: this.spy() }
+                { environment: "fake",
+                    id: 1,
+                    runExtensionHook: this.spy(),
+                    tests: ['test.js'] },
+                { environment: "fake",
+                    id: 2,
+                    runExtensionHook: this.spy(),
+                    tests: ['test.js'] }
             ], {}, callback);
 
             assert.calledTwice(this.runners.fake.run);
@@ -501,7 +518,8 @@ buster.testCase("Test CLI", {
             this.config = cliHelper.writeFile(
                 "buster2.js",
                 "var config = module.exports;" +
-                    "config.server = { environment: 'node' }"
+                    "config.server = { environment: 'node', " +
+                    "tests: ['test.js'] }"
             );
         },
 
@@ -528,7 +546,8 @@ buster.testCase("Test CLI", {
             };
             this.fakeConfig = {
                 environment: "fake",
-                runExtensionHook: this.spy()
+                runExtensionHook: this.spy(),
+                tests: ["test.js"]
             };
         },
 
@@ -541,10 +560,8 @@ buster.testCase("Test CLI", {
         "with code 0 when two test configurations pass": function () {
             this.results = [[null, { ok: true, tests: 1 }],
                             [null, { ok: true, tests: 1 }]];
-            this.cli.runConfigGroups([this.fakeConfig, {
-                environment: "fake",
-                runExtensionHook: this.spy()
-            }], {}, this.done);
+            this.cli.runConfigGroups([this.fakeConfig,
+                                      this.fakeConfig], {}, this.done);
             assert.calledOnceWith(this.exit, 0);
         },
 
@@ -563,10 +580,8 @@ buster.testCase("Test CLI", {
         "with code 1 when one of several test configus fails": function () {
             this.results = [[null, { ok: true, tests: 1 }],
                             [null, { ok: false, tests: 1 }]];
-            this.cli.runConfigGroups([this.fakeConfig, {
-                environment: "fake",
-                runExtensionHook: this.spy()
-            }], {}, this.done);
+            this.cli.runConfigGroups([this.fakeConfig,
+                                      this.fakeConfig], {}, this.done);
             assert.calledOnceWith(this.exit, 1);
         },
 
@@ -611,7 +626,9 @@ buster.testCase("Test CLI", {
                 node: { run: this.stub().returns({}) },
                 browser: { run: this.stub().returns({}) }
             };
-            this.config = { environment: "node", runExtensionHook: this.spy() };
+            this.config = { environment: "node",
+                            runExtensionHook: this.spy(),
+                            tests: ['test.js'] };
         },
 
         "are preloaded for environment": function () {

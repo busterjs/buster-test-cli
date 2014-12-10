@@ -1,5 +1,6 @@
 var buster = require("buster-node");
 var assert = buster.assert;
+var refute = buster.refute;
 var runAnalyzer = require("../lib/run-analyzer");
 var cliHelper = require("buster-cli/test/test-helper");
 var streamLogger = require("stream-logger");
@@ -31,7 +32,7 @@ buster.testCase("Analyzer helper", {
             this.analyzer = runAnalyzer.create(this.logger, {});
             this.run = { abort: this.spy() };
             this.runner = { run: this.stub().returns(this.run) };
-            this.config = { runExtensionHook: this.spy() };
+            this.config = { runExtensionHook: this.spy(), tests: ["test.js"] };
         },
 
         "triggers analyze extension hook": function () {
@@ -47,6 +48,20 @@ buster.testCase("Analyzer helper", {
 
             assert.calledOnce(this.runner.run);
             assert.calledWith(this.runner.run, this.config, {});
+        },
+
+        "not starts run if config.tests isn't defined": function () {
+            this.config.tests = undefined;
+            this.analyzer.run(this.runner, this.config);
+
+            refute.called(this.runner.run);
+        },
+
+        "not starts run if config.tests is empty array": function () {
+            this.config.tests = [];
+            this.analyzer.run(this.runner, this.config);
+
+            refute.called(this.runner.run);
         },
 
         "aborts run if analyzer fails": function () {
