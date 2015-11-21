@@ -1,62 +1,68 @@
 {
-    "name": "buster-test-cli",
-    "version": "0.8.8",
-    "description": "Cli tools for Buster.JS test runners",
-    "homepage": "http://busterjs.org/docs/buster-test-cli",
-    "author": {
-        "name": "Christian Johansen",
-        "email": "christian@cjohansen.no",
-        "url": "http://cjohansen.no"
+  "name": "buster-test-cli",
+  "version": "0.8.8",
+  "description": "Cli tools for Buster.JS test runners",
+  "homepage": "http://busterjs.org/docs/buster-test-cli",
+  "author": {
+    "name": "Christian Johansen",
+    "email": "christian@cjohansen.no",
+    "url": "http://cjohansen.no"
+  },
+  "contributors": [
+    {
+      "name": "August Lilleaas",
+      "email": "august@augustl.com",
+      "url": "http://augustl.com"
     },
-    "contributors": [{
-        "name": "August Lilleaas",
-        "email": "august@augustl.com",
-        "url": "http://augustl.com"
-    }, {
-        "name": "Daniel Wittner",
-        "email": "d.wittner@gmx.de",
-        "url": "https://github.com/dwittner"
-    }, {
-        "name": "Matthias Kling",
-        "email": "m.kling@sprax.eu"
-    }, {
-        "name": "Sasha Depold",
-        "email": "sascha@depold.com",
-        "url": "http://depold.com"
-    }, {
-        "name": "Stein Magnus Jodal",
-        "email": "stein.magnus@jodal.no",
-        "url": "http://jodal.no"
-    }, {
-        "name": "Tobias Ebnöther",
-        "email": "ebi@gorn.ch"
-    }],
-    "main": "./lib/test-cli",
-    "repository": {
-        "type": "git",
-        "url": "https://github.com/busterjs/buster-test-cli.git"
+    {
+      "name": "Daniel Wittner",
+      "email": "d.wittner@gmx.de",
+      "url": "https://github.com/dwittner"
     },
-    "scripts": {
-        "test": "node run-tests.js",
-        "test-debug": "node --debug-brk run-tests.js"
+    {
+      "name": "Matthias Kling",
+      "email": "m.kling@sprax.eu"
     },
-    "dependencies": {
-        "buster-analyzer": "=0.5.0",
-        "ramp": "~1.0",
-        "ansi-grid": "=0.5.0",
-        "ansi-colorizer": "~1.0",
-        "buster-cli": "~0.6",
-        "buster-test": "~0.7",
-        "bane": "~1.0",
-        "stack-filter": "~1.0",
-        "ejs": "~0.4",
-        "when": "https://github.com/cujojs/when/tarball/1.8.1",
-        "lodash": "~1.0",
-        "platform": "~1.2"
+    {
+      "name": "Sasha Depold",
+      "email": "sascha@depold.com",
+      "url": "http://depold.com"
     },
-    "devDependencies": {
-        "buster-node": "*",
-        "referee": "~1.0",
-        "stream-logger": ">=0.3.0"
+    {
+      "name": "Stein Magnus Jodal",
+      "email": "stein.magnus@jodal.no",
+      "url": "http://jodal.no"
+    },
+    {
+      "name": "Tobias Ebnöther",
+      "email": "ebi@gorn.ch"
     }
+  ],
+  "main": "./lib/test-cli",
+  "license": "BSD-3-Clause",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/busterjs/buster-test-cli.git"
+  },
+  "scripts": {
+    "test": "node run-tests.js",
+    "test-debug": "node --debug-brk run-tests.js"
+  },
+  "dependencies": {
+    "buster-analyzer": "0.6.x",
+    "ramp": "https://github.com/busterjs/ramp.git#update-deps",
+    "ansi-colorizer": "1.x",
+    "buster-cli": "0.7.x",
+    "buster-test": "https://github.com/busterjs/buster-test.git#update-deps",
+    "bane": "1.x",
+    "stack-filter": "1.x",
+    "ejs": "2.x",
+    "when": "1.x",
+    "lodash": "3.x",
+    "platform": "1.x"
+  },
+  "devDependencies": {
+    "buster-node": "0.7.x",
+    "stream-logger": "1.x"
+  }
 }
