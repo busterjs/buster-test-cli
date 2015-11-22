@@ -79,6 +79,7 @@ buster.testCase("Node runner", {
             var config = fakeConfig(this);
             config.resolve.returns(when.defer());
             this.runner.run(config, {});
+
             refute.called(test.autoRun);
         },
 
@@ -89,21 +90,22 @@ buster.testCase("Node runner", {
             refute.called(test.autoRun);
         },
 
-        "autoRuns when config and beforeRunHook is resolved": function () {
+        "autoRuns when config and beforeRunHook is resolved": function (done) {
             this.stubBeforeRunHook().resolve([]);
             this.stub(test, "autoRun");
             var config = fakeConfig(this);
             var deferred = when.defer();
             config.resolve.returns(deferred.promise);
 
-            this.runner.run(config, {});
+            this.runner.run(config, {}, function () {
+                assert.called(test.autoRun);
+                done();
+            });
             var rs = resourceSet(this, "/here", ["hey.js"]);
             deferred.resolve(rs);
-
-            assert.called(test.autoRun);
         },
 
-        "yields config resolution error to done callback": function () {
+        "yields config resolution error to done callback": function (done) {
             // If the configuration fails to load, the beforeRunHook
             // will never resolve, as it waits for all the load:???
             // events (one or more of which will not be emitted when
@@ -111,15 +113,15 @@ buster.testCase("Node runner", {
             var config = fakeConfig(this);
             var deferred = when.defer();
             config.resolve.returns(deferred.promise);
-            var done = this.spy();
 
-            this.runner.run(config, {}, done);
+            this.runner.run(config, {}, function (err) {
+                assert.equals(err.code, 70);
+                assert.equals(err.message, msg);
+                done();
+            });
+
             var msg = "Unknown configuration option 'foo'";
-            deferred.reject({ message: msg });
-
-            assert.calledOnce(done);
-            assert.equals(done.getCall(0).args[0].code, 70);
-            assert.equals(done.getCall(0).args[0].message, msg);
+            deferred.reject(new Error(msg));
         }
     },
 
@@ -149,14 +151,15 @@ buster.testCase("Node runner", {
     },
 
     "testRun extension hook": {
-        "fires with test runner": function () {
+        "fires with test runner": function (done) {
             this.stubBeforeRunHook().resolve([]);
             this.stub(test, "autoRun");
             var config = fakeConfig(this);
-            this.runner.run(config, {});
-            test.autoRun.yieldTo("start", { id: 42 });
-
-            assert.calledWith(config.runExtensionHook, "testRun", { id: 42 });
+            this.runner.run(config, {}, function () {
+                test.autoRun.yieldTo("start", { id: 42 });
+                assert.calledWith(config.runExtensionHook, "testRun", { id: 42 });
+                done();
+            });
         }
     },
 
@@ -176,23 +179,23 @@ buster.testCase("Node runner", {
             test.testContext.listeners = this.contextListeners;
         },
 
-        "registers listener for created test cases": function () {
+        "registers listener for created test cases": function (done) {
             this.stubBeforeRunHook().resolve([]);
-            this.runner.run(this.config, {});
-
-            test.testContext.emit("create", { id: 42 });
-
-            assert.calledOnce(this.autoRunner, { id: 42 });
+            this.runner.run(this.config, {}, function () {
+                test.testContext.emit("create", { id: 42 });
+                assert.calledOnce(this.autoRunner, { id: 42 });
+                done();
+            }.bind(this));
         },
 
-        "calls done callback when complete": function () {
+        "calls done callback when complete": function (done) {
             this.stubBeforeRunHook().resolve([]);
-            var callback = this.spy();
             test.autoRun.yieldsTo("end", { ok: true, tests: 42 });
-            this.runner.run(this.config, {}, callback);
-
-            assert.calledOnce(callback);
-            assert.calledWith(callback, null, { ok: true, tests: 42 });
+            this.runner.run(this.config, {}, function (err, res) {
+                assert.isNull(err);
+                assert.equals(res, { ok: true, tests: 42 });
+                done();
+            });
         },
 
         "requires absolute paths": function (done) {
@@ -230,74 +233,77 @@ buster.testCase("Node runner", {
             assert.calledWith(rs.process, { "/somewhere.js": ["123"] });
         },
 
-        "writes manifest when successful": function () {
+        "writes manifest when successful": function (done) {
             this.stubBeforeRunHook().resolve([]);
-            this.runner.run(this.config, {});
-
-            assert.calledOnce(fs.writeFileSync);
+            this.runner.run(this.config, {}, function () {
+                assert.calledOnce(fs.writeFileSync);
+                done();
+            });
         },
 
-        "does not write manifest when beforeRunHook fails": function () {
+        "does not write manifest when beforeRunHook fails": function (done) {
             var beforeResolver = this.stubBeforeRunHook();
-            this.runner.run(this.config, {});
+            this.runner.run(this.config, {}, function () {
+                refute.called(fs.writeFileSync);
+                done();
+            });
 
-            beforeResolver.reject({ message: "Oh no" });
-
-            refute.called(fs.writeFileSync);
+            beforeResolver.reject(new Error("Oh no"));
         },
 
-        "does not write manifest when aborted": function () {
+        "does not write manifest when aborted": function (done) {
             var beforeResolver = this.stubBeforeRunHook();
-            var run = this.runner.run(this.config, {});
+            var run = this.runner.run(this.config, {}, function () {
+                refute.called(fs.writeFileSync);
+                done();
+            });
 
             run.abort({ message: "Oh snap" });
             beforeResolver.resolve([{}]);
-
-            refute.called(fs.writeFileSync);
         },
 
-        "does not run tests when aborted": function () {
+        "does not run tests when aborted": function (done) {
             var beforeResolver = this.stubBeforeRunHook();
-            var run = this.runner.run(this.config, {});
+            var run = this.runner.run(this.config, {}, function () {
+                refute.called(test.autoRun);
+                done();
+            });
 
             run.abort({ message: "Oh snap" });
             beforeResolver.resolve([{}]);
-
-            refute.called(test.autoRun);
         },
 
-        "call done when aborted": function () {
+        "call done when aborted": function (done) {
             var beforeResolver = this.stubBeforeRunHook();
-            var done = this.spy();
-            var run = this.runner.run(this.config, {}, done);
+            var run = this.runner.run(this.config, {}, function (err) {
+                assert.equals(err, { code: 70, message: "Oh snap" });
+                done();
+            });
 
             run.abort({ message: "Oh snap" });
             beforeResolver.resolve([{}]);
-
-            assert.calledOnce(done);
-            assert.calledWithExactly(done, { code: 70, message: "Oh snap" });
         },
 
-        "does not run tests in case of no matching test files": function () {
+        "does not run tests in case of no matching test files": function (done) {
             var beforeResolver = this.stubBeforeRunHook();
             this.config.resolve.returns(when(resourceSet(this, "/here", [])));
-            var run = this.runner.run(this.config, {});
+            this.runner.run(this.config, {}, function () {
+                refute.called(test.autoRun);
+                done();
+            });
 
             beforeResolver.resolve([{}]);
-
-            refute.called(test.autoRun);
         },
 
-        "call done in case of no matching test files": function () {
+        "call done in case of no matching test files": function (done) {
             var beforeResolver = this.stubBeforeRunHook();
             this.config.resolve.returns(when(resourceSet(this, "/here", [])));
-            var done = this.spy();
-            var run = this.runner.run(this.config, {}, done);
+            this.runner.run(this.config, {}, function (err) {
+                refute.defined(err);
+                done();
+            });
 
             beforeResolver.resolve([{}]);
-
-            assert.calledOnce(done);
-            assert.calledWithExactly(done);
         }
 
     }
