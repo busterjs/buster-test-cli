@@ -172,11 +172,12 @@ buster.testCase("Node runner", {
             this.contextListeners = test.testContext.listeners;
             delete test.testContext.listeners;
             this.stub(fs, "writeFileSync");
-            cliHelper.cdFixtures();
+            this.cwd = cliHelper.cdFixtures();
         },
 
         tearDown: function () {
             test.testContext.listeners = this.contextListeners;
+            process.chdir(this.cwd);
         },
 
         "registers listener for created test cases": function (done) {

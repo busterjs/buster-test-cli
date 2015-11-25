@@ -35,11 +35,12 @@ buster.testCase("Test CLI", {
             runners: this.runners
         });
         this.exit = this.cli.cli.exit = this.spy();
-        cliHelper.cdFixtures();
+        this.cwd = cliHelper.cdFixtures();
     },
 
     tearDown: function (done) {
         cliHelper.clearFixtures(done);
+        process.chdir(this.cwd);
     },
 
     "help": {
