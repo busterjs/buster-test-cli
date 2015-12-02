@@ -53,7 +53,7 @@
     "ramp": "2.x",
     "ansi-colorizer": "1.x",
     "buster-cli": "0.8.x",
-    "buster-test": "https://github.com/busterjs/buster-test.git#update-deps",
+    "buster-test": "git://github.com/busterjs/buster-test.git#update-deps",
     "bane": "1.x",
     "stack-filter": "1.x",
     "ejs": "2.x",
