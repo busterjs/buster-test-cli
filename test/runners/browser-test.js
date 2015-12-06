@@ -617,23 +617,31 @@ buster.testCase("Browser runner", {
                 });
             },
 
-            "//builds cwd from session server and root": function () {
-                this.session.resourcesPath = "/aaa-bbb/resources";
+            "builds cwd from session server and root": function () {
+                this.session.getSession = this.stub().returns({
+                    resourcesPath: "/aaa-bbb/resources"
+                });
                 var run = this.createRun({ server: "localhost:1111" });
                 run.runTests(this.session);
 
                 assert.match(reporters.brief.create.args[0][0], {
-                    cwd: "http://localhost:1111/aaa-bbb/resources"
+                    stackFilter: {
+                        cwd: "http://localhost:1111/aaa-bbb/resources"
+                    }
                 });
             },
 
-            "//builds cwd from non-default session server and root": function () {
-                this.session.resourcesPath = "/aaa-bbb/resources";
+            "builds cwd from non-default session server and root": function () {
+                this.session.getSession = this.stub().returns({
+                    resourcesPath: "/aaa-bbb/resources"
+                });
                 var run = this.createRun({ server: "somewhere:2524" });
                 run.runTests(this.session);
 
                 assert.match(reporters.brief.create.args[0][0], {
-                    cwd: "http://somewhere:2524/aaa-bbb/resources"
+                    stackFilter: {
+                        cwd: "http://somewhere:2524/aaa-bbb/resources"
+                    }
                 });
             },
 
