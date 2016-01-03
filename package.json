@@ -49,20 +49,20 @@
     "test-debug": "node --debug-brk run-tests.js"
   },
   "dependencies": {
-    "buster-analyzer": "0.6.x",
-    "ramp": "2.x",
     "ansi-colorizer": "1.x",
-    "buster-cli": "0.8.x",
-    "buster-test": "git://github.com/busterjs/buster-test.git#update-deps",
     "bane": "1.x",
-    "stack-filter": "1.x",
+    "buster-analyzer": "0.6.x",
+    "buster-cli": "0.8.x",
+    "buster-test": "0.8.x",
     "ejs": "2.x",
-    "when": "3.x",
     "lodash": "3.x",
-    "platform": "1.x"
+    "platform": "1.x",
+    "ramp": "2.x",
+    "stack-filter": "1.x",
+    "when": "3.x"
   },
   "devDependencies": {
-    "buster-node": "0.7.x",
+    "buster-node": "0.8.x",
     "stream-logger": "1.x"
   }
 }
