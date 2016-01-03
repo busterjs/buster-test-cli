@@ -788,7 +788,6 @@ buster.testCase("Browser runner", {
             var resourceSet = mkrs(this);
             this.addResourceDeferred.resolve();
             this.sessionDeferred.reject(new Error("ECONNREFUSED, Connection refused"));
-            var callback = this.spy();
 
             this.run.startSession(this.client, function (err) {
                 var message = err.message;
@@ -798,6 +797,60 @@ buster.testCase("Browser runner", {
                 assert.equals(err.code, 75);
                 done();
             })(resourceSet);
+        },
+
+        "passes on the error message received in session abort": function (done) {
+
+            this.stub(ramp, "createRampClient").returns(this.client);
+
+            var session = fakeSession(this);
+            var config = fakeConfig(this);
+            config.resolve = this.stub().returns(when.resolve(mkrs(this)));
+
+            this.run = testRun.create(config, { server: "localhost:1111" }, this.logger, function (err) {
+                assert.equals(err.message, "not sure what happened");
+                done();
+            });
+
+            this.stub(this.run, "runTests", function () {
+                // instead of running tests - abort the session
+                // this is ugly as hell...
+                assert.calledOnce(session.onSessionAbort);
+                var listener = session.onSessionAbort.firstCall.args[0];
+                listener({error: "not sure what happened"});
+            });
+
+            this.run.start();
+
+            this.addResourceDeferred.resolve();
+            this.sessionDeferred.resolve(session);
+        },
+
+        "adds default error message for session abort": function (done) {
+
+            this.stub(ramp, "createRampClient").returns(this.client);
+
+            var session = fakeSession(this);
+            var config = fakeConfig(this);
+            config.resolve = this.stub().returns(when.resolve(mkrs(this)));
+
+            this.run = testRun.create(config, { server: "localhost:1111" }, this.logger, function (err) {
+                assert.equals(err.message, "Browser session aborted (client failed to send a heartbeat?)");
+                done();
+            });
+
+            this.stub(this.run, "runTests", function () {
+                // instead of running tests - abort the session
+                // this is ugly as hell...
+                assert.calledOnce(session.onSessionAbort);
+                var listener = session.onSessionAbort.firstCall.args[0];
+                listener({}); // emulate ramp calling back without any details
+            });
+
+            this.run.start();
+
+            this.addResourceDeferred.resolve();
+            this.sessionDeferred.resolve(session);
         },
 
         "files": {
@@ -841,25 +894,5 @@ buster.testCase("Browser runner", {
                 run.start();
             }
         }
-    },
-
-    // TODO: Test that the actual message from the abort event is passed
-    // correctly.
-    "//ends session when session aborts itself": function (done) {
-        var serverClient = fakeServerClient(this);
-        this.stub(ramp, "createRampClient").returns(serverClient);
-
-        var config = fakeConfig(this);
-        config.resolve.returns(when([]));
-
-        var session = fakeSession(this);
-        var deferred = when.defer();
-        deferred.resolve(session);
-        serverClient.createSession.returns(deferred.promise);
-
-        var run = this.runner.run(config, {}, done);
-
-        assert.calledOnce(session.onSessionAbort);
-        session.onAbort.getCall(0).args[0]({message: "An error from the session"});
     }
 });
