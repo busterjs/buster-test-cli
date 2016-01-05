@@ -16,13 +16,13 @@ function mkrs(tc) {
 	tc.addResourceDeferred = when.defer();
 	var resourceSet = [
 	];
-	resourceSet.addResource = tc.stub().returns(tc.addResourceDeferred);
+	resourceSet.addResource = tc.stub().returns(tc.addResourceDeferred.promise);
 	// 4 files means, that one test file exists
 	resourceSet.loadPath= {
 		paths: tc.stub().returns(4),
 		append: tc.stub()
 	};
-	
+
     return resourceSet;
 }
 
@@ -34,12 +34,12 @@ function fakeConfig(tc) {
 }
 
 function fakeSession(tc) {
-	tc.initializeDeferred = when.defer();	
+	tc.initializeDeferred = when.defer();
     return bane.createEventEmitter({
         getSession: tc.stub().returns({
             resourcesPath: ""
         }),
-        initialize: tc.stub().returns(tc.initializeDeferred),
+        initialize: tc.stub().returns(tc.initializeDeferred.promise),
         // onStart: tc.stub(),
         // onLoad: tc.stub().yields([{}]),
         // onEnd: tc.stub(),
@@ -203,7 +203,7 @@ buster.testCase("Browser runner", {
             var session = fakeSession(this);
             this.serverClient.createSession.returns(when(session));
             var deferred = when.defer();
-            this.config.resolve.returns(deferred);
+            this.config.resolve.returns(deferred.promise);
 
             var run = this.runner.run(this.config, {});
             this.stub(run, "runTests").yields();
@@ -260,48 +260,89 @@ buster.testCase("Browser runner", {
                 refute.called(this.serverClient.createSession);
             }.bind(this)));
 
-            run.abort();
-            deferred.resolve({});
-        },
-
-        "//ends session if running": function (done) {
-            this.config.resolve.returns(when([]));
-            var session = fakeSession(this);
-            var deferred = when.defer();
-            this.serverClient.createSession.returns(deferred.promise);
-
-            var run = this.runner.run(this.config, {}, function () {
-                process.nextTick(done(function () {
-                    assert.calledOnce(session.endSession);
-                }));
-            });
-
-            run.abort();
-            deferred.resolve(session);
+            run.abort(new Error("crapsicles"));
+            deferred.resolve(mkrs(this));
         },
 
         "calls run-callback with abort error": function (done) {
             var deferred = when.defer();
-            this.config.resolve.returns(deferred);
+            this.config.resolve.returns(deferred.promise);
 
             var run = this.runner.run(this.config, {}, done(function (err) {
                 assert.equals(err.code, 42);
             }));
 
             run.abort({ code: 42 });
-            deferred.resolve({});
+            deferred.resolve(mkrs(this));
         },
 
         "sets error code if not present": function (done) {
             var deferred = when.defer();
-            this.config.resolve.returns(deferred);
+            this.config.resolve.returns(deferred.promise);
 
             var run = this.runner.run(this.config, {}, done(function (err) {
                 assert.equals(err.code, 70);
             }));
 
             run.abort({});
-            deferred.resolve({});
+            deferred.resolve(mkrs(this));
+        },
+
+        "does not start a test run": function (done) {
+            var deferred = when.defer();
+            this.config.resolve.returns(deferred.promise);
+
+            var runTestsSpy, onInterruptSpy;
+            var run = this.runner.run(this.config, {}, function () {
+                setTimeout(done(function () {
+                    refute.called(runTestsSpy);
+                    refute.called(onInterruptSpy);
+                }), 10);
+            });
+            runTestsSpy = this.spy(run, "runTests");
+            onInterruptSpy = this.spy(run, "onInterrupt");
+
+            run.abort({ code: 42 });
+            deferred.resolve(mkrs(this));
+        },
+
+        "does not send resources to browser": function (done) {
+            var deferred = when.defer();
+            this.config.resolve.returns(deferred.promise);
+
+            var resourceSet = mkrs(this);
+
+            var run = this.runner.run(this.config, {}, function () {
+                setTimeout(done(function () {
+                    refute.called(resourceSet.addResource);
+                }), 10);
+            });
+
+            run.abort({ code: 42 });
+            deferred.resolve(resourceSet);
+        },
+
+        "ends session if running": function (done) {
+            this.config.resolve.returns(when.resolve(mkrs(this)));
+
+            var session = fakeSession(this);
+
+            var run = this.runner.run(this.config, {}, function (err) {
+                assert.match(err, { message: "crapola" });
+                setTimeout(done(function () {
+                    assert.calledOnce(session.endSession);
+                }), 10);
+            });
+
+            // note: stubbing own methods... but there's no other way to intercept currently
+            // so doing it anyways, since we need to document the use case via test name...
+            this.stub(run, "startSession", function (client, cb) {
+                return function () {
+                    run.abort(new Error("crapola"));
+                    // bypass serverClient.createSession - imagine it just worked
+                    cb(null, session);
+                }
+            });
         }
     },
 
@@ -372,7 +413,7 @@ buster.testCase("Browser runner", {
         },
 
         "testRun extension hook": {
-            "triggers with runners": function () {
+            "triggers with runners": function (done) {
                 var config = fakeConfig(this);
                 var sessionClient = fakeSessionClient(this);
                 this.initializeDeferred.resolve(sessionClient);
@@ -380,23 +421,27 @@ buster.testCase("Browser runner", {
 
                 run.runTests(this.session);
 
-                assert.called(config.runExtensionHook);
-                assert.calledWith(
-                    config.runExtensionHook,
-                    "testRun",
-                    this.remoteRunner,
-                    sessionClient
-                );
+                this.initializeDeferred.promise.then(function () {
+                    assert.called(config.runExtensionHook);
+                    assert.calledWith(
+                        config.runExtensionHook,
+                        "testRun",
+                        this.remoteRunner,
+                        sessionClient
+                    );
+                    done();
+                }.bind(this));
             },
 
-            "aborts run when hook throws": function () {
+            "aborts run when hook throws": function (done) {
                 var config = fakeConfig(this);
-                config.runExtensionHook.throws("Oh noes");
+                config.runExtensionHook.throws(new Error("Oh noes"));
                 var run = testRun.create(config, {}, this.logger);
 
                 run.runTests(this.session, function (err) {
                     assert.equals(err.code, 70);
                     assert.calledOnce(this.session.endSession);
+                    done();
                 }.bind(this));
             }
         },
@@ -613,23 +658,31 @@ buster.testCase("Browser runner", {
                 });
             },
 
-            "//builds cwd from session server and root": function () {
-                this.session.resourcesPath = "/aaa-bbb/resources";
+            "builds cwd from session server and root": function () {
+                this.session.getSession = this.stub().returns({
+                    resourcesPath: "/aaa-bbb/resources"
+                });
                 var run = this.createRun({ server: "localhost:1111" });
                 run.runTests(this.session);
 
                 assert.match(reporters.brief.create.args[0][0], {
-                    cwd: "http://localhost:1111/aaa-bbb/resources"
+                    stackFilter: {
+                        cwd: "http://localhost:1111/aaa-bbb/resources"
+                    }
                 });
             },
 
-            "//builds cwd from non-default session server and root": function () {
-                this.session.resourcesPath = "/aaa-bbb/resources";
+            "builds cwd from non-default session server and root": function () {
+                this.session.getSession = this.stub().returns({
+                    resourcesPath: "/aaa-bbb/resources"
+                });
                 var run = this.createRun({ server: "somewhere:2524" });
                 run.runTests(this.session);
 
                 assert.match(reporters.brief.create.args[0][0], {
-                    cwd: "http://somewhere:2524/aaa-bbb/resources"
+                    stackFilter: {
+                        cwd: "http://somewhere:2524/aaa-bbb/resources"
+                    }
                 });
             },
 
@@ -692,11 +745,14 @@ buster.testCase("Browser runner", {
                 this.initializeDeferred.resolve(this.sessionClient);
             },
 
-            "ends session client on suite:end": function () {
-                this.run.runTests(this.session, function () {});
-                this.remoteRunner.emit("suite:end");
-
-                assert.calledOnce(this.sessionClient.endSession);
+            "ends session client on suite:end": function (done) {
+                this.run.runTests(this.session, function () {
+                    assert.calledOnce(this.sessionClient.endSession);
+                    done();
+                }.bind(this));
+                this.initializeDeferred.promise.then(function () {
+                    this.remoteRunner.emit("suite:end");
+                }.bind(this));
             },
 
             "prints to stdout": function () {
@@ -706,14 +762,22 @@ buster.testCase("Browser runner", {
                 refute.equals(this.stdout, stdout);
             },
 
-            "calls run callback when done": function () {
-                var callback = this.spy();
+            "does not throw when no session provided": function () {
+                // note: this should not be necessary! but it avoids hidden exceptions
+                // after the abort() happens
+                this.run.endSession();
+                assert(true);
+            },
 
-                this.run.runTests(this.session, callback);
-                this.remoteRunner.emit("suite:end", { ok: true });
-
-                assert.calledOnce(callback);
-                assert.calledWith(callback, null, { ok: true });
+            "calls run callback when done": function (done) {
+                this.run.runTests(this.session, function (err, res) {
+                    assert.isNull(err);
+                    assert.equals(res, {ok: true});
+                    done();
+                });
+                this.initializeDeferred.promise.then(function () {
+                    this.remoteRunner.emit("suite:end", {ok: true});
+                }.bind(this));
             },
 
             "prints to stderr on unsuccesful session close":
@@ -732,7 +796,7 @@ buster.testCase("Browser runner", {
             this.sessionDeferred = when.defer();
             this.client = {
                 connect: this.stub().returns(when()),
-                createSession: this.stub().returns(this.sessionDeferred)
+                createSession: this.stub().returns(this.sessionDeferred.promise)
             };
         },
 
@@ -750,36 +814,92 @@ buster.testCase("Browser runner", {
 
             this.run = testRun.create(config, options, this.logger, cb);
             this.run.startSession = function (client, callback) {
-                return function () { callback({ message: "Failed serializing resources" }); };
+                return function () {
+                    callback({ message: "Failed serializing resources" });
+                };
             };
             this.run.start();
         },
 
-        "session creation error": function () {
-        	var resourceSet = mkrs(this);
-        	this.addResourceDeferred.resolve();
-            this.sessionDeferred.reject({ message: "Djeez" });
-            var callback = this.spy();
+        "session creation error": function (done) {
+            var resourceSet = mkrs(this);
+            this.addResourceDeferred.resolve();
+            this.sessionDeferred.reject({message: "Djeez"});
 
-            this.run.startSession(this.client, callback)(resourceSet);
-
-            assert.calledOnce(callback);
-            assert.match(callback.args[0][0].message, "Failed creating session");
+            this.run.startSession(this.client, function (err) {
+                assert.match(err.message, "Failed creating session");
+                done();
+            })(resourceSet);
         },
 
-        "yields understandable error if server cannot be reached": function () {
-        	var resourceSet = mkrs(this);
-        	this.addResourceDeferred.resolve();
+        "yields understandable error if server cannot be reached": function (done) {
+            var resourceSet = mkrs(this);
+            this.addResourceDeferred.resolve();
             this.sessionDeferred.reject(new Error("ECONNREFUSED, Connection refused"));
-            var callback = this.spy();
 
-            this.run.startSession(this.client, callback)(resourceSet);
+            this.run.startSession(this.client, function (err) {
+                var message = err.message;
+                assert.match(message, "Unable to connect to server");
+                assert.match(message, "http://localhost:1111");
+                assert.match(message, "Please make sure that buster-server is running");
+                assert.equals(err.code, 75);
+                done();
+            })(resourceSet);
+        },
 
-            var message = callback.args[0][0].message;
-            assert.match(message, "Unable to connect to server");
-            assert.match(message, "http://localhost:1111");
-            assert.match(message, "Please make sure that buster-server is running");
-            assert.equals(callback.args[0][0].code, 75);
+        "passes on the error message received in session abort": function (done) {
+
+            this.stub(ramp, "createRampClient").returns(this.client);
+
+            var session = fakeSession(this);
+            var config = fakeConfig(this);
+            config.resolve = this.stub().returns(when.resolve(mkrs(this)));
+
+            this.run = testRun.create(config, { server: "localhost:1111" }, this.logger, function (err) {
+                assert.equals(err.message, "not sure what happened");
+                assert.calledOnce(session.endSession);
+                done();
+            });
+
+            this.stub(this.run, "runTests", function () {
+                // instead of running tests - abort the session
+                // this is ugly as hell...
+                assert.calledOnce(session.onSessionAbort);
+                var listener = session.onSessionAbort.firstCall.args[0];
+                listener({error: "not sure what happened"});
+            });
+
+            this.run.start();
+
+            this.addResourceDeferred.resolve();
+            this.sessionDeferred.resolve(session);
+        },
+
+        "adds default error message for session abort": function (done) {
+
+            this.stub(ramp, "createRampClient").returns(this.client);
+
+            var session = fakeSession(this);
+            var config = fakeConfig(this);
+            config.resolve = this.stub().returns(when.resolve(mkrs(this)));
+
+            this.run = testRun.create(config, { server: "localhost:1111" }, this.logger, function (err) {
+                assert.equals(err.message, "Browser session aborted (client failed to send a heartbeat?)");
+                done();
+            });
+
+            this.stub(this.run, "runTests", function () {
+                // instead of running tests - abort the session
+                // this is ugly as hell...
+                assert.calledOnce(session.onSessionAbort);
+                var listener = session.onSessionAbort.firstCall.args[0];
+                listener({}); // emulate ramp calling back without any details
+            });
+
+            this.run.start();
+
+            this.addResourceDeferred.resolve();
+            this.sessionDeferred.resolve(session);
         },
 
         "files": {
@@ -787,64 +907,41 @@ buster.testCase("Browser runner", {
                 this.stub(ramp, "createRampClient").returns(this.client);
                 this.config = fakeConfig(this);
                 this.configDeferred = when.defer();
-                this.config.resolve.returns(this.configDeferred);
+                this.config.resolve.returns(this.configDeferred.promise);
                 this.stub(process, "cwd").returns("/home/christian/projects/buster/sample");
             },
 
-            "yields understandable error if pattern matches no files": function () {
+            "yields understandable error if pattern matches no files": function (done) {
                 this.configDeferred.reject(new Error("ENOENT, No such file or directory '/home/christian/projects/buster/sample/src/*.js'"));
-                var callback = this.spy();
 
-                var run = testRun.create(this.config, {}, this.logger, callback);
+                var run = testRun.create(this.config, {}, this.logger, function (err) {
+                    assert.match(err.message, "pattern 'src/*.js' does not match any files");
+                    assert.equals(err.code, 65);
+                    done();
+                });
                 run.start();
-
-                assert.calledOnce(callback);
-                assert.match(callback.args[0][0].message, "pattern 'src/*.js' does not match any files");
-                assert.equals(callback.args[0][0].code, 65);
             },
 
-            "yields understandable error if a file could not be found": function () {
+            "yields understandable error if a file could not be found": function (done) {
                 this.configDeferred.reject(new Error("ENOENT, No such file or directory '/home/christian/projects/buster/sample/src/trim.js'"));
-                var callback = this.spy();
 
-                var run = testRun.create(this.config, {}, this.logger, callback);
+                var run = testRun.create(this.config, {}, this.logger, function (err) {
+                    assert.match(err.message, "Configured path 'src/trim.js' is not a file or directory");
+                    assert.equals(err.code, 65);
+                    done();
+                });
                 run.start();
-
-                assert.calledOnce(callback);
-                assert.match(callback.args[0][0].message, "Configured path 'src/trim.js' is not a file or directory");
-                assert.equals(callback.args[0][0].code, 65);
             },
 
-            "yields understandable error if config fails to resolve": function () {
+            "yields understandable error if config fails to resolve": function (done) {
                 this.configDeferred.reject({ message: "Failed loading configuration: Oh noes" });
-                var callback = this.spy();
 
-                var run = testRun.create(this.config, {}, this.logger, callback);
+                var run = testRun.create(this.config, {}, this.logger, function (err) {
+                    assert.match(err.message, "Failed loading configuration: Oh noes");
+                    done();
+                });
                 run.start();
-
-                assert.calledOnce(callback);
-                assert.match(callback.args[0][0].message, "Failed loading configuration: Oh noes");
             }
         }
-    },
-
-    // TODO: Test that the actual message from the abort event is passed
-    // correctly.
-    "//ends session when session aborts itself": function (done) {
-        var serverClient = fakeServerClient(this);
-        this.stub(ramp, "createRampClient").returns(serverClient);
-
-        var config = fakeConfig(this);
-        config.resolve.returns(when([]));
-
-        var session = fakeSession(this);
-        var deferred = when.defer();
-        deferred.resolve(session);
-        serverClient.createSession.returns(deferred.promise);
-
-        var run = this.runner.run(config, {}, done);
-
-        assert.calledOnce(session.onSessionAbort);
-        session.onAbort.getCall(0).args[0]({message: "An error from the session"});
     }
 });
