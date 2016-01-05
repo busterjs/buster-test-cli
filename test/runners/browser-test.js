@@ -260,24 +260,8 @@ buster.testCase("Browser runner", {
                 refute.called(this.serverClient.createSession);
             }.bind(this)));
 
-            run.abort();
-            deferred.resolve({});
-        },
-
-        "//ends session if running": function (done) {
-            this.config.resolve.returns(when([]));
-            var session = fakeSession(this);
-            var deferred = when.defer();
-            this.serverClient.createSession.returns(deferred.promise);
-
-            var run = this.runner.run(this.config, {}, function () {
-                process.nextTick(done(function () {
-                assert.calledOnce(session.endSession);
-                }));
-            });
-
-            run.abort();
-            deferred.resolve(session);
+            run.abort(new Error("crapsicles"));
+            deferred.resolve(mkrs(this));
         },
 
         "calls run-callback with abort error": function (done) {
@@ -289,7 +273,7 @@ buster.testCase("Browser runner", {
             }));
 
             run.abort({ code: 42 });
-            deferred.resolve({});
+            deferred.resolve(mkrs(this));
         },
 
         "sets error code if not present": function (done) {
@@ -301,7 +285,64 @@ buster.testCase("Browser runner", {
             }));
 
             run.abort({});
-            deferred.resolve({});
+            deferred.resolve(mkrs(this));
+        },
+
+        "does not start a test run": function (done) {
+            var deferred = when.defer();
+            this.config.resolve.returns(deferred.promise);
+
+            var runTestsSpy, onInterruptSpy;
+            var run = this.runner.run(this.config, {}, function () {
+                setTimeout(done(function () {
+                    refute.called(runTestsSpy);
+                    refute.called(onInterruptSpy);
+                }), 10);
+            });
+            runTestsSpy = this.spy(run, "runTests");
+            onInterruptSpy = this.spy(run, "onInterrupt");
+
+            run.abort({ code: 42 });
+            deferred.resolve(mkrs(this));
+        },
+
+        "does not send resources to browser": function (done) {
+            var deferred = when.defer();
+            this.config.resolve.returns(deferred.promise);
+
+            var resourceSet = mkrs(this);
+
+            var run = this.runner.run(this.config, {}, function () {
+                setTimeout(done(function () {
+                    refute.called(resourceSet.addResource);
+                }), 10);
+            });
+
+            run.abort({ code: 42 });
+            deferred.resolve(resourceSet);
+        },
+
+        "ends session if running": function (done) {
+            this.config.resolve.returns(when.resolve(mkrs(this)));
+
+            var session = fakeSession(this);
+
+            var run = this.runner.run(this.config, {}, function (err) {
+                assert.match(err, { message: "crapola" });
+                setTimeout(done(function () {
+                    assert.calledOnce(session.endSession);
+                }), 10);
+            });
+
+            // note: stubbing own methods... but there's no other way to intercept currently
+            // so doing it anyways, since we need to document the use case via test name...
+            this.stub(run, "startSession", function (client, cb) {
+                return function () {
+                    run.abort(new Error("crapola"));
+                    // bypass serverClient.createSession - imagine it just worked
+                    cb(null, session);
+                }
+            });
         }
     },
 
@@ -721,6 +762,13 @@ buster.testCase("Browser runner", {
                 refute.equals(this.stdout, stdout);
             },
 
+            "does not throw when no session provided": function () {
+                // note: this should not be necessary! but it avoids hidden exceptions
+                // after the abort() happens
+                this.run.endSession();
+                assert(true);
+            },
+
             "calls run callback when done": function (done) {
                 this.run.runTests(this.session, function (err, res) {
                     assert.isNull(err);
@@ -809,6 +857,7 @@ buster.testCase("Browser runner", {
 
             this.run = testRun.create(config, { server: "localhost:1111" }, this.logger, function (err) {
                 assert.equals(err.message, "not sure what happened");
+                assert.calledOnce(session.endSession);
                 done();
             });
 
