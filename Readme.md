@@ -8,7 +8,7 @@ Library that supports the `buster-test` command line interface.
 
 ## Changelog
 
-**0.9.0** (2015-Jan-05)
+**0.9.0** (2016-Jan-05)
 
 * BREAKING: Updated all dependencies (`ramp@2.x`, `when@3.x`, `buster-test@0.8.x`)
 * BREAKING: added an engine requirement (node LTS) in `package.json` 
